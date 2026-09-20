@@ -5,6 +5,10 @@ import 'features/auth/presentation/screens/register_screen.dart';
 import 'features/stores/presentation/screens/my_stores_screen.dart';
 import 'features/stores/presentation/screens/new_store_screen.dart';
 import 'features/dashboard/presentation/screens/store_summary_screen.dart';
+import 'features/inventory/presentation/screens/products_screen.dart';
+import 'features/inventory/presentation/screens/new_product_screen.dart';
+import 'features/debts/presentation/screens/debts_screen.dart';
+import 'features/help/presentation/screens/help_screen.dart';
 
 void main() {
   runApp(const FiamasApp());
@@ -20,6 +24,17 @@ class AppRoutes {
   static const stores = '/stores';
   static const newStore = '/new-store';
   static const summary = '/summary';
+  static const products = '/products';
+  static const newProduct = '/new-product';
+  static const debts = '/debts';
+  static const help = '/help';
+
+  /// Salta directo al Resumen de Tienda (pantalla "Inicio"), sin importar
+  /// cuántas pantallas haya en el stack de navegación. Se usa desde el
+  /// tab "Inicio" de la barra inferior en Fiados, Productos y Ayuda.
+  static void goHome(BuildContext context) {
+    Navigator.of(context).popUntil((route) => route.settings.name == summary);
+  }
 }
 
 class FiamasApp extends StatelessWidget {
@@ -38,7 +53,11 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.stores: (_) => const MyStoresScreen(),
         AppRoutes.newStore: (_) => const NewStoreScreen(),
         AppRoutes.summary: (_) => const StoreSummaryScreen(),
+        AppRoutes.products: (_) => const ProductsScreen(),
+        AppRoutes.newProduct: (_) => const NewProductScreen(),
+        AppRoutes.debts: (_) => const DebtsScreen(),
+        AppRoutes.help: (_) => const HelpScreen(),
       },
     );
   }
-}
+} 

@@ -1,30 +1,41 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/gradient_button.dart';
+import '../../../../core/widgets/labeled_dropdown_field.dart';
 import '../../../../core/widgets/labeled_field.dart';
 
-class NewStoreScreen extends StatefulWidget {
-  const NewStoreScreen({super.key});
+class NewProductScreen extends StatefulWidget {
+  const NewProductScreen({super.key});
 
   @override
-  State<NewStoreScreen> createState() => _NewStoreScreenState();
+  State<NewProductScreen> createState() => _NewProductScreenState();
 }
 
-class _NewStoreScreenState extends State<NewStoreScreen> {
+class _NewProductScreenState extends State<NewProductScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _rucController = TextEditingController();
+  final _priceController = TextEditingController();
+  String? _category;
+
+  static const _categories = [
+    'Bebidas',
+    'Snacks',
+    'Panadería',
+    'Abarrotes',
+    'Limpieza',
+    'Otros',
+  ];
 
   @override
   void dispose() {
     _nameController.dispose();
-    _addressController.dispose();
-    _rucController.dispose();
+    _priceController.dispose();
     super.dispose();
   }
 
-  void _handleCreate() {
+  void _handleSave() {
     if (_formKey.currentState?.validate() ?? false) {
+      // TODO: conectar con InventoryRepository.createProduct()
       Navigator.of(context).pop();
     }
   }
@@ -39,7 +50,7 @@ class _NewStoreScreenState extends State<NewStoreScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 1. Botón para regresar
+              // 1. Botón para regresar (alineado a la izquierda)
               Align(
                 alignment: Alignment.centerLeft,
                 child: IconButton(
@@ -56,7 +67,7 @@ class _NewStoreScreenState extends State<NewStoreScreen> {
 
               // 2. Encabezado centrado, AFUERA de la tarjeta blanca
               Text(
-                'Nueva Tienda',
+                'Nuevo Producto',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
@@ -65,7 +76,7 @@ class _NewStoreScreenState extends State<NewStoreScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Cuéntanos un poco sobre tu negocio',
+                'Agrega un artículo a tu lista',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppColors.inkMuted,
@@ -118,9 +129,9 @@ class _NewStoreScreenState extends State<NewStoreScreen> {
                                       ),
                                     ),
                                     child: const Icon(
-                                      Icons.storefront_outlined,
+                                      Icons.inventory_2_outlined,
                                       color: AppColors.inkMuted,
-                                      size: 36,
+                                      size: 34,
                                     ),
                                   ),
                                   Positioned(
@@ -160,7 +171,7 @@ class _NewStoreScreenState extends State<NewStoreScreen> {
                                   border: Border.all(color: AppColors.mist),
                                 ),
                                 child: Text(
-                                  'Añadir foto de tienda',
+                                  'Añadir imagen de producto',
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyMedium
@@ -178,35 +189,40 @@ class _NewStoreScreenState extends State<NewStoreScreen> {
 
                       // Campos de entrada
                       LabeledField(
-                        label: 'Nombre de la tienda',
-                        hint: 'Ej: Bodega Doña María',
-                        icon: Icons.storefront_outlined,
+                        label: 'Nombre del producto',
+                        hint: 'Ej: Arroz Costeño 1kg',
+                        icon: Icons.inventory_2_outlined,
                         controller: _nameController,
                         validator: (v) => (v == null || v.isEmpty)
-                            ? 'Ingresa el nombre de tu tienda'
+                            ? 'Ingresa el nombre del producto'
                             : null,
                       ),
                       const SizedBox(height: 16),
-                      LabeledField(
-                        label: 'Dirección / Ubicación',
-                        hint: 'Calle, Distrito, Ciudad',
-                        icon: Icons.location_on_outlined,
-                        controller: _addressController,
-                        validator: (v) => (v == null || v.isEmpty)
-                            ? 'Ingresa la dirección'
-                            : null,
+                      LabeledDropdownField(
+                        label: 'Categoría',
+                        hint: 'Selecciona una categoría',
+                        icon: Icons.category_outlined,
+                        items: _categories,
+                        value: _category,
+                        onChanged: (value) =>
+                            setState(() => _category = value),
+                        validator: (v) =>
+                            v == null ? 'Selecciona una categoría' : null,
                       ),
                       const SizedBox(height: 16),
                       LabeledField(
-                        label: 'RUC (Opcional)',
-                        hint: '11 dígitos',
-                        icon: Icons.badge_outlined,
-                        keyboardType: TextInputType.number,
-                        controller: _rucController,
+                        label: 'Precio de venta',
+                        hint: 'S/ 0.00',
+                        icon: Icons.sell_outlined,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        controller: _priceController,
                         validator: (v) {
-                          if (v == null || v.isEmpty) return null;
-                          if (v.length != 11) {
-                            return 'El RUC debe tener 11 dígitos';
+                          if (v == null || v.isEmpty) {
+                            return 'Ingresa el precio de venta';
+                          }
+                          if (double.tryParse(v) == null) {
+                            return 'Ingresa un precio válido';
                           }
                           return null;
                         },
@@ -214,18 +230,10 @@ class _NewStoreScreenState extends State<NewStoreScreen> {
                       const SizedBox(height: 28),
 
                       // Botón principal
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.ink,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        onPressed: _handleCreate,
-                        icon: const Icon(Icons.check_circle_outline, size: 18),
-                        label: const Text('Crear tienda'),
+                      GradientButton(
+                        label: 'Guardar producto',
+                        icon: Icons.check_circle_outline,
+                        onPressed: _handleSave,
                       ),
                     ],
                   ),

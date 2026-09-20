@@ -4,6 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/gradient_button.dart';
 import '../../../../core/widgets/labeled_field.dart';
 import '../../../../main.dart';
+import '../../../client_portal/presentation/screens/client_login_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -203,7 +204,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                       Align(
                                         alignment: Alignment.centerRight,
                                         child: TextButton(
-                                          onPressed: () {},
+                                          onPressed: () {
+                                            // TODO: flujo de recuperación de clave
+                                          },
                                           style: TextButton.styleFrom(
                                             foregroundColor: AppColors.ink,
                                           ),
@@ -264,7 +267,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               const SizedBox(height: 12),
                               OutlinedButton.icon(
-                                onPressed: () {},
+                                onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const ClientLoginScreen(),
+                                  ),
+                                ),
                                 icon: const Icon(Icons.person_outline, size: 18),
                                 label: const Text('¿Eres cliente? Mira tu cuenta'),
                                 style: OutlinedButton.styleFrom(

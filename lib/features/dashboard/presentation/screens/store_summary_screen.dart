@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_bottom_nav.dart';
+import '../../../../main.dart';
 import '../widgets/dashboard_action_card.dart';
 import '../widgets/recent_debt_tile.dart';
 
@@ -183,7 +184,7 @@ class StoreSummaryScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 16),
 
               // Acciones rápidas
               Row(
@@ -238,7 +239,18 @@ class StoreSummaryScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: const AppBottomNav(currentIndex: 0),
+      bottomNavigationBar: AppBottomNav(
+        currentIndex: 0,
+        onTap: (index) {
+          if (index == 1) {
+            Navigator.of(context).pushNamed(AppRoutes.debts);
+          } else if (index == 2) {
+            Navigator.of(context).pushNamed(AppRoutes.products);
+          } else if (index == 3) {
+            Navigator.of(context).pushNamed(AppRoutes.help);
+          }
+        },
+      ),
     );
   }
 }
