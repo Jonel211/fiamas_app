@@ -1,29 +1,27 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 
-/// Campo de texto con etiqueta arriba, usado en login, registro y
-/// cualquier formulario futuro. Mantiene una sola fuente de verdad
-/// para el look de los inputs de la app.
-class LabeledField extends StatelessWidget {
-  const LabeledField({
+/// Campo de selección con el mismo look que [LabeledField] (label arriba,
+/// ícono a la izquierda, caja con borde), pero usando un dropdown en vez
+/// de texto libre.
+class LabeledDropdownField extends StatelessWidget {
+  const LabeledDropdownField({
     super.key,
     required this.label,
     required this.hint,
+    required this.items,
+    required this.value,
+    required this.onChanged,
     this.icon,
-    this.suffixIcon,
-    this.obscureText = false,
-    this.keyboardType,
-    this.controller,
     this.validator,
   });
 
   final String label;
   final String hint;
+  final List<String> items;
+  final String? value;
+  final ValueChanged<String?> onChanged;
   final IconData? icon;
-  final Widget? suffixIcon;
-  final bool obscureText;
-  final TextInputType? keyboardType;
-  final TextEditingController? controller;
   final String? Function(String?)? validator;
 
   @override
@@ -33,18 +31,22 @@ class LabeledField extends StatelessWidget {
       children: [
         Text(label, style: Theme.of(context).textTheme.labelLarge),
         const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          obscureText: obscureText,
-          keyboardType: keyboardType,
+        DropdownButtonFormField<String>(
+          initialValue: value,
           validator: validator,
+          icon: const Icon(Icons.keyboard_arrow_down,
+              color: AppColors.inkMuted, size: 20),
           decoration: InputDecoration(
             hintText: hint,
             prefixIcon: icon != null
                 ? Icon(icon, size: 20, color: AppColors.inkMuted)
                 : null,
-            suffixIcon: suffixIcon,
           ),
+          items: [
+            for (final item in items)
+              DropdownMenuItem(value: item, child: Text(item)),
+          ],
+          onChanged: onChanged,
         ),
       ],
     );
