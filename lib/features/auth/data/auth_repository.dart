@@ -2,12 +2,14 @@ import '../../../core/services/api_service.dart';
 import '../../../core/services/session_service.dart';
 
 class AuthRepository {
-  /// Registra un tendero en el backend
+  // ============================================================
+  // REGISTRO: Tendero
+  // El email se genera automáticamente en el backend desde el DNI
+  // ============================================================
   Future<Map<String, dynamic>> registerTendero({
     required String dni,
     required String nombres,
     required String apellidos,
-    required String email,
     required String telefono,
     required String password,
   }) async {
@@ -15,19 +17,21 @@ class AuthRepository {
       'dni': dni,
       'nombres': nombres,
       'apellidos': apellidos,
-      'email': email,
       'telefono': telefono,
       'password': password,
+      // 👆 NO enviamos email: el backend lo genera como {dni}@tendero.fiamas.app
     });
   }
 
-  /// Login del tendero
+  // ============================================================
+  // LOGIN: Tendero (por DNI, teléfono o email)
+  // ============================================================
   Future<Map<String, dynamic>> loginTendero({
-    required String email,
+    required String identifier, // DNI, teléfono o email
     required String password,
   }) async {
     final result = await ApiService.post('/auth/login', {
-      'email': email,
+      'identifier': identifier,
       'password': password,
       'rol': 'tendero',
     });

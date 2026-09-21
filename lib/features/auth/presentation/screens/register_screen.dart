@@ -16,7 +16,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nombresCtrl = TextEditingController();
   final _apellidosCtrl = TextEditingController();
   final _dniCtrl = TextEditingController();
-  final _emailCtrl = TextEditingController();
   final _telefonoCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _confirmPasswordCtrl = TextEditingController();
@@ -27,15 +26,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureConfirm = true;
   bool _isLoading = false;
 
-  // Color principal del diseño
   final Color _primaryColor = const Color(0xFF0F172A);
+  final Color _accentColor = const Color(0xFF0E7C7B);
 
   @override
   void dispose() {
     _nombresCtrl.dispose();
     _apellidosCtrl.dispose();
     _dniCtrl.dispose();
-    _emailCtrl.dispose();
     _telefonoCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmPasswordCtrl.dispose();
@@ -51,7 +49,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       dni: _dniCtrl.text.trim(),
       nombres: _nombresCtrl.text.trim(),
       apellidos: _apellidosCtrl.text.trim(),
-      email: _emailCtrl.text.trim(),
       telefono: _telefonoCtrl.text.trim(),
       password: _passwordCtrl.text,
     );
@@ -60,22 +57,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = false);
 
     if (result['success'] == true) {
-      // Éxito
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '¡Cuenta creada con éxito! Bienvenido a Fiamas.',
+            '¡Cuenta creada con éxito! Ya puedes iniciar sesión.',
             style: GoogleFonts.poppins(),
           ),
-          backgroundColor: const Color(0xFF0E7C7B),
+          backgroundColor: _accentColor,
+          duration: const Duration(seconds: 3),
         ),
       );
-      // Navegar al login después de un momento
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) Navigator.of(context).pushReplacementNamed('/login');
       });
     } else {
-      // Error
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -129,7 +124,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       v == null || v.isEmpty ? 'Ingresa tus nombres' : null,
                 ),
 
-                // Apellidos (NUEVO, requerido por backend)
+                // Apellidos
                 _buildLabel('Apellidos'),
                 _buildTextField(
                   controller: _apellidosCtrl,
@@ -154,29 +149,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
 
-                // Email (NUEVO, requerido por backend)
-                _buildLabel('Correo electrónico'),
-                _buildTextField(
-                  controller: _emailCtrl,
-                  hint: 'Ej: juan@correo.com',
-                  icon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Ingresa tu correo';
-                    if (!v.contains('@')) return 'Correo inválido';
-                    return null;
-                  },
-                ),
-
-                // Teléfono
+                // Teléfono (ahora es CLAVE para el login)
                 _buildLabel('Número de celular'),
                 _buildTextField(
                   controller: _telefonoCtrl,
-                  hint: 'Ej: 987 654 321',
+                  hint: 'Ej: 987654321',
                   icon: Icons.phone_outlined,
                   keyboardType: TextInputType.phone,
-                  validator: (v) =>
-                      v == null || v.isEmpty ? 'Ingresa tu celular' : null,
+                  maxLength: 9,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Ingresa tu celular';
+                    if (v.length != 9) return 'El celular debe tener 9 dígitos';
+                    return null;
+                  },
                 ),
 
                 // Contraseña
@@ -222,8 +207,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Confirma tu contraseña';
-                    if (v != _passwordCtrl.text)
+                    if (v != _passwordCtrl.text) {
                       return 'Las contraseñas no coinciden';
+                    }
                     return null;
                   },
                 ),
@@ -297,7 +283,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           style: GoogleFonts.poppins(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF0E7C7B),
+                            color: _accentColor,
                           ),
                         ),
                       ),
@@ -321,7 +307,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         style: GoogleFonts.poppins(
           fontSize: 13,
           fontWeight: FontWeight.w600,
-          color: const Color(0xFF0F172A),
+          color: _primaryColor,
         ),
       ),
     );
@@ -369,7 +355,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF0E7C7B), width: 1.5),
+          borderSide: BorderSide(color: _accentColor, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

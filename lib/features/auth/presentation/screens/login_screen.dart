@@ -7,7 +7,7 @@ import '../../../../core/widgets/gradient_button.dart';
 import '../../../../core/widgets/labeled_field.dart';
 import '../../../../main.dart';
 import '../../../client_portal/presentation/screens/client_login_screen.dart';
-import '../../data/auth_repository.dart'; // 👈 NUEVO
+import '../../data/auth_repository.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -19,28 +19,27 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(); // 👈 CAMBIADO
+  final _identifierController = TextEditingController(); // 👈 DNI o teléfono
   final _passwordController = TextEditingController();
 
-  final _authRepository = AuthRepository(); // 👈 NUEVO
+  final _authRepository = AuthRepository();
   bool _obscurePassword = true;
-  bool _isLoading = false; // 👈 NUEVO
+  bool _isLoading = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _identifierController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  // 👇 CAMBIADO: ahora es async y conecta con el backend
   Future<void> _handleLogin() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() => _isLoading = true);
 
     final result = await _authRepository.loginTendero(
-      email: _emailController.text.trim(),
+      identifier: _identifierController.text.trim(),
       password: _passwordController.text,
     );
 
@@ -48,7 +47,6 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (result['success'] == true) {
-      // Éxito: navegar al resumen de tienda
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('¡Bienvenido de nuevo!'),
@@ -58,7 +56,6 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       Navigator.of(context).pushNamed(AppRoutes.stores);
     } else {
-      // Error: mostrar mensaje
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result['error'] ?? 'Error al iniciar sesión'),
@@ -77,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: AppColors.ivory,
       body: Stack(
         children: [
-          // Header con la imagen transparente y difuminada
+          // Header con imagen difuminada
           Positioned(
             top: 0,
             left: 0,
@@ -210,20 +207,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                                       const SizedBox(height: 16),
 
-                                      // 👇 CAMBIADO: ahora es Correo electrónico
+                                      // 🔥 CAMBIO: ahora es DNI o teléfono
                                       LabeledField(
-                                        label: 'Correo electrónico',
-                                        hint: 'Ej: juan@correo.com',
-                                        icon: Icons.email_outlined,
-                                        keyboardType:
-                                            TextInputType.emailAddress,
-                                        controller: _emailController,
+                                        label: 'DNI o número de celular',
+                                        hint: 'Ej: 72839485',
+                                        icon: Icons.badge_outlined,
+                                        keyboardType: TextInputType.number,
+                                        controller: _identifierController,
                                         validator: (value) {
                                           if (value == null || value.isEmpty) {
-                                            return 'Ingresa tu correo';
+                                            return 'Ingresa tu DNI o celular';
                                           }
-                                          if (!value.contains('@')) {
-                                            return 'Correo inválido';
+                                          if (value.length < 8) {
+                                            return 'Debe tener al menos 8 dígitos';
                                           }
                                           return null;
                                         },
@@ -258,7 +254,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         alignment: Alignment.centerRight,
                                         child: TextButton(
                                           onPressed: () {
-                                            // TODO: flujo de recuperación de clave
+                                            // TODO: flujo de recuperación
                                           },
                                           style: TextButton.styleFrom(
                                             foregroundColor: AppColors.ink,
@@ -275,7 +271,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                                       const SizedBox(height: 4),
 
-                                      // 👇 CAMBIADO: muestra loader mientras carga
+                                      // Botón con estado de carga
                                       GradientButton(
                                         label: _isLoading
                                             ? 'Ingresando...'
