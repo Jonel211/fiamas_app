@@ -1,10 +1,13 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/gradient_button.dart';
 import '../../../../core/widgets/labeled_field.dart';
 import '../../../../main.dart';
 import '../../../client_portal/presentation/screens/client_login_screen.dart';
+import '../../data/auth_repository.dart'; // 👈 NUEVO
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -16,20 +19,52 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _identifierController = TextEditingController();
+  final _emailController = TextEditingController(); // 👈 CAMBIADO
   final _passwordController = TextEditingController();
+
+  final _authRepository = AuthRepository(); // 👈 NUEVO
   bool _obscurePassword = true;
+  bool _isLoading = false; // 👈 NUEVO
 
   @override
   void dispose() {
-    _identifierController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  void _handleLogin() {
-    if (_formKey.currentState?.validate() ?? false) {
+  // 👇 CAMBIADO: ahora es async y conecta con el backend
+  Future<void> _handleLogin() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    setState(() => _isLoading = true);
+
+    final result = await _authRepository.loginTendero(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+    );
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (result['success'] == true) {
+      // Éxito: navegar al resumen de tienda
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('¡Bienvenido de nuevo!'),
+          backgroundColor: Color(0xFF0E7C7B),
+          duration: Duration(seconds: 2),
+        ),
+      );
       Navigator.of(context).pushNamed(AppRoutes.stores);
+    } else {
+      // Error: mostrar mensaje
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['error'] ?? 'Error al iniciar sesión'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
     }
   }
 
@@ -51,24 +86,17 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // Fondo oscuro base sobre el que se apoya la imagen
                 Container(color: AppColors.ink),
-
-                // Imagen con Transparencia (Opacity)
                 Opacity(
-                  opacity: 0.30, // Reduce este valor para hacerla más transparente (0.0 a 1.0)
+                  opacity: 0.30,
                   child: Image.asset(
                     'assets/images/tienda.jpg',
                     fit: BoxFit.cover,
                   ),
                 ),
-
-                // Desenfoque suave opcional para quitarle nitidez a la foto
                 BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 2.0, sigmaY: 2.0),
-                  child: Container(
-                    color: Colors.black.withValues(alpha: 0.2),
-                  ),
+                  child: Container(color: Colors.black.withValues(alpha: 0.2)),
                 ),
               ],
             ),
@@ -78,7 +106,9 @@ class _LoginScreenState extends State<LoginScreen> {
               builder: (context, constraints) {
                 return SingleChildScrollView(
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
@@ -102,7 +132,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                         borderRadius: BorderRadius.circular(14),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: AppColors.ink.withValues(alpha: 0.12),
+                                            color: AppColors.ink.withValues(
+                                              alpha: 0.12,
+                                            ),
                                             blurRadius: 10,
                                             offset: const Offset(0, 4),
                                           ),
@@ -127,7 +159,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                     Text(
                                       'Para el tendero peruano',
                                       style: TextStyle(
-                                        color: Colors.white.withValues(alpha: 0.85),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.85,
+                                        ),
                                         fontSize: 12,
                                       ),
                                     ),
@@ -139,7 +173,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               padding: const EdgeInsets.only(top: 250),
                               child: Container(
                                 width: double.infinity,
-                                padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+                                padding: const EdgeInsets.fromLTRB(
+                                  24,
+                                  24,
+                                  24,
+                                  20,
+                                ),
                                 decoration: BoxDecoration(
                                   color: AppColors.surface,
                                   borderRadius: const BorderRadius.vertical(
@@ -147,7 +186,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.18),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.18,
+                                      ),
                                       blurRadius: 30,
                                       offset: const Offset(0, -8),
                                     ),
@@ -156,7 +197,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: Form(
                                   key: _formKey,
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
                                     children: [
                                       const Text(
                                         'Ingresar a mi tienda',
@@ -167,18 +209,27 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ),
                                       ),
                                       const SizedBox(height: 16),
+
+                                      // 👇 CAMBIADO: ahora es Correo electrónico
                                       LabeledField(
-                                        label: 'Teléfono o DNI',
-                                        hint: 'Ej: 72839485',
-                                        icon: Icons.badge_outlined,
-                                        keyboardType: TextInputType.number,
-                                        controller: _identifierController,
-                                        validator: (value) =>
-                                            (value == null || value.isEmpty)
-                                                ? 'Ingresa tu teléfono o DNI'
-                                                : null,
+                                        label: 'Correo electrónico',
+                                        hint: 'Ej: juan@correo.com',
+                                        icon: Icons.email_outlined,
+                                        keyboardType:
+                                            TextInputType.emailAddress,
+                                        controller: _emailController,
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Ingresa tu correo';
+                                          }
+                                          if (!value.contains('@')) {
+                                            return 'Correo inválido';
+                                          }
+                                          return null;
+                                        },
                                       ),
                                       const SizedBox(height: 16),
+
                                       LabeledField(
                                         label: 'Contraseña',
                                         hint: '••••••••',
@@ -194,12 +245,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                             color: AppColors.inkMuted,
                                           ),
                                           onPressed: () => setState(
-                                              () => _obscurePassword = !_obscurePassword),
+                                            () => _obscurePassword =
+                                                !_obscurePassword,
+                                          ),
                                         ),
                                         validator: (value) =>
                                             (value == null || value.isEmpty)
-                                                ? 'Ingresa tu contraseña'
-                                                : null,
+                                            ? 'Ingresa tu contraseña'
+                                            : null,
                                       ),
                                       Align(
                                         alignment: Alignment.centerRight,
@@ -214,16 +267,23 @@ class _LoginScreenState extends State<LoginScreen> {
                                             '¿Olvidaste tu clave?',
                                             style: TextStyle(
                                               fontSize: 13,
-                                              decoration: TextDecoration.underline,
+                                              decoration:
+                                                  TextDecoration.underline,
                                             ),
                                           ),
                                         ),
                                       ),
                                       const SizedBox(height: 4),
+
+                                      // 👇 CAMBIADO: muestra loader mientras carga
                                       GradientButton(
-                                        label: 'Entrar',
+                                        label: _isLoading
+                                            ? 'Ingresando...'
+                                            : 'Entrar',
                                         icon: Icons.arrow_forward,
-                                        onPressed: _handleLogin,
+                                        onPressed: _isLoading
+                                            ? null
+                                            : _handleLogin,
                                       ),
                                     ],
                                   ),
@@ -272,8 +332,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                     builder: (_) => const ClientLoginScreen(),
                                   ),
                                 ),
-                                icon: const Icon(Icons.person_outline, size: 18),
-                                label: const Text('¿Eres cliente? Mira tu cuenta'),
+                                icon: const Icon(
+                                  Icons.person_outline,
+                                  size: 18,
+                                ),
+                                label: const Text(
+                                  '¿Eres cliente? Mira tu cuenta',
+                                ),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: AppColors.ink,
                                   side: const BorderSide(color: AppColors.mist),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import 'core/theme/app_theme.dart';
+import 'features/auth/presentation/screens/splash_screen.dart'; // NUEVO
 import 'features/auth/presentation/screens/login_screen.dart';
 import 'features/auth/presentation/screens/register_screen.dart';
 import 'features/stores/presentation/screens/my_stores_screen.dart';
@@ -19,7 +21,8 @@ void main() {
 /// Ej: Navigator.pushNamed(context, AppRoutes.stores);
 class AppRoutes {
   AppRoutes._();
-  static const login = '/';
+  static const splash = '/'; //  CAMBIADO: ahora es el splash
+  static const login = '/login'; //  CAMBIADO: antes era '/'
   static const register = '/register';
   static const stores = '/stores';
   static const newStore = '/new-store';
@@ -46,9 +49,10 @@ class FiamasApp extends StatelessWidget {
       title: 'Fiamas',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      initialRoute: AppRoutes.login,
+      initialRoute: AppRoutes.splash, //  CAMBIADO: inicia en splash
       routes: {
-        AppRoutes.login: (_) => const LoginScreen(),
+        AppRoutes.splash: (_) => const SplashScreen(), //  NUEVO
+        AppRoutes.login: (_) => const LoginScreen(), //  CAMBIADO
         AppRoutes.register: (_) => const RegisterScreen(),
         AppRoutes.stores: (_) => const MyStoresScreen(),
         AppRoutes.newStore: (_) => const NewStoreScreen(),
@@ -60,4 +64,4 @@ class FiamasApp extends StatelessWidget {
       },
     );
   }
-} 
+}

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/labeled_field.dart';
+import '../../data/tienda_repository.dart'; // 👈 NUEVO
 
 class NewStoreScreen extends StatefulWidget {
   const NewStoreScreen({super.key});
@@ -15,6 +17,9 @@ class _NewStoreScreenState extends State<NewStoreScreen> {
   final _addressController = TextEditingController();
   final _rucController = TextEditingController();
 
+  final _repository = TiendaRepository(); // 👈 NUEVO
+  bool _isLoading = false; // 👈 NUEVO
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -23,9 +28,45 @@ class _NewStoreScreenState extends State<NewStoreScreen> {
     super.dispose();
   }
 
-  void _handleCreate() {
-    if (_formKey.currentState?.validate() ?? false) {
-      Navigator.of(context).pop();
+  // 👇 CAMBIADO: ahora es async y conecta con el backend
+  Future<void> _handleCreate() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    setState(() => _isLoading = true);
+
+    final result = await _repository.crearTienda(
+      nombre: _nameController.text.trim(),
+      direccion: _addressController.text.trim().isEmpty
+          ? null
+          : _addressController.text.trim(),
+      ruc: _rucController.text.trim().isEmpty
+          ? null
+          : _rucController.text.trim(),
+    );
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (result['success'] == true) {
+      // ✅ Éxito
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('¡Tienda creada exitosamente!'),
+          backgroundColor: Color(0xFF0E7C7B),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      // Devolver true para que MyStoresScreen recargue la lista
+      Navigator.of(context).pop(true);
+    } else {
+      // ❌ Error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['error'] ?? 'Error al crear la tienda'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
     }
   }
 
@@ -43,7 +84,9 @@ class _NewStoreScreenState extends State<NewStoreScreen> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: _isLoading
+                      ? null
+                      : () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.arrow_back, color: AppColors.ink),
                   style: IconButton.styleFrom(
                     backgroundColor: AppColors.mist,
@@ -54,22 +97,21 @@ class _NewStoreScreenState extends State<NewStoreScreen> {
               ),
               const SizedBox(height: 16),
 
-              // 2. Encabezado centrado, AFUERA de la tarjeta blanca
+              // 2. Encabezado
               Text(
                 'Nueva Tienda',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.ink,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.ink,
+                ),
               ),
               const SizedBox(height: 6),
               Text(
                 'Cuéntanos un poco sobre tu negocio',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.inkMuted,
-                    ),
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: AppColors.inkMuted),
               ),
               const SizedBox(height: 24),
 
@@ -94,12 +136,14 @@ class _NewStoreScreenState extends State<NewStoreScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Selector de foto + etiqueta con borde redondeado
+                      // Selector de foto
                       Center(
                         child: GestureDetector(
-                          onTap: () {
-                            // TODO: abrir selector de imagen / cámara
-                          },
+                          onTap: _isLoading
+                              ? null
+                              : () {
+                                  // TODO: abrir selector de imagen / cámara
+                                },
                           child: Column(
                             children: [
                               Stack(
@@ -148,7 +192,6 @@ class _NewStoreScreenState extends State<NewStoreScreen> {
                                 ],
                               ),
                               const SizedBox(height: 12),
-                              // Etiqueta con borde redondeado tipo "pill"
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
@@ -161,9 +204,7 @@ class _NewStoreScreenState extends State<NewStoreScreen> {
                                 ),
                                 child: Text(
                                   'Añadir foto de tienda',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
+                                  style: Theme.of(context).textTheme.bodyMedium
                                       ?.copyWith(
                                         color: AppColors.ink,
                                         fontWeight: FontWeight.w600,
@@ -176,7 +217,7 @@ class _NewStoreScreenState extends State<NewStoreScreen> {
                       ),
                       const SizedBox(height: 28),
 
-                      // Campos de entrada
+                      // Nombre
                       LabeledField(
                         label: 'Nombre de la tienda',
                         hint: 'Ej: Bodega Doña María',
@@ -187,6 +228,8 @@ class _NewStoreScreenState extends State<NewStoreScreen> {
                             : null,
                       ),
                       const SizedBox(height: 16),
+
+                      // Dirección
                       LabeledField(
                         label: 'Dirección / Ubicación',
                         hint: 'Calle, Distrito, Ciudad',
@@ -197,6 +240,8 @@ class _NewStoreScreenState extends State<NewStoreScreen> {
                             : null,
                       ),
                       const SizedBox(height: 16),
+
+                      // RUC
                       LabeledField(
                         label: 'RUC (Opcional)',
                         hint: '11 dígitos',
@@ -213,7 +258,7 @@ class _NewStoreScreenState extends State<NewStoreScreen> {
                       ),
                       const SizedBox(height: 28),
 
-                      // Botón principal
+                      // 👇 Botón principal con estado de carga
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.ink,
@@ -223,9 +268,20 @@ class _NewStoreScreenState extends State<NewStoreScreen> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        onPressed: _handleCreate,
-                        icon: const Icon(Icons.check_circle_outline, size: 18),
-                        label: const Text('Crear tienda'),
+                        onPressed: _isLoading ? null : _handleCreate,
+                        icon: _isLoading
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.check_circle_outline, size: 18),
+                        label: Text(
+                          _isLoading ? 'Creando tienda...' : 'Crear tienda',
+                        ),
                       ),
                     ],
                   ),

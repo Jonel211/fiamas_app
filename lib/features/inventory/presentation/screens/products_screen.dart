@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/services/session_service.dart';
 import '../../../../core/widgets/app_bottom_nav.dart';
 import '../../../../main.dart';
-import '../../domain/product.dart';
-import '../widgets/product_tile.dart';
+import '../../data/models/producto_model.dart';
+import '../../data/producto_repository.dart';
 import 'new_product_screen.dart';
 
 class ProductsScreen extends StatefulWidget {
@@ -14,129 +16,80 @@ class ProductsScreen extends StatefulWidget {
 }
 
 class _ProductsScreenState extends State<ProductsScreen> {
-  // TODO: reemplazar por datos reales desde InventoryRepository
-  static const _products = [
-    Product(
-        id: '1',
-        name: 'Agua San Mateo 1L',
-        category: 'Bebidas',
-        price: 2.50,
-        icon: IconName.bottle),
-    Product(
-        id: '2',
-        name: 'Galletas Soda Field',
-        category: 'Snacks',
-        price: 0.80,
-        icon: IconName.cookie),
-    Product(
-        id: '3',
-        name: 'Pan de Molde Unión',
-        category: 'Panadería',
-        price: 6.50,
-        icon: IconName.bread),
-  ];
-
-  static const _categories = [
-    'Bebidas',
-    'Snacks',
-    'Panadería',
-    'Abarrotes',
-    'Limpieza',
-    'Otros',
-  ];
-
-  String? _selectedCategory;
+  final _repository = ProductoRepository();
+  final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
-  bool _searchFocused = false;
+
+  List<ProductoModel> _productos = [];
+  bool _isLoading = true;
+  String? _errorMessage;
+  String? _tiendaNombre;
 
   @override
   void initState() {
     super.initState();
-    _searchFocusNode.addListener(() {
-      setState(() => _searchFocused = _searchFocusNode.hasFocus);
-    });
+    _cargarProductos();
+    _searchFocusNode.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
+    _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
   }
 
-  List<Product> get _filteredProducts {
-    if (_selectedCategory == null) return _products;
-    return _products.where((p) => p.category == _selectedCategory).toList();
+  Future<void> _cargarProductos() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final tienda = await SessionService.getTiendaActual();
+    if (tienda == null) {
+      setState(() {
+        _errorMessage = 'No hay tienda seleccionada';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    _tiendaNombre = tienda['nombre'];
+
+    final result = await _repository.obtenerProductosPorTienda(tienda['id']!);
+
+    if (!mounted) return;
+
+    if (result['success'] == true) {
+      final data = result['data'] as Map<String, dynamic>;
+      final lista = (data['data']?['productos'] ?? []) as List<dynamic>;
+      setState(() {
+        _productos = lista
+            .map((p) => ProductoModel.fromJson(p as Map<String, dynamic>))
+            .toList();
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _errorMessage = result['error'] ?? 'Error al cargar productos';
+        _isLoading = false;
+      });
+    }
   }
 
-  void _openFilterSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return Container(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-              decoration: const BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: AppColors.mist,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  Text('Filtrar por categoría',
-                      style: Theme.of(context).textTheme.headlineSmall),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Elige una categoría para ver solo esos productos',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _FilterChip(
-                        label: 'Todos',
-                        selected: _selectedCategory == null,
-                        onTap: () => setSheetState(() => _selectedCategory = null),
-                      ),
-                      for (final category in _categories)
-                        _FilterChip(
-                          label: category,
-                          selected: _selectedCategory == category,
-                          onTap: () =>
-                              setSheetState(() => _selectedCategory = category),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {}); // aplica la selección a la lista
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text('Aplicar filtro'),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
+  Future<void> _irANuevoProducto() async {
+    final creado = await Navigator.of(
+      context,
+    ).push<bool>(MaterialPageRoute(builder: (_) => const NewProductScreen()));
+    if (creado == true) _cargarProductos();
+  }
+
+  List<ProductoModel> get _filteredProductos {
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isEmpty) return _productos;
+    return _productos
+        .where((p) => p.nombre.toLowerCase().contains(query))
+        .toList();
   }
 
   @override
@@ -154,53 +107,20 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text('Mis Productos',
-                                style: Theme.of(context).textTheme.headlineSmall),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                'Mostrando ${_filteredProducts.length}',
-                                style: const TextStyle(
-                                    fontSize: 12, color: AppColors.inkMuted),
-                              ),
-                              const SizedBox(height: 6),
-                              GestureDetector(
-                                onTap: _openFilterSheet,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 7),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.surface,
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: AppColors.mist),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.filter_list,
-                                          size: 15, color: AppColors.ink),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        _selectedCategory ?? 'Filter',
-                                        style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.ink),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                      Text(
+                        'Mis Productos',
+                        style: Theme.of(context).textTheme.headlineSmall,
                       ),
+                      if (_tiendaNombre != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          _tiendaNombre!,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.inkMuted,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -208,33 +128,36 @@ class _ProductsScreenState extends State<ProductsScreen> {
                           color: AppColors.surface,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: _searchFocused ? AppColors.ink : AppColors.mist,
-                            width: _searchFocused ? 1.5 : 1,
+                            color: _searchFocusNode.hasFocus
+                                ? AppColors.ink
+                                : AppColors.mist,
+                            width: _searchFocusNode.hasFocus ? 1.5 : 1,
                           ),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.search,
-                                size: 20,
-                                color: _searchFocused
-                                    ? AppColors.ink
-                                    : AppColors.inkMuted),
+                            Icon(
+                              Icons.search,
+                              size: 20,
+                              color: _searchFocusNode.hasFocus
+                                  ? AppColors.ink
+                                  : AppColors.inkMuted,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: TextField(
+                                controller: _searchController,
                                 focusNode: _searchFocusNode,
                                 decoration: const InputDecoration(
                                   hintText: 'Buscar producto...',
                                   filled: false,
                                   border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
                                   isDense: true,
-                                  contentPadding: EdgeInsets.symmetric(vertical: 14),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
                                 ),
-                                onChanged: (value) {
-                                  // TODO: filtrar _filteredProducts por nombre
-                                },
+                                onChanged: (_) => setState(() {}),
                               ),
                             ),
                           ],
@@ -244,24 +167,48 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   ),
                 ),
                 Expanded(
-                  child: _filteredProducts.isEmpty
-                      ? Center(
-                          child: Text(
-                            'No hay productos en esta categoría',
-                            style: Theme.of(context).textTheme.bodyMedium,
+                  child: _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF0E7C7B),
                           ),
                         )
-                      : ListView(
-                          padding: const EdgeInsets.fromLTRB(24, 0, 24, 90),
-                          children: [
-                            for (final product in _filteredProducts)
-                              ProductTile(
-                                product: product,
-                                onEdit: () {
-                                  // TODO: abrir edición del producto
-                                },
+                      : _errorMessage != null
+                      ? _buildError()
+                      : _filteredProductos.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.inventory_2_outlined,
+                                size: 48,
+                                color: AppColors.inkMuted,
                               ),
-                          ],
+                              const SizedBox(height: 8),
+                              Text(
+                                'Aún no tienes productos',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Toca el botón + para agregar uno',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _cargarProductos,
+                          color: const Color(0xFF0E7C7B),
+                          child: ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(24, 0, 24, 90),
+                            itemCount: _filteredProductos.length,
+                            itemBuilder: (_, i) {
+                              final p = _filteredProductos[i];
+                              return _ProductoCard(producto: p);
+                            },
+                          ),
                         ),
                 ),
               ],
@@ -271,9 +218,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
               bottom: 20,
               child: FloatingActionButton(
                 backgroundColor: AppColors.teal,
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const NewProductScreen()),
-                ),
+                onPressed: _irANuevoProducto,
                 child: const Icon(Icons.add, color: Colors.white),
               ),
             ),
@@ -294,38 +239,111 @@ class _ProductsScreenState extends State<ProductsScreen> {
       ),
     );
   }
+
+  Widget _buildError() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              _errorMessage!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 14, color: AppColors.inkMuted),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextButton.icon(
+            onPressed: _cargarProductos,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Reintentar'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-/// Chip de selección de categoría, usado dentro del bottom sheet de filtro.
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
+/// Tarjeta visual de un producto (reemplaza el ProductTile antiguo)
+class _ProductoCard extends StatelessWidget {
+  const _ProductoCard({required this.producto});
+  final ProductoModel producto;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.teal : AppColors.mist.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: selected ? Colors.white : AppColors.inkMuted,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.mist),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.mist,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.inventory_2_outlined,
+              color: AppColors.ink,
+              size: 20,
+            ),
           ),
-        ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  producto.nombre,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: AppColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Stock: ${producto.stockActual} ${producto.unidadMedida}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.inkMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'S/ ${producto.precioVenta.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: AppColors.ink,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Icon(
+                Icons.edit_outlined,
+                size: 15,
+                color: AppColors.inkMuted,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
