@@ -4,11 +4,14 @@ import '../constants/app_colors.dart';
 class AppTheme {
   AppTheme._();
 
+  // Pendiente: activar Poppins cuando agreguemos los archivos .ttf
+  // static const String fontFamily = 'Poppins';
+
   static ThemeData get light {
     return ThemeData(
       useMaterial3: true,
+      // fontFamily: fontFamily,
       scaffoldBackgroundColor: AppColors.ivory,
-      fontFamily: 'Inter',
       colorScheme: const ColorScheme.light(
         primary: AppColors.ink,
         secondary: AppColors.teal,
@@ -16,7 +19,6 @@ class AppTheme {
         surface: AppColors.surface,
         error: AppColors.danger,
       ),
-
       textTheme: const TextTheme(
         headlineSmall: TextStyle(
           fontSize: 26,
@@ -24,20 +26,17 @@ class AppTheme {
           color: AppColors.ink,
           height: 1.2,
         ),
-        
         bodyMedium: TextStyle(
           fontSize: 14,
           color: AppColors.inkMuted,
           height: 1.4,
         ),
-        
         labelLarge: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w600,
           color: AppColors.ink,
         ),
       ),
-
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surface,
@@ -61,7 +60,6 @@ class AppTheme {
           borderSide: const BorderSide(color: AppColors.danger),
         ),
       ),
-
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.ink,
