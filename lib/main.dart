@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
+import 'features/auth/presentation/screens/splash_screen.dart';
+import 'features/auth/presentation/screens/welcome_screen.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
 import 'features/auth/presentation/screens/register_screen.dart';
+import 'features/auth/presentation/screens/register_client_screen.dart';
+import 'features/auth/presentation/screens/verification_screen.dart';
 import 'features/stores/presentation/screens/my_stores_screen.dart';
 import 'features/stores/presentation/screens/new_store_screen.dart';
 import 'features/dashboard/presentation/screens/store_summary_screen.dart';
@@ -19,8 +23,12 @@ void main() {
 /// Ej: Navigator.pushNamed(context, AppRoutes.stores);
 class AppRoutes {
   AppRoutes._();
-  static const login = '/';
+  static const splash = '/';
+  static const welcome = '/welcome';
+  static const login = '/login';
   static const register = '/register';
+  static const registerClient = '/register-client';
+  static const verification = '/verification';
   static const stores = '/stores';
   static const newStore = '/new-store';
   static const summary = '/summary';
@@ -46,10 +54,14 @@ class FiamasApp extends StatelessWidget {
       title: 'Fiamas',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      initialRoute: AppRoutes.login,
+      initialRoute: AppRoutes.splash,
       routes: {
+        AppRoutes.splash: (_) => const SplashScreen(),
+        AppRoutes.welcome: (_) => const WelcomeScreen(),
         AppRoutes.login: (_) => const LoginScreen(),
         AppRoutes.register: (_) => const RegisterScreen(),
+        AppRoutes.registerClient: (_) => const RegisterClientScreen(),
+        AppRoutes.verification: (_) => const VerificationScreen(),
         AppRoutes.stores: (_) => const MyStoresScreen(),
         AppRoutes.newStore: (_) => const NewStoreScreen(),
         AppRoutes.summary: (_) => const StoreSummaryScreen(),
@@ -60,4 +72,4 @@ class FiamasApp extends StatelessWidget {
       },
     );
   }
-} 
+}

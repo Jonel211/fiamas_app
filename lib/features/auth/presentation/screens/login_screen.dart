@@ -1,11 +1,7 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/gradient_button.dart';
-import '../../../../core/widgets/labeled_field.dart';
+import '../../../../core/widgets/auth_field.dart';
 import '../../../../main.dart';
-import '../../../client_portal/presentation/screens/client_login_screen.dart';
-import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,6 +11,13 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  // Logo vertical (bolsa arriba, "FIAMAS" abajo), versión oscura.
+  static const String _logo = 'assets/images/fiamas-vertical.png';
+
+  // Altura de la franja azul y tamaño con el que se dibuja el logo.
+  static const double _headerHeight = 240;
+  static const double _logoHeight = 200;
+
   final _formKey = GlobalKey<FormState>();
   final _identifierController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -35,265 +38,150 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final statusBarHeight = MediaQuery.of(context).padding.top;
-    const double headerHeight = 350;
-
     return Scaffold(
-      backgroundColor: AppColors.ivory,
-      body: Stack(
-        children: [
-          // Header con la imagen transparente y difuminada
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: headerHeight + statusBarHeight,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Fondo oscuro base sobre el que se apoya la imagen
-                Container(color: AppColors.ink),
-
-                // Imagen con Transparencia (Opacity)
-                Opacity(
-                  opacity: 0.30, // Reduce este valor para hacerla más transparente (0.0 a 1.0)
-                  child: Image.asset(
-                    'assets/images/tienda.jpg',
-                    fit: BoxFit.cover,
-                  ),
-                ),
-
-                // Desenfoque suave opcional para quitarle nitidez a la foto
-                BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 2.0, sigmaY: 2.0),
-                  child: Container(
-                    color: Colors.black.withValues(alpha: 0.2),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
+      backgroundColor: AppColors.skyBlue,
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          slivers: [
+            // Rellena la pantalla y, si el teclado ocupa espacio, se desplaza.
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Column(
+                children: [
+                  // ── Cabecera azul claro con logo ───────────
+                  SizedBox(
+                    height: _headerHeight,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      alignment: Alignment.center,
                       children: [
-                        Stack(
-                          children: [
-                            Positioned(
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              height: headerHeight,
-                              child: Padding(
-                                padding: const EdgeInsets.only(top: 82),
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      width: 52,
-                                      height: 52,
-                                      alignment: Alignment.center,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(14),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: AppColors.ink.withValues(alpha: 0.12),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 4),
-                                          ),
-                                        ],
-                                      ),
-                                      child: const Icon(
-                                        Icons.storefront_outlined,
-                                        color: AppColors.ink,
-                                        size: 24,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 10),
-                                    const Text(
-                                      'Fiamas',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'Para el tendero peruano',
-                                      style: TextStyle(
-                                        color: Colors.white.withValues(alpha: 0.85),
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                        OverflowBox(
+                          maxWidth: double.infinity,
+                          maxHeight: double.infinity,
+                          child: Image.asset(
+                            _logo,
+                            height: _logoHeight,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => const Text(
+                              'FIAMAS',
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.ink,
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.only(top: 250),
-                              child: Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surface,
-                                  borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(32),
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.18),
-                                      blurRadius: 30,
-                                      offset: const Offset(0, -8),
-                                    ),
-                                  ],
-                                ),
-                                child: Form(
-                                  key: _formKey,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                                    children: [
-                                      const Text(
-                                        'Ingresar a mi tienda',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppColors.ink,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      LabeledField(
-                                        label: 'Teléfono o DNI',
-                                        hint: 'Ej: 72839485',
-                                        icon: Icons.badge_outlined,
-                                        keyboardType: TextInputType.number,
-                                        controller: _identifierController,
-                                        validator: (value) =>
-                                            (value == null || value.isEmpty)
-                                                ? 'Ingresa tu teléfono o DNI'
-                                                : null,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      LabeledField(
-                                        label: 'Contraseña',
-                                        hint: '••••••••',
-                                        icon: Icons.lock_outline,
-                                        obscureText: _obscurePassword,
-                                        controller: _passwordController,
-                                        suffixIcon: IconButton(
-                                          icon: Icon(
-                                            _obscurePassword
-                                                ? Icons.visibility_off_outlined
-                                                : Icons.visibility_outlined,
-                                            size: 20,
-                                            color: AppColors.inkMuted,
-                                          ),
-                                          onPressed: () => setState(
-                                              () => _obscurePassword = !_obscurePassword),
-                                        ),
-                                        validator: (value) =>
-                                            (value == null || value.isEmpty)
-                                                ? 'Ingresa tu contraseña'
-                                                : null,
-                                      ),
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: TextButton(
-                                          onPressed: () {
-                                            // TODO: flujo de recuperación de clave
-                                          },
-                                          style: TextButton.styleFrom(
-                                            foregroundColor: AppColors.ink,
-                                          ),
-                                          child: const Text(
-                                            '¿Olvidaste tu clave?',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              decoration: TextDecoration.underline,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      GradientButton(
-                                        label: 'Entrar',
-                                        icon: Icons.arrow_forward,
-                                        onPressed: _handleLogin,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 32),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Text(
-                                    '¿No tienes cuenta? ',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: AppColors.inkMuted,
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () => Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => const RegisterScreen(),
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      'Regístrate aquí',
-                                      style: TextStyle(
-                                        color: AppColors.ink,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 13,
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              OutlinedButton.icon(
-                                onPressed: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => const ClientLoginScreen(),
-                                  ),
-                                ),
-                                icon: const Icon(Icons.person_outline, size: 18),
-                                label: const Text('¿Eres cliente? Mira tu cuenta'),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppColors.ink,
-                                  side: const BorderSide(color: AppColors.mist),
-                                  minimumSize: const Size.fromHeight(48),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              ),
-                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                );
-              },
+
+                  // ── Panel blanco con el formulario ─────────
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.fromLTRB(
+                        24,
+                        28,
+                        24,
+                        24 + MediaQuery.of(context).padding.bottom,
+                      ),
+                      decoration: const BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(32)),
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Text(
+                              '¡Ingresa ya!',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.ink,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+
+                            AuthField(
+                              label: 'Teléfono',
+                              controller: _identifierController,
+                              keyboardType: TextInputType.phone,
+                              digitsOnly: true,
+                              validator: (v) => (v == null || v.isEmpty)
+                                  ? 'Ingresa tu teléfono'
+                                  : null,
+                            ),
+                            AuthField(
+                              label: 'Contraseña',
+                              controller: _passwordController,
+                              obscureText: _obscurePassword,
+                              bottomSpacing: 4,
+                              suffixIcon: IconButton(
+                                onPressed: () => setState(
+                                    () => _obscurePassword = !_obscurePassword),
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
+                                  size: 20,
+                                  color: AppColors.inkMuted,
+                                ),
+                              ),
+                              validator: (v) => (v == null || v.isEmpty)
+                                  ? 'Ingresa tu contraseña'
+                                  : null,
+                            ),
+
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () {
+                                  // TODO: flujo de recuperación de contraseña
+                                },
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppColors.ink,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4, vertical: 8),
+                                ),
+                                child: const Text(
+                                  '¿Olvidaste tu contraseña?',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.teal,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size.fromHeight(48),
+                                textStyle: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              onPressed: _handleLogin,
+                              child: const Text('Ver mi cuenta'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

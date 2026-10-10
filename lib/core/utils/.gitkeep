@@ -1,0 +1,145 @@
+import 'package:flutter/material.dart';
+import '../../../../core/constants/app_colors.dart';
+
+/// Registro del cliente: en vez de un formulario, escanea un código
+/// (QR) que le entrega el tendero para crear su cuenta.
+class RegisterClientScreen extends StatelessWidget {
+  const RegisterClientScreen({super.key});
+
+  // Mismo logo y medidas que la pantalla de registro del tendero.
+  static const String _logo = 'assets/images/logo-os.png';
+  static const double _headerHeight = 130;
+  static const double _logoHeight = 240;
+
+  void _onScan(BuildContext context) {
+    // TODO: abrir el escáner de la cámara (lib/core/hardware) y, con el
+    // código leído, crear la cuenta del cliente en la API.
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('El escáner estará disponible pronto')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.skyBlue,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // ── Cabecera azul claro con logo ─────────────────
+            SizedBox(
+              height: _headerHeight,
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  OverflowBox(
+                    maxWidth: double.infinity,
+                    maxHeight: double.infinity,
+                    child: Image.asset(
+                      _logo,
+                      height: _logoHeight,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Text(
+                        'FIAMAS',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.ink,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Panel blanco ─────────────────────────────────
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+                decoration: const BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius:
+                      BorderRadius.vertical(top: Radius.circular(32)),
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'Crear tu cuenta',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.ink,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Empieza a ver tus notas de crédito',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: AppColors.ink,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 48),
+
+                      const Text(
+                        'Haga clic en el botón para crear su cuenta',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.teal,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+
+                      // Botón dorado de escáner
+                      Center(
+                        child: Material(
+                          color: AppColors.gold,
+                          borderRadius: BorderRadius.circular(12),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () => _onScan(context),
+                            child: const SizedBox(
+                              width: 140,
+                              height: 92,
+                              child: Icon(
+                                Icons.qr_code_scanner,
+                                size: 68,
+                                color: AppColors.ink,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      const Text(
+                        'Escanéalo y no\nhagas preguntas',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.ink,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
