@@ -36,6 +36,12 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// Navega a la pantalla de bienvenida (donde el usuario elige
+  /// si es Tendero o Cliente antes de registrarse).
+  void _goToWelcome() {
+    Navigator.of(context).pushNamed(AppRoutes.welcome);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,26 +55,30 @@ class _LoginScreenState extends State<LoginScreen> {
               hasScrollBody: false,
               child: Column(
                 children: [
-                  // ── Cabecera azul claro con logo ───────────
+                  // ── Cabecera azul claro con logo (clickeable) ───────────
                   SizedBox(
                     height: _headerHeight,
                     child: Stack(
                       clipBehavior: Clip.none,
                       alignment: Alignment.center,
                       children: [
-                        OverflowBox(
-                          maxWidth: double.infinity,
-                          maxHeight: double.infinity,
-                          child: Image.asset(
-                            _logo,
-                            height: _logoHeight,
-                            fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) => const Text(
-                              'FIAMAS',
-                              style: TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.ink,
+                        GestureDetector(
+                          onTap: _goToWelcome,
+                          behavior: HitTestBehavior.opaque,
+                          child: OverflowBox(
+                            maxWidth: double.infinity,
+                            maxHeight: double.infinity,
+                            child: Image.asset(
+                              _logo,
+                              height: _logoHeight,
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) => const Text(
+                                'FIAMAS',
+                                style: TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.ink,
+                                ),
                               ),
                             ),
                           ),
@@ -170,7 +180,35 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               onPressed: _handleLogin,
-                              child: const Text('Ver mi cuenta'),
+                              child: const Text('Registrate'),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // ── ¿No tienes cuenta? Regístrate ─────────
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  '¿No tienes cuenta? ',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.inkMuted,
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: _goToWelcome,
+                                  behavior: HitTestBehavior.opaque,
+                                  child: const Text(
+                                    'Regístrate',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.teal,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),

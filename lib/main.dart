@@ -6,6 +6,7 @@ import 'features/auth/presentation/screens/login_screen.dart';
 import 'features/auth/presentation/screens/register_screen.dart';
 import 'features/auth/presentation/screens/register_client_screen.dart';
 import 'features/auth/presentation/screens/verification_screen.dart';
+import 'features/menu/presentation/screens/menu_screen.dart';
 import 'features/stores/presentation/screens/my_stores_screen.dart';
 import 'features/stores/presentation/screens/new_store_screen.dart';
 import 'features/dashboard/presentation/screens/store_summary_screen.dart';
@@ -29,6 +30,7 @@ class AppRoutes {
   static const register = '/register';
   static const registerClient = '/register-client';
   static const verification = '/verification';
+  static const menu = '/menu';
   static const stores = '/stores';
   static const newStore = '/new-store';
   static const summary = '/summary';
@@ -62,6 +64,7 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.register: (_) => const RegisterScreen(),
         AppRoutes.registerClient: (_) => const RegisterClientScreen(),
         AppRoutes.verification: (_) => const VerificationScreen(),
+        AppRoutes.menu: (_) => const MenuScreen(),
         AppRoutes.stores: (_) => const MyStoresScreen(),
         AppRoutes.newStore: (_) => const NewStoreScreen(),
         AppRoutes.summary: (_) => const StoreSummaryScreen(),
