@@ -33,8 +33,13 @@ class _MenuScreenState extends State<MenuScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Tarjeta de usuario
-                  const UserCard(name: 'Jonel Villanueva', phone: '999999999'),
+                  // Tarjeta de usuario: abre "Mi Perfil"
+                  UserCard(
+                    name: 'Jonel Villanueva',
+                    phone: '999999999',
+                    onTap: () =>
+                        Navigator.of(context).pushNamed(AppRoutes.profile),
+                  ),
                   const SizedBox(height: 24),
 
                   // Sección: DATOS Y RESPALDO
@@ -76,7 +81,8 @@ class _MenuScreenState extends State<MenuScreen> {
                       MenuItem(
                         icon: Icons.lock_outline_rounded,
                         title: 'Cambiar contraseña',
-                        onTap: () {},
+                        onTap: () => Navigator.of(context)
+                            .pushNamed(AppRoutes.changePassword),
                       ),
                       MenuItem(
                         icon: Icons.share_outlined,
@@ -95,18 +101,19 @@ class _MenuScreenState extends State<MenuScreen> {
                       MenuItem(
                         icon: Icons.description_outlined,
                         title: 'Términos y condiciones',
-                        onTap: () {},
+                        onTap: () => Navigator.of(context).pushNamed(AppRoutes.terms),
                       ),
                       MenuItem(
                         icon: Icons.shield_outlined,
                         title: 'Política de privacidad',
-                        onTap: () {},
+                        onTap: () => Navigator.of(context).pushNamed(AppRoutes.privacy),
                       ),
                       MenuItem(
                         icon: Icons.info_outline_rounded,
                         title: 'Acerca de Fiamas',
                         subtitle: 'Versión 1.0.0',
-                        onTap: () {},
+                        onTap: () =>
+                            Navigator.of(context).pushNamed(AppRoutes.about),
                       ),
                     ],
                   ),

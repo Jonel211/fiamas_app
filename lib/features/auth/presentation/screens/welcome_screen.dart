@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import '../../../../core/constants/app_colors.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -76,13 +78,33 @@ class _Photo extends StatelessWidget {
   }
 }
 
-/// Logo a la izquierda e ícono decorativo de contacto a la derecha.
+/// Logo a la izquierda y botón de WhatsApp a la derecha.
 class _TopBar extends StatelessWidget {
   const _TopBar({required this.logoPath});
 
   static const double _logoHeight = 64;
+  static const double _whatsappSize = 48;
+
+  // Número con código de país, sin +, espacios ni guiones.
+  static const String _whatsappPhone = '51910491787';
+  static const String _whatsappMessage =
+      'Hola, quiero información sobre Fiamas';
+  static const String _whatsappIcon = 'assets/icons/whatsapp.png';
 
   final String logoPath;
+
+  Future<void> _openWhatsApp(BuildContext context) async {
+    final uri = Uri.parse(
+      'https://wa.me/$_whatsappPhone'
+      '?text=${Uri.encodeComponent(_whatsappMessage)}',
+    );
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo abrir WhatsApp')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,14 +130,19 @@ class _TopBar extends StatelessWidget {
                   ),
                 ),
               ),
-              Container(
-                width: 44,
-                height: 44,
-                decoration: const BoxDecoration(
-                  color: AppColors.whatsapp,
-                  shape: BoxShape.circle,
+              GestureDetector(
+                onTap: () => _openWhatsApp(context),
+                child: Image.asset(
+                  _whatsappIcon,
+                  width: _whatsappSize,
+                  height: _whatsappSize,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, _, _) => const Icon(
+                    Icons.phone,
+                    color: Colors.white,
+                    size: 26,
+                  ),
                 ),
-                child: const Icon(Icons.phone, color: Colors.white, size: 26),
               ),
             ],
           ),
@@ -270,9 +297,7 @@ class _RoleOption extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               label,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyLarge
+              style: Theme.of(context).textTheme.bodyLarge
                   ?.copyWith(color: Colors.white),
             ),
           ],
