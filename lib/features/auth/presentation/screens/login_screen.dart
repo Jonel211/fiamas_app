@@ -150,9 +150,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             Align(
                               alignment: Alignment.centerRight,
                               child: TextButton(
-                                onPressed: () {
-                                  // TODO: flujo de recuperación de contraseña
-                                },
+                                onPressed: () => Navigator.of(context)
+                                    .pushNamed(AppRoutes.forgotPassword),
                                 style: TextButton.styleFrom(
                                   foregroundColor: AppColors.ink,
                                   padding: const EdgeInsets.symmetric(
@@ -180,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               onPressed: _handleLogin,
-                              child: const Text('Registrate'),
+                              child: const Text('Ingresar'),
                             ),
 
                             const SizedBox(height: 24),
