@@ -78,7 +78,8 @@ class _MenuScreenState extends State<MenuScreen> {
                       MenuItem(
                         icon: Icons.lock_outline_rounded,
                         title: 'Cambiar contraseña',
-                        onTap: () {},
+                        onTap: () => Navigator.of(context)
+                            .pushNamed(AppRoutes.changePassword),
                       ),
                       MenuItem(
                         icon: Icons.share_outlined,
@@ -97,18 +98,19 @@ class _MenuScreenState extends State<MenuScreen> {
                       MenuItem(
                         icon: Icons.description_outlined,
                         title: 'Términos y condiciones',
-                        onTap: () {},
+                        onTap: () => Navigator.of(context).pushNamed(AppRoutes.terms),
                       ),
                       MenuItem(
                         icon: Icons.shield_outlined,
                         title: 'Política de privacidad',
-                        onTap: () {},
+                        onTap: () => Navigator.of(context).pushNamed(AppRoutes.privacy),
                       ),
                       MenuItem(
                         icon: Icons.info_outline_rounded,
                         title: 'Acerca de Fiamas',
                         subtitle: 'Versión 1.0.0',
-                        onTap: () {},
+                        onTap: () =>
+                            Navigator.of(context).pushNamed(AppRoutes.about),
                       ),
                     ],
                   ),

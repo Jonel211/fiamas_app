@@ -180,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               onPressed: _handleLogin,
-                              child: const Text('Registrate'),
+                              child: const Text('Ingresar'),
                             ),
 
                             const SizedBox(height: 24),
