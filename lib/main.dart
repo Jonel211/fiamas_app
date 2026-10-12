@@ -6,6 +6,7 @@ import 'features/auth/presentation/screens/login_screen.dart';
 import 'features/auth/presentation/screens/register_screen.dart';
 import 'features/auth/presentation/screens/register_client_screen.dart';
 import 'features/auth/presentation/screens/verification_screen.dart';
+import 'features/auth/presentation/screens/change_password_screen.dart';
 import 'features/auth/presentation/screens/forgot_password_screen.dart';
 import 'features/auth/presentation/screens/reset_code_screen.dart';
 import 'features/auth/presentation/screens/new_password_screen.dart';
@@ -18,6 +19,9 @@ import 'features/inventory/presentation/screens/products_screen.dart';
 import 'features/inventory/presentation/screens/new_product_screen.dart';
 import 'features/debts/presentation/screens/debts_screen.dart';
 import 'features/help/presentation/screens/help_screen.dart';
+import 'features/help/presentation/screens/about_screen.dart';
+import 'features/help/presentation/screens/terms_screen.dart';
+import 'features/help/presentation/screens/privacy_screen.dart';
 
 void main() {
   runApp(const FiamasApp());
@@ -34,6 +38,7 @@ class AppRoutes {
   static const register = '/register';
   static const registerClient = '/register-client';
   static const verification = '/verification';
+  static const changePassword = '/change-password';
   static const forgotPassword = '/forgot-password';
   static const resetCode = '/reset-code';
   static const newPassword = '/new-password';
@@ -46,6 +51,9 @@ class AppRoutes {
   static const newProduct = '/new-product';
   static const debts = '/debts';
   static const help = '/help';
+  static const about = '/about';
+  static const terms = '/terms';
+  static const privacy = '/privacy';
 
   /// Salta directo al Resumen de Tienda (pantalla "Inicio"), sin importar
   /// cuántas pantallas haya en el stack de navegación. Se usa desde el
@@ -72,6 +80,7 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.register: (_) => const RegisterScreen(),
         AppRoutes.registerClient: (_) => const RegisterClientScreen(),
         AppRoutes.verification: (_) => const VerificationScreen(),
+        AppRoutes.changePassword: (_) => const ChangePasswordScreen(),
         AppRoutes.forgotPassword: (_) => const ForgotPasswordScreen(),
         AppRoutes.resetCode: (_) => const ResetCodeScreen(),
         AppRoutes.newPassword: (_) => const NewPasswordScreen(),
@@ -84,6 +93,9 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.newProduct: (_) => const NewProductScreen(),
         AppRoutes.debts: (_) => const DebtsScreen(),
         AppRoutes.help: (_) => const HelpScreen(),
+        AppRoutes.about: (_) => const AboutScreen(),
+        AppRoutes.terms: (_) => const TermsScreen(),
+        AppRoutes.privacy: (_) => const PrivacyScreen(),
       },
     );
   }
