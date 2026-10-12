@@ -32,10 +32,12 @@ class _MenuScreenState extends State<MenuScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Tarjeta de usuario
-                  const UserCard(
+                  // Tarjeta de usuario: abre "Mi Perfil"
+                  UserCard(
                     name: 'Jonel Villanueva',
                     phone: '999999999',
+                    onTap: () =>
+                        Navigator.of(context).pushNamed(AppRoutes.profile),
                   ),
                   const SizedBox(height: 24),
 

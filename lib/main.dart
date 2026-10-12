@@ -6,7 +6,11 @@ import 'features/auth/presentation/screens/login_screen.dart';
 import 'features/auth/presentation/screens/register_screen.dart';
 import 'features/auth/presentation/screens/register_client_screen.dart';
 import 'features/auth/presentation/screens/verification_screen.dart';
+import 'features/auth/presentation/screens/forgot_password_screen.dart';
+import 'features/auth/presentation/screens/reset_code_screen.dart';
+import 'features/auth/presentation/screens/new_password_screen.dart';
 import 'features/menu/presentation/screens/menu_screen.dart';
+import 'features/profile/presentation/screens/profile_screen.dart';
 import 'features/stores/presentation/screens/my_stores_screen.dart';
 import 'features/stores/presentation/screens/new_store_screen.dart';
 import 'features/dashboard/presentation/screens/store_summary_screen.dart';
@@ -30,7 +34,11 @@ class AppRoutes {
   static const register = '/register';
   static const registerClient = '/register-client';
   static const verification = '/verification';
+  static const forgotPassword = '/forgot-password';
+  static const resetCode = '/reset-code';
+  static const newPassword = '/new-password';
   static const menu = '/menu';
+  static const profile = '/profile';
   static const stores = '/stores';
   static const newStore = '/new-store';
   static const summary = '/summary';
@@ -64,7 +72,11 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.register: (_) => const RegisterScreen(),
         AppRoutes.registerClient: (_) => const RegisterClientScreen(),
         AppRoutes.verification: (_) => const VerificationScreen(),
+        AppRoutes.forgotPassword: (_) => const ForgotPasswordScreen(),
+        AppRoutes.resetCode: (_) => const ResetCodeScreen(),
+        AppRoutes.newPassword: (_) => const NewPasswordScreen(),
         AppRoutes.menu: (_) => const MenuScreen(),
+        AppRoutes.profile: (_) => const ProfileScreen(),
         AppRoutes.stores: (_) => const MyStoresScreen(),
         AppRoutes.newStore: (_) => const NewStoreScreen(),
         AppRoutes.summary: (_) => const StoreSummaryScreen(),
