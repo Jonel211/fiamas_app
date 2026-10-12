@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import 'core/theme/app_theme.dart';
+import 'core/widgets/main_shell.dart';
+import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/auth/presentation/screens/splash_screen.dart';
 import 'features/auth/presentation/screens/welcome_screen.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
@@ -14,22 +18,21 @@ import 'features/menu/presentation/screens/menu_screen.dart';
 import 'features/profile/presentation/screens/profile_screen.dart';
 import 'features/stores/presentation/screens/my_stores_screen.dart';
 import 'features/stores/presentation/screens/new_store_screen.dart';
-import 'features/dashboard/presentation/screens/store_summary_screen.dart';
-import 'features/inventory/presentation/screens/products_screen.dart';
 import 'features/inventory/presentation/screens/new_product_screen.dart';
-import 'features/debts/presentation/screens/debts_screen.dart';
 import 'features/help/presentation/screens/help_screen.dart';
 import 'features/help/presentation/screens/about_screen.dart';
 import 'features/help/presentation/screens/terms_screen.dart';
 import 'features/help/presentation/screens/privacy_screen.dart';
 
 void main() {
-  runApp(const FiamasApp());
+  runApp(
+    MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
+      child: const FiamasApp(),
+    ),
+  );
 }
 
-/// Rutas con nombre para poder navegar entre TODAS las pantallas mientras
-/// se arma la parte visual, sin depender de login real ni de datos.
-/// Ej: Navigator.pushNamed(context, AppRoutes.stores);
 class AppRoutes {
   AppRoutes._();
   static const splash = '/';
@@ -47,7 +50,6 @@ class AppRoutes {
   static const stores = '/stores';
   static const newStore = '/new-store';
   static const summary = '/summary';
-  static const products = '/products';
   static const newProduct = '/new-product';
   static const debts = '/debts';
   static const help = '/help';
@@ -88,10 +90,9 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.profile: (_) => const ProfileScreen(),
         AppRoutes.stores: (_) => const MyStoresScreen(),
         AppRoutes.newStore: (_) => const NewStoreScreen(),
-        AppRoutes.summary: (_) => const StoreSummaryScreen(),
-        AppRoutes.products: (_) => const ProductsScreen(),
+        AppRoutes.summary: (_) => const MainShellScreen(),
         AppRoutes.newProduct: (_) => const NewProductScreen(),
-        AppRoutes.debts: (_) => const DebtsScreen(),
+       // AppRoutes.debts: (_) => const DebtsScreen(),
         AppRoutes.help: (_) => const HelpScreen(),
         AppRoutes.about: (_) => const AboutScreen(),
         AppRoutes.terms: (_) => const TermsScreen(),

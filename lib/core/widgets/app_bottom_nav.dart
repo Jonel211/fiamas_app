@@ -1,53 +1,196 @@
 import 'package:flutter/material.dart';
+
 import '../constants/app_colors.dart';
 
 class AppBottomNav extends StatelessWidget {
-  const AppBottomNav({super.key, required this.currentIndex, this.onTap});
+  const AppBottomNav({
+    super.key,
+    required this.currentIndex,
+    this.onTap,
+    this.onFiadoTap,
+  });
 
   final int currentIndex;
   final ValueChanged<int>? onTap;
-
-  static const _items = [
-    (icon: Icons.home_outlined, label: 'Inicio'),
-    (icon: Icons.people_outline, label: 'Fiados'),
-    (icon: Icons.inventory_2_outlined, label: 'Productos'),
-    (icon: Icons.help_outline, label: 'Ayuda'),
-  ];
+  final VoidCallback? onFiadoTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.mist)),
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Container(
+          height: 68,
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(35),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 16,
+                spreadRadius: 2,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              // 0: Inicio
+              _NavItem(
+                icon: Icons.home_outlined,
+                activeIcon: Icons.home_rounded,
+                label: 'Inicio',
+                isSelected: currentIndex == 0,
+                onTap: () => onTap?.call(0),
+              ),
+
+              // 1: Productos
+              _NavItem(
+                icon: Icons.inventory_2_outlined,
+                activeIcon: Icons.inventory_2_rounded,
+                label: 'Productos',
+                isSelected: currentIndex == 1,
+                onTap: () => onTap?.call(1),
+              ),
+
+              // Botón Central: Fiado (+)
+              _FiadoNavItem(onTap: onFiadoTap),
+
+              // 2: Clientes
+              _NavItem(
+                icon: Icons.people_outline_rounded,
+                activeIcon: Icons.people_rounded,
+                label: 'Clientes',
+                isSelected: currentIndex == 2,
+                onTap: () => onTap?.call(2),
+              ),
+
+              // 3: Más
+              _NavItem(
+                icon: Icons.grid_view_outlined,
+                activeIcon: Icons.grid_view_rounded,
+                label: 'Más',
+                isSelected: currentIndex == 3,
+                onTap: () => onTap?.call(3),
+              ),
+            ],
+          ),
+        ),
       ),
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(_items.length, (i) {
-          final selected = i == currentIndex;
-          final item = _items[i];
-          final color = selected ? AppColors.teal : AppColors.inkMuted;
-          return InkWell(
-            onTap: () => onTap?.call(i),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(item.icon, size: 22, color: color),
-                const SizedBox(height: 2),
-                Text(
-                  item.label.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    color: color,
-                    letterSpacing: 0.3,
-                  ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isSelected ? AppColors.teal : AppColors.inkMuted;
+
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(35),
+          onTap: onTap,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Círculo animado que se colorea solo si está seleccionado (isSelected == true)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isSelected ? AppColors.teal : Colors.transparent,
                 ),
-              ],
+                child: Icon(
+                  isSelected ? activeIcon : icon,
+                  size: 22,
+                  color: isSelected ? Colors.white : AppColors.inkMuted,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: textColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FiadoNavItem extends StatelessWidget {
+  const _FiadoNavItem({required this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              top: -18,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: AppColors.teal,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.teal.withValues(alpha: 0.35),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.add, color: Colors.white, size: 30),
+                  ),
+                  const SizedBox(height: 2),
+                  const Text(
+                    'Fiado',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          );
-        }),
+          ],
+        ),
       ),
     );
   }
