@@ -1,255 +1,417 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/app_bottom_nav.dart';
-import '../../../../main.dart';
-import '../widgets/dashboard_action_card.dart';
-import '../widgets/recent_debt_tile.dart';
 
 class StoreSummaryScreen extends StatelessWidget {
   const StoreSummaryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.ivory,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Encabezado
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.arrow_back, color: AppColors.ink),
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppColors.mist,
-                      padding: const EdgeInsets.all(8),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('MI TIENDA',
-                            style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.inkMuted,
-                                letterSpacing: 0.5)),
-                        Text('Bodega "El Sol"',
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineSmall
-                                ?.copyWith(fontSize: 20)),
-                      ],
-                    ),
-                  ),
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundColor: AppColors.mist,
-                    child: const Icon(Icons.person_outline,
-                        color: AppColors.ink, size: 18),
-                  ),
-                ],
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 1. TARJETA ENCABEZADO DE SALDO
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF148F8B), // Color teal principal
+                borderRadius: BorderRadius.circular(24),
               ),
-              const SizedBox(height: 20),
-
-              // Tarjeta de saldo
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF0F2A52),
-                      Color(0xFF2B5A96),
-                      Color(0xFF6FA3D8),
-                    ],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF0F2A52).withValues(alpha: 0.35),
-                      blurRadius: 28,
-                      offset: const Offset(0, 14),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: Stack(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Fila superior: Nombre de tienda e íconos
+                  Row(
                     children: [
-                      Positioned(
-                        top: -60,
-                        right: -40,
-                        child: Transform.rotate(
-                          angle: 0.5,
-                          child: Container(
-                            width: 220,
-                            height: 260,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.white.withValues(alpha: 0.18),
-                                  Colors.white.withValues(alpha: 0.0),
-                                ],
-                              ),
-                            ),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.storefront_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Bodega Gian Carlos',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
                         ),
                       ),
-                      Positioned(
-                        right: -18,
-                        bottom: -18,
-                        child: Icon(
-                          Icons.storefront_rounded,
-                          size: 130,
-                          color: Colors.white.withValues(alpha: 0.08),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(22, 22, 22, 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(Icons.account_balance_wallet,
-                                    size: 26,
-                                    color: Colors.white.withValues(alpha: 0.95)),
-                                const Spacer(),
-                                Text(
-                                  'TOTAL POR COBRAR',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.6,
-                                    color: Colors.white.withValues(alpha: 0.85),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 28),
-                            const Center(
-                              child: Text(
-                                'S/ 1,245.50',
-                                style: TextStyle(
-                                  fontSize: 34,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 22),
-                            Center(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 7),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.16),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.25),
-                                    width: 0.8,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.schedule,
-                                        size: 15,
-                                        color: Colors.white.withValues(alpha: 0.9)),
-                                    const SizedBox(width: 6),
-                                    Text('12 fiados pendientes',
-                                        style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.white
-                                                .withValues(alpha: 0.95))),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
+                      IconButton(
+                        onPressed: () {},
+                        icon: const Icon(
+                          Icons.notifications_none_rounded,
+                          color: Colors.white,
+                          size: 24,
                         ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 20),
+
+                  // Label Saldo Total
+                  Text(
+                    'SALDO TOTAL POR COBRAR',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white.withOpacity(0.8),
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+
+                  // Monto Principal
+                  const Text(
+                    'S/ 945.50',
+                    style: TextStyle(
+                      fontSize: 38,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      height: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Métricas del mes
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.trending_up_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Cobrado este mes: S/ 7,420',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // 2. BOTONES DE ACCIÓN RÁPIDA
+            Row(
+              children: [
+                // Botón Anotar Fiado
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(
+                        0xFFE5A93C,
+                      ), // Amarillo / Gold
+                      foregroundColor: const Color(0xFF2C2208),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    icon: const Icon(Icons.add, size: 20),
+                    label: const Text(
+                      'Anotar Fiado',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // Botón Cobro WhatsApp
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {},
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: AppColors.ink,
+                      side: const BorderSide(color: Color(0xFFD0D7DE)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    icon: const Icon(
+                      Icons.chat_bubble_outline_rounded,
+                      size: 18,
+                      color: AppColors.ink,
+                    ),
+                    label: const Text(
+                      'Cobro WhatsApp',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // 3. TARJETA DE ALERTA DE LÍMITE DE CRÉDITO
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7EA), // Fondo beige/crema claro
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFF3D299), width: 1),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 2),
+                    child: const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Color(0xFFD98A1B),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: RichText(
+                      text: const TextSpan(
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF4A3E2C),
+                          height: 1.35,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: 'Límite cerca: ',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          TextSpan(
+                            text: 'Don Roberto Ruiz está al 95% de su crédito autorizado.',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // 4. ENCABEZADO "MOVIMIENTOS DE HOY"
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Movimientos de hoy',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.ink,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {},
+                  child: Row(
+                    children: const [
+                      Text(
+                        'Ver clientes',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF148F8B),
+                        ),
+                      ),
+                      SizedBox(width: 2),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                        color: Color(0xFF148F8B),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // 5. LISTA DE MOVIMIENTOS
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: const [
+                  _MovementTile(
+                    initial: 'M',
+                    avatarBg: Color(0xFFBBDEFB),
+                    avatarFg: Color(0xFF1565C0),
+                    name: 'Doña Martha Gómez',
+                    subtitle: 'Aceite 1L, Arroz 2kg, Leche',
+                    amount: '+ S/ 45.50',
+                    isPositive: true,
+                    time: '10:15 AM',
+                    showBorder: true,
+                  ),
+                  _MovementTile(
+                    initial: 'R',
+                    avatarBg: Color(0xFFFFECB3),
+                    avatarFg: Color(0xFFB78103),
+                    name: 'Don Roberto Ruiz',
+                    subtitle: 'Gaseosas 3L, Paquete bot...',
+                    amount: '+ S/ 95.00',
+                    isPositive: true,
+                    time: '6:40 PM',
+                    showBorder: true,
+                  ),
+                  _MovementTile(
+                    initial: 'C',
+                    avatarBg: Color(0xFFE8F5E9),
+                    avatarFg: Color(0xFF2E7D32),
+                    name: 'Carlos Mendoza',
+                    subtitle: 'Liquidación total cuenta ...',
+                    amount: '- S/ 150.00',
+                    isPositive: false,
+                    time: '3:10 PM',
+                    showBorder: false,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Widget auxiliar para cada item de movimiento
+class _MovementTile extends StatelessWidget {
+  const _MovementTile({
+    required this.initial,
+    required this.avatarBg,
+    required this.avatarFg,
+    required this.name,
+    required this.subtitle,
+    required this.amount,
+    required this.isPositive,
+    required this.time,
+    required this.showBorder,
+  });
+
+  final String initial;
+  final Color avatarBg;
+  final Color avatarFg;
+  final String name;
+  final String subtitle;
+  final String amount;
+  final bool isPositive;
+  final String time;
+  final bool showBorder;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        border: showBorder
+            ? const Border(
+                bottom: BorderSide(color: Color(0xFFF0F3F6), width: 1),
+              )
+            : null,
+      ),
+      child: Row(
+        children: [
+          // Avatar con Inicial
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: avatarBg,
+            child: Text(
+              initial,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: avatarFg,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          // Nombre y detalle de productos
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.inkMuted,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+
+          // Monto y hora
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                amount,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: isPositive
+                      ? const Color(0xFF148F8B)
+                      : const Color(0xFFE53935),
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Acciones rápidas
-              Row(
-                children: [
-                  DashboardActionCard(
-                    icon: Icons.add,
-                    label: 'Anotar\nfiado',
-                    accent: AppColors.teal,
-                    onTap: () {
-                      // TODO: ir a features/debts -> registrar nuevo fiado
-                    },
-                  ),
-                  const SizedBox(width: 12),
-                  DashboardActionCard(
-                    icon: Icons.attach_money,
-                    label: 'Cobrar',
-                    accent: AppColors.ink,
-                    onTap: () {
-                      // TODO: ir a features/debts -> registrar abono/pago
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // Últimos fiados
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Últimos fiados',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                          color: AppColors.ink)),
-                  TextButton(
-                    onPressed: () {
-                      // TODO: ir a features/debts -> listado completo
-                    },
-                    style: TextButton.styleFrom(foregroundColor: AppColors.ink),
-                    child: const Text('Ver todos',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                  ),
-                ],
-              ),
-              // TODO: reemplazar por datos reales desde DebtsRepository
-              const RecentDebtTile(
-                customerName: 'Ricardo Mendoza',
-                timeAgo: 'Hace 1 hora',
-                amount: 'S/ 45.00',
+              const SizedBox(height: 2),
+              Text(
+                time,
+                style: const TextStyle(fontSize: 11, color: AppColors.inkMuted),
               ),
             ],
           ),
-        ),
-      ),
-      bottomNavigationBar: AppBottomNav(
-        currentIndex: 0,
-        onTap: (index) {
-          if (index == 1) {
-            Navigator.of(context).pushNamed(AppRoutes.debts);
-          } else if (index == 2) {
-            Navigator.of(context).pushNamed(AppRoutes.products);
-          } else if (index == 3) {
-            Navigator.of(context).pushNamed(AppRoutes.help);
-          }
-        },
+        ],
       ),
     );
   }

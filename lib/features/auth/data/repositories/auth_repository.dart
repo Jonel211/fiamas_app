@@ -1,0 +1,85 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import '../datasources/auth_remote_datasource.dart';
+import '../models/user_model.dart';
+
+class AuthRepository {
+  final AuthRemoteDataSource _remoteDataSource;
+  final FlutterSecureStorage _storage;
+
+  static const String _tokenKey = 'auth_token';
+  static const String _userKey = 'auth_user';
+
+  AuthRepository(this._remoteDataSource, this._storage);
+
+  // ─── Login ───────────────────────────────────────────────
+  Future<UserModel> login({
+    required String identificador,
+    required String password,
+  }) async {
+    final data = await _remoteDataSource.login(
+      identificador: identificador,
+      password: password,
+    );
+
+    final token = data['token'] as String;
+    final usuario = UserModel.fromJson(data['usuario'] as Map<String, dynamic>);
+
+    // Guardar token y usuario de forma segura
+    await _storage.write(key: _tokenKey, value: token);
+    await _storage.write(key: _userKey, value: usuario.toJson().toString());
+
+    return usuario;
+  }
+
+  // ─── Registro Tendero ────────────────────────────────────
+  Future<void> registerTendero({
+    required String dni,
+    required String nombres,
+    required String apellidos,
+    required String telefono,
+    required String password,
+    required String nombreTienda,
+  }) async {
+    await _remoteDataSource.registerTendero(
+      dni: dni,
+      nombres: nombres,
+      apellidos: apellidos,
+      telefono: telefono,
+      password: password,
+      nombreTienda: nombreTienda,
+    );
+  }
+
+  // ─── Registro Cliente ────────────────────────────────────
+  Future<void> registerCliente({
+    required String telefono,
+    required String nombres,
+    required String apellidos,
+    String? password,
+    String? direccion,
+  }) async {
+    await _remoteDataSource.registerCliente(
+      telefono: telefono,
+      nombres: nombres,
+      apellidos: apellidos,
+      password: password,
+      direccion: direccion,
+    );
+  }
+
+  // ─── Token ───────────────────────────────────────────────
+  Future<String?> getToken() async {
+    return await _storage.read(key: _tokenKey);
+  }
+
+  Future<void> logout() async {
+    await _storage.delete(key: _tokenKey);
+    await _storage.delete(key: _userKey);
+  }
+
+  Future<bool> isLoggedIn() async {
+    final token = await getToken();
+    return token != null && token.isNotEmpty;
+  }
+}

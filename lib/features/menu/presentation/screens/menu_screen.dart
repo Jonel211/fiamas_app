@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../main.dart';
 import '../widgets/menu_app_bar.dart';
@@ -33,10 +34,7 @@ class _MenuScreenState extends State<MenuScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Tarjeta de usuario
-                  const UserCard(
-                    name: 'Jonel Villanueva',
-                    phone: '999999999',
-                  ),
+                  const UserCard(name: 'Jonel Villanueva', phone: '999999999'),
                   const SizedBox(height: 24),
 
                   // Sección: DATOS Y RESPALDO

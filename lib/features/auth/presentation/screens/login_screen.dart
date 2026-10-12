@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/auth_field.dart';
 import '../../../../main.dart';
+import '../providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,10 +14,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Logo vertical (bolsa arriba, "FIAMAS" abajo), versión oscura.
   static const String _logo = 'assets/images/fiamas-vertical.png';
-
-  // Altura de la franja azul y tamaño con el que se dibuja el logo.
   static const double _headerHeight = 240;
   static const double _logoHeight = 200;
 
@@ -30,32 +30,65 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin() {
-    if (_formKey.currentState?.validate() ?? false) {
-      Navigator.of(context).pushNamed(AppRoutes.stores);
+  Future<void> _handleLogin() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    final auth = context.read<AuthProvider>();
+
+    final success = await auth.login(
+      identificador: _identifierController.text.trim(),
+      password: _passwordController.text,
+    );
+
+    if (!mounted) return;
+
+    if (success) {
+      final user = auth.user;
+
+      if (user == null) return;
+
+      // Navegación según el rol
+      if (user.isTendero) {
+        // Tendero → va a sus tiendas
+        Navigator.of(context)
+            .pushNamedAndRemoveUntil(AppRoutes.stores, (route) => false);
+      } else if (user.isCliente) {
+        // Cliente → por ahora lo mandamos al menú o a la pantalla que tengas
+        // Cambia esta ruta cuando tengas la home del cliente
+        Navigator.of(context)
+            .pushNamedAndRemoveUntil(AppRoutes.menu, (route) => false);
+      }
+    } else {
+      // Mostrar error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(auth.errorMessage ?? 'Error al iniciar sesión'),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
-  /// Navega a la pantalla de bienvenida (donde el usuario elige
-  /// si es Tendero o Cliente antes de registrarse).
   void _goToWelcome() {
     Navigator.of(context).pushNamed(AppRoutes.welcome);
   }
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+
     return Scaffold(
       backgroundColor: AppColors.skyBlue,
       body: SafeArea(
         bottom: false,
         child: CustomScrollView(
           slivers: [
-            // Rellena la pantalla y, si el teclado ocupa espacio, se desplaza.
             SliverFillRemaining(
               hasScrollBody: false,
               child: Column(
                 children: [
-                  // ── Cabecera azul claro con logo (clickeable) ───────────
+                  // ── Cabecera ───────────────────────────────
                   SizedBox(
                     height: _headerHeight,
                     child: Stack(
@@ -87,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
 
-                  // ── Panel blanco con el formulario ─────────
+                  // ── Panel blanco ───────────────────────────
                   Expanded(
                     child: Container(
                       width: double.infinity,
@@ -99,8 +132,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       decoration: const BoxDecoration(
                         color: AppColors.surface,
-                        borderRadius:
-                            BorderRadius.vertical(top: Radius.circular(32)),
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(32),
+                        ),
                       ),
                       child: Form(
                         key: _formKey,
@@ -133,7 +167,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               bottomSpacing: 4,
                               suffixIcon: IconButton(
                                 onPressed: () => setState(
-                                    () => _obscurePassword = !_obscurePassword),
+                                  () => _obscurePassword = !_obscurePassword,
+                                ),
                                 icon: Icon(
                                   _obscurePassword
                                       ? Icons.visibility_off_outlined
@@ -151,12 +186,14 @@ class _LoginScreenState extends State<LoginScreen> {
                               alignment: Alignment.centerRight,
                               child: TextButton(
                                 onPressed: () {
-                                  // TODO: flujo de recuperación de contraseña
+                                  // TODO: recuperación de contraseña
                                 },
                                 style: TextButton.styleFrom(
                                   foregroundColor: AppColors.ink,
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 4, vertical: 8),
+                                    horizontal: 4,
+                                    vertical: 8,
+                                  ),
                                 ),
                                 child: const Text(
                                   '¿Olvidaste tu contraseña?',
@@ -169,6 +206,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             const SizedBox(height: 12),
 
+                            // Botón de login
                             ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.teal,
@@ -179,13 +217,22 @@ class _LoginScreenState extends State<LoginScreen> {
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              onPressed: _handleLogin,
-                              child: const Text('Registrate'),
+                              onPressed: auth.isLoading ? null : _handleLogin,
+                              child: auth.isLoading
+                                  ? const SizedBox(
+                                      height: 22,
+                                      width: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.5,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text('Ingresar'),
                             ),
 
                             const SizedBox(height: 24),
 
-                            // ── ¿No tienes cuenta? Regístrate ─────────
+                            // ¿No tienes cuenta?
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
