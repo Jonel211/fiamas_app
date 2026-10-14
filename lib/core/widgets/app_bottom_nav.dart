@@ -57,22 +57,22 @@ class AppBottomNav extends StatelessWidget {
               // Botón Central: Fiado (+)
               _FiadoNavItem(onTap: onFiadoTap),
 
-              // 2: Clientes
+              // 3: Clientes (índice 3 en main_shell)
               _NavItem(
                 icon: Icons.people_outline_rounded,
                 activeIcon: Icons.people_rounded,
                 label: 'Clientes',
-                isSelected: currentIndex == 2,
-                onTap: () => onTap?.call(2),
+                isSelected: currentIndex == 3, // ✅ CORREGIDO: era 2, ahora es 3
+                onTap: () => onTap?.call(2), // Envía índice 2 al onTap
               ),
 
-              // 3: Más
+              // 4: Más
               _NavItem(
                 icon: Icons.grid_view_outlined,
                 activeIcon: Icons.grid_view_rounded,
                 label: 'Más',
-                isSelected: currentIndex == 3,
-                onTap: () => onTap?.call(3),
+                isSelected: currentIndex == 4, // ✅ CORREGIDO: era 3, ahora es 4
+                onTap: () => onTap?.call(3), // Envía índice 3 al onTap
               ),
             ],
           ),
@@ -110,7 +110,6 @@ class _NavItem extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Círculo animado que se colorea solo si está seleccionado (isSelected == true)
               AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.all(7),

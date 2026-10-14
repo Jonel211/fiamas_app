@@ -23,6 +23,13 @@ import 'features/help/presentation/screens/help_screen.dart';
 import 'features/help/presentation/screens/about_screen.dart';
 import 'features/help/presentation/screens/terms_screen.dart';
 import 'features/help/presentation/screens/privacy_screen.dart';
+import 'features/customers/presentation/screens/customer_list_screen.dart';
+import 'features/customers/presentation/screens/customer_profile_screen.dart';
+import 'features/debts/domain/debt.dart';
+import 'features/debts/presentation/screens/debt_detail_screen.dart';
+
+// ✅ NUEVO IMPORT: Pantalla de historial de deudas del cliente
+import 'features/debts/presentation/screens/debt_history_screen.dart';
 
 void main() {
   runApp(
@@ -35,6 +42,8 @@ void main() {
 
 class AppRoutes {
   AppRoutes._();
+
+  // Autenticación
   static const splash = '/';
   static const welcome = '/welcome';
   static const login = '/login';
@@ -45,21 +54,33 @@ class AppRoutes {
   static const forgotPassword = '/forgot-password';
   static const resetCode = '/reset-code';
   static const newPassword = '/new-password';
+
+  // Navegación principal
   static const menu = '/menu';
   static const profile = '/profile';
   static const stores = '/stores';
   static const newStore = '/new-store';
   static const summary = '/summary';
+
+  // Inventario
   static const newProduct = '/new-product';
+
+  // Fiados
   static const debts = '/debts';
+  static const debtDetail = '/debt-detail';
+  static const debtHistory = '/debt-history'; // ✅ RUTA AGREGADA
+
+  // Configuración y legales
   static const help = '/help';
   static const about = '/about';
   static const terms = '/terms';
   static const privacy = '/privacy';
 
-  /// Salta directo al Resumen de Tienda (pantalla "Inicio"), sin importar
-  /// cuántas pantallas haya en el stack de navegación. Se usa desde el
-  /// tab "Inicio" de la barra inferior en Fiados, Productos y Ayuda.
+  // Clientes
+  static const customers = '/customers';
+  static const customerProfile = '/customer-profile';
+  static const editCreditLimit = '/edit-credit-limit';
+
   static void goHome(BuildContext context) {
     Navigator.of(context).popUntil((route) => route.settings.name == summary);
   }
@@ -76,6 +97,7 @@ class FiamasApp extends StatelessWidget {
       theme: AppTheme.light,
       initialRoute: AppRoutes.splash,
       routes: {
+        // Autenticación
         AppRoutes.splash: (_) => const SplashScreen(),
         AppRoutes.welcome: (_) => const WelcomeScreen(),
         AppRoutes.login: (_) => const LoginScreen(),
@@ -86,17 +108,45 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.forgotPassword: (_) => const ForgotPasswordScreen(),
         AppRoutes.resetCode: (_) => const ResetCodeScreen(),
         AppRoutes.newPassword: (_) => const NewPasswordScreen(),
+
+        // Navegación principal
         AppRoutes.menu: (_) => const MenuScreen(),
         AppRoutes.profile: (_) => const ProfileScreen(),
         AppRoutes.stores: (_) => const MyStoresScreen(),
         AppRoutes.newStore: (_) => const NewStoreScreen(),
         AppRoutes.summary: (_) => const MainShellScreen(),
+
+        // Inventario
         AppRoutes.newProduct: (_) => const NewProductScreen(),
-       // AppRoutes.debts: (_) => const DebtsScreen(),
+
+        // Fiados
+        AppRoutes.debts: (_) => const MainShellScreen(initialIndex: 2),
+        AppRoutes.debtDetail: (context) {
+          final debt = ModalRoute.of(context)!.settings.arguments as Debt;
+          return DebtDetailScreen(debt: debt);
+        },
+        //  RUTA REGISTRADA PARA EL HISTORIAL
+        AppRoutes.debtHistory: (context) {
+          final customer =
+              ModalRoute.of(context)!.settings.arguments
+                  as Map<String, dynamic>;
+          return DebtHistoryScreen(customer: customer);
+        },
+
+        // Configuración y legales
         AppRoutes.help: (_) => const HelpScreen(),
         AppRoutes.about: (_) => const AboutScreen(),
         AppRoutes.terms: (_) => const TermsScreen(),
         AppRoutes.privacy: (_) => const PrivacyScreen(),
+
+        // Clientes
+        AppRoutes.customers: (_) => const CustomerListScreen(),
+        AppRoutes.customerProfile: (context) {
+          final customer =
+              ModalRoute.of(context)!.settings.arguments
+                  as Map<String, dynamic>;
+          return CustomerProfileScreen(customer: customer);
+        },
       },
     );
   }

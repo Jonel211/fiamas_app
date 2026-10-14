@@ -31,6 +31,13 @@ class AppColors {
   static const Color surface = Colors.white; // tarjetas
   static const Color danger = Color(0xFFB3452C); // errores
 
+  // ── NUEVOS COLORES para pantallas de clientes ────────────────
+  /// Verde para estados exitosos (pagado, al día).
+  static const Color success = Color(0xFF22C55E);
+
+  /// Morado para avatares y acentos.
+  static const Color purple = Color(0xFF8B5CF6);
+
   // ── Extras ───────────────────────────────────────────────────
   /// Verde del ícono de WhatsApp.
   static const Color whatsapp = Color(0xFF25D366);
