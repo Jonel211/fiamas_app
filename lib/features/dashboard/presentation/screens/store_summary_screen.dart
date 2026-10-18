@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../main.dart';
 
 class StoreSummaryScreen extends StatelessWidget {
   const StoreSummaryScreen({super.key});
@@ -50,7 +51,9 @@ class StoreSummaryScreen extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        onPressed: () {},
+                        onPressed: () =>
+                            Navigator.of(context)
+                                .pushNamed(AppRoutes.notifications),
                         icon: const Icon(
                           Icons.notifications_none_rounded,
                           color: Colors.white,
