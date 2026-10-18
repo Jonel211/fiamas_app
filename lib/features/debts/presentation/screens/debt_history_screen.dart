@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../domain/debt.dart';
 import 'debt_detail_screen.dart';
-import 'select_debts_screen.dart'; // ✅ NUEVO IMPORT para la selección múltiple
+import 'select_debts_screen.dart';
 
 class DebtHistoryScreen extends StatefulWidget {
   final Map<String, dynamic> customer;
@@ -120,96 +120,105 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
       ),
       body: Column(
         children: [
-          // HEADER DEL CLIENTE
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: AppColors.teal,
-                  child: Text(
-                    initial,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
+          // HEADER DEL CLIENTE (Clickeable → Perfil)
+          GestureDetector(
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                '/customer-profile',
+                arguments: widget.customer,
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: AppColors.teal,
+                    child: Text(
+                      initial,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          phone,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.inkMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.ink,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.gold.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          'Score 92',
+                          style: TextStyle(
+                            color: AppColors.gold,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        phone,
+                      const Text(
+                        'Excelente',
                         style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.inkMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.gold.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        'Score 92',
-                        style: TextStyle(
-                          color: AppColors.gold,
+                          color: AppColors.teal,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Excelente',
-                      style: TextStyle(
-                        color: AppColors.teal,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
 
-          // TARJETA TEAL
+          // TARJETA TEAL: SALDO ACTUAL PENDIENTE
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 20),
             padding: const EdgeInsets.all(20),
@@ -335,7 +344,7 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
 
           const SizedBox(height: 16),
 
-          // LISTA
+          // LISTA DE DEUDAS
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -347,7 +356,7 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
         ],
       ),
 
-      // ✅ NUEVO BOTÓN FLOTANTE PARA SELECCIÓN MÚLTIPLE
+      // BOTÓN FLOTANTE: SELECCIONAR FIADOS
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(

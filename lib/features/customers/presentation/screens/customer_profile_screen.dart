@@ -204,17 +204,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                     // TODO: Abrir WhatsApp
                   },
                 ),
-                _ActionCircleButton(
-                  icon: Icons.history,
-                  label: 'Historial',
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      '/debt-history',
-                      arguments: widget.customer,
-                    );
-                  },
-                ),
+
                 _ActionCircleButton(
                   icon: Icons.location_on_outlined,
                   label: 'Dirección',

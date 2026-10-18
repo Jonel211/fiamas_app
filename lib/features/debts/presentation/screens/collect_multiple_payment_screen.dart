@@ -86,7 +86,7 @@ class _CollectMultiplePaymentScreenState
           children: [
             // ═══════════════════════════════════════════════════════════════
             // MONTO QUE DEBE
-            // ══════════════════════════════════════════════════════════════
+            // ═════════════════════════════════════════════════════════════
             Center(
               child: Column(
                 children: [
@@ -118,8 +118,7 @@ class _CollectMultiplePaymentScreenState
             // OPCIONES: Pagó todo / Pagó una parte
             // ═══════════════════════════════════════════════════════════════
             _buildPaymentOption(
-              icon: Icons.check_circle_outline,
-              iconColor: AppColors.success,
+              iconPath: 'assets/icons/bill_icon.png',
               title: 'Pagó todo',
               subtitle: 'Cerrar deuda',
               isSelected: _paidAll,
@@ -127,7 +126,6 @@ class _CollectMultiplePaymentScreenState
                 setState(() {
                   _paidAll = true;
                   _paidPartial = false;
-                  _amountController.text = _totalDebt.toStringAsFixed(2);
                 });
               },
             ),
@@ -135,8 +133,7 @@ class _CollectMultiplePaymentScreenState
             const SizedBox(height: 12),
 
             _buildPaymentOption(
-              icon: Icons.payment,
-              iconColor: AppColors.teal,
+              iconPath: 'assets/icons/bill_icon.png',
               title: 'Pagó una parte',
               subtitle: 'Abonar al saldo',
               isSelected: _paidPartial,
@@ -151,8 +148,71 @@ class _CollectMultiplePaymentScreenState
             const SizedBox(height: 24),
 
             // ═══════════════════════════════════════════════════════════════
+            // MONTO ABONADO (SOLO APARECE SI "Pagó una parte" ESTÁ SELECCIONADO)
+            // ══════════════════════════════════════════════════════════════
+            if (_paidPartial) ...[
+              const Text(
+                'Monto abonado',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.ink,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.mist.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.mist),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.account_balance_wallet_outlined,
+                      color: AppColors.success,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _amountController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.ink,
+                        ),
+                        decoration: const InputDecoration(
+                          prefixText: 'S/ ',
+                          prefixStyle: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.ink,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        onChanged: (value) {
+                          setState(() {});
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // ══════════════════════════════════════════════════════════════
             // MEDIO DE PAGO
-            // ═══════════════════════════════════════════════════════════════
+            // ══════════════════════════════════════════════════════════════
             const Text(
               'Medio de pago',
               style: TextStyle(
@@ -166,8 +226,7 @@ class _CollectMultiplePaymentScreenState
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _buildPaymentMethodButton(
-                  icon: Icons.account_balance_wallet,
-                  color: AppColors.success,
+                  iconPath: 'assets/icons/billete.png',
                   label: 'Efectivo',
                   isSelected: _selectedPaymentMethod == 'efectivo',
                   onTap: () {
@@ -177,8 +236,7 @@ class _CollectMultiplePaymentScreenState
                   },
                 ),
                 _buildPaymentMethodButton(
-                  icon: Icons.phone_android,
-                  color: const Color(0xFF7B2CBF),
+                  iconPath: 'assets/icons/yape.png',
                   label: 'Yape',
                   isSelected: _selectedPaymentMethod == 'yape',
                   onTap: () {
@@ -188,8 +246,7 @@ class _CollectMultiplePaymentScreenState
                   },
                 ),
                 _buildPaymentMethodButton(
-                  icon: Icons.phone_android,
-                  color: const Color(0xFF00B4D8),
+                  iconPath: 'assets/icons/plin.png',
                   label: 'Plin',
                   isSelected: _selectedPaymentMethod == 'plin',
                   onTap: () {
@@ -334,9 +391,12 @@ class _CollectMultiplePaymentScreenState
     );
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // WIDGETS CON IMÁGENES
+  // ══════════════════════════════════════════════════════════════════════════
+
   Widget _buildPaymentOption({
-    required IconData icon,
-    required Color iconColor,
+    required String iconPath,
     required String title,
     required String subtitle,
     required bool isSelected,
@@ -356,7 +416,7 @@ class _CollectMultiplePaymentScreenState
         ),
         child: Row(
           children: [
-            Icon(icon, color: iconColor, size: 32),
+            Image.asset(iconPath, width: 48, height: 48, fit: BoxFit.contain),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -393,8 +453,7 @@ class _CollectMultiplePaymentScreenState
   }
 
   Widget _buildPaymentMethodButton({
-    required IconData icon,
-    required Color color,
+    required String iconPath,
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
@@ -406,17 +465,21 @@ class _CollectMultiplePaymentScreenState
           Container(
             width: 60,
             height: 60,
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: isSelected
-                  ? color.withOpacity(0.2)
-                  : AppColors.mist.withOpacity(0.3),
               shape: BoxShape.circle,
+              color: Colors.white,
               border: Border.all(
-                color: isSelected ? color : AppColors.mist,
+                color: isSelected ? AppColors.teal : AppColors.mist,
                 width: isSelected ? 2 : 1,
               ),
             ),
-            child: Icon(icon, color: color, size: 28),
+            child: Image.asset(
+              iconPath,
+              width: 44,
+              height: 44,
+              fit: BoxFit.contain,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -424,7 +487,7 @@ class _CollectMultiplePaymentScreenState
             style: TextStyle(
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              color: isSelected ? color : AppColors.inkMuted,
+              color: isSelected ? AppColors.teal : AppColors.inkMuted,
             ),
           ),
         ],
@@ -449,7 +512,6 @@ class _CollectMultiplePaymentScreenState
       return;
     }
 
-    // TODO: Implementar lógica de cobro múltiple con el backend
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -461,8 +523,8 @@ class _CollectMultiplePaymentScreenState
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // Cerrar diálogo
-              Navigator.pop(context, true); // Regresar al historial
+              Navigator.pop(context);
+              Navigator.pop(context, true);
             },
             child: const Text('Aceptar'),
           ),

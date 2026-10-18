@@ -8,8 +8,6 @@ import '../../features/inventory/presentation/screens/new_product_screen.dart';
 import '../../features/debts/presentation/screens/debts_screen.dart';
 import '../../features/debts/presentation/screens/new_debt_customer_screen.dart';
 import '../../features/help/presentation/screens/help_screen.dart';
-
-// ✅ IMPORTACIÓN DE LA NUEVA PANTALLA DE CLIENTES
 import '../../features/customers/presentation/screens/customer_list_screen.dart';
 
 class MainShellScreen extends StatefulWidget {
@@ -35,7 +33,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
     StoreSummaryScreen(), // 0: Inicio
     ProductsScreen(), // 1: Productos
     DebtsScreen(), // 2: Fiados (Gestión de deudas)
-    CustomerListScreen(), // 3: Clientes (Nuestra nueva pantalla)
+    CustomerListScreen(), // 3: Clientes (Lista de clientes)
     HelpScreen(), // 4: Más / Ayuda
   ];
 
@@ -65,24 +63,8 @@ class _MainShellScreenState extends State<MainShellScreen> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
       );
-    } else if (_currentIndex == 3) {
-      // ✅ FAB para Clientes
-      return FloatingActionButton.extended(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Próximamente: Agregar nuevo cliente'),
-            ),
-          );
-        },
-        backgroundColor: AppColors.teal,
-        icon: const Icon(Icons.person_add, color: Colors.white),
-        label: const Text(
-          'Nuevo cliente',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-      );
     }
+    // ✅ Ya NO hay FAB para Clientes (índice 3)
     return null;
   }
 
@@ -95,7 +77,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
       bottomNavigationBar: AppBottomNav(
         currentIndex: _currentIndex,
         onTap: (index) {
-          // ✅ MAPEO EXPLÍCITO Y SEGURO DE ÍNDICES
+          // MAPEO EXPLÍCITO Y SEGURO DE ÍNDICES
           setState(() {
             if (index == 0) {
               _currentIndex = 0; // Inicio

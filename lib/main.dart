@@ -25,10 +25,9 @@ import 'features/help/presentation/screens/terms_screen.dart';
 import 'features/help/presentation/screens/privacy_screen.dart';
 import 'features/customers/presentation/screens/customer_list_screen.dart';
 import 'features/customers/presentation/screens/customer_profile_screen.dart';
+import 'features/customers/presentation/screens/scoring_history_screen.dart';
 import 'features/debts/domain/debt.dart';
 import 'features/debts/presentation/screens/debt_detail_screen.dart';
-
-// ✅ NUEVO IMPORT: Pantalla de historial de deudas del cliente
 import 'features/debts/presentation/screens/debt_history_screen.dart';
 
 void main() {
@@ -68,7 +67,7 @@ class AppRoutes {
   // Fiados
   static const debts = '/debts';
   static const debtDetail = '/debt-detail';
-  static const debtHistory = '/debt-history'; // ✅ RUTA AGREGADA
+  static const debtHistory = '/debt-history';
 
   // Configuración y legales
   static const help = '/help';
@@ -79,7 +78,7 @@ class AppRoutes {
   // Clientes
   static const customers = '/customers';
   static const customerProfile = '/customer-profile';
-  static const editCreditLimit = '/edit-credit-limit';
+  static const scoringHistory = '/scoring-history';
 
   static void goHome(BuildContext context) {
     Navigator.of(context).popUntil((route) => route.settings.name == summary);
@@ -125,7 +124,6 @@ class FiamasApp extends StatelessWidget {
           final debt = ModalRoute.of(context)!.settings.arguments as Debt;
           return DebtDetailScreen(debt: debt);
         },
-        //  RUTA REGISTRADA PARA EL HISTORIAL
         AppRoutes.debtHistory: (context) {
           final customer =
               ModalRoute.of(context)!.settings.arguments
@@ -146,6 +144,11 @@ class FiamasApp extends StatelessWidget {
               ModalRoute.of(context)!.settings.arguments
                   as Map<String, dynamic>;
           return CustomerProfileScreen(customer: customer);
+        },
+        AppRoutes.scoringHistory: (context) {
+          final args = ModalRoute.of(context)?.settings.arguments;
+          final customer = args is Map<String, dynamic> ? args : null;
+          return ScoringHistoryScreen(customer: customer);
         },
       },
     );
