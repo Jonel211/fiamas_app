@@ -89,10 +89,11 @@ class _StoresGrid extends StatelessWidget {
               // Navegación al resumen de esa tienda
               Navigator.of(context).pushNamed(AppRoutes.summary);
             },
-            onEdit: () {
-              // TODO: navegar a edición de tienda
-              debugPrint('Editar tienda: ${store.id}');
-            },
+            // Abre "Editar Tienda" con los datos de esta tienda
+            onEdit: () => Navigator.of(context).pushNamed(
+              AppRoutes.editStore,
+              arguments: store,
+            ),
           ),
         AddStoreItem(
           onTap: () => Navigator.of(context).pushNamed(AppRoutes.newStore),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../main.dart';
+import '../widgets/movement_tile.dart';
 
 class StoreSummaryScreen extends StatelessWidget {
   const StoreSummaryScreen({super.key});
@@ -16,14 +18,13 @@ class StoreSummaryScreen extends StatelessWidget {
             // 1. TARJETA ENCABEZADO DE SALDO
             Container(
               decoration: BoxDecoration(
-                color: const Color(0xFF148F8B), // Color teal principal
+                color: const Color(0xFF148F8B),
                 borderRadius: BorderRadius.circular(24),
               ),
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Fila superior: Nombre de tienda e íconos
                   Row(
                     children: [
                       Container(
@@ -50,7 +51,9 @@ class StoreSummaryScreen extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        onPressed: () {},
+                        onPressed: () =>
+                            Navigator.of(context)
+                                .pushNamed(AppRoutes.notifications),
                         icon: const Icon(
                           Icons.notifications_none_rounded,
                           color: Colors.white,
@@ -60,8 +63,6 @@ class StoreSummaryScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 20),
-
-                  // Label Saldo Total
                   Text(
                     'SALDO TOTAL POR COBRAR',
                     style: TextStyle(
@@ -72,8 +73,6 @@ class StoreSummaryScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-
-                  // Monto Principal
                   const Text(
                     'S/ 945.50',
                     style: TextStyle(
@@ -84,8 +83,6 @@ class StoreSummaryScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 14),
-
-                  // Métricas del mes
                   Row(
                     children: [
                       const Icon(
@@ -112,14 +109,14 @@ class StoreSummaryScreen extends StatelessWidget {
             // 2. BOTONES DE ACCIÓN RÁPIDA
             Row(
               children: [
-                // Botón Anotar Fiado
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () {},
+                    // AQUÍ CONECTAMOS EL BOTÓN CON LA NUEVA PANTALLA
+                    onPressed: () {
+                      Navigator.of(context).pushNamed(AppRoutes.registroFiado);
+                    },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(
-                        0xFFE5A93C,
-                      ), // Amarillo / Gold
+                      backgroundColor: const Color(0xFFE5A93C),
                       foregroundColor: const Color(0xFF2C2208),
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -138,8 +135,6 @@ class StoreSummaryScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-
-                // Botón Cobro WhatsApp
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () {},
@@ -175,16 +170,16 @@ class StoreSummaryScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF7EA), // Fondo beige/crema claro
+                color: const Color(0xFFFFF7EA),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFFF3D299), width: 1),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    margin: const EdgeInsets.only(top: 2),
-                    child: const Icon(
+                  const Padding(
+                    padding: EdgeInsets.only(top: 2),
+                    child: Icon(
                       Icons.warning_amber_rounded,
                       color: Color(0xFFD98A1B),
                       size: 20,
@@ -268,7 +263,7 @@ class StoreSummaryScreen extends StatelessWidget {
               ),
               child: Column(
                 children: const [
-                  _MovementTile(
+                  MovementTile(
                     initial: 'M',
                     avatarBg: Color(0xFFBBDEFB),
                     avatarFg: Color(0xFF1565C0),
@@ -279,7 +274,7 @@ class StoreSummaryScreen extends StatelessWidget {
                     time: '10:15 AM',
                     showBorder: true,
                   ),
-                  _MovementTile(
+                  MovementTile(
                     initial: 'R',
                     avatarBg: Color(0xFFFFECB3),
                     avatarFg: Color(0xFFB78103),
@@ -290,7 +285,7 @@ class StoreSummaryScreen extends StatelessWidget {
                     time: '6:40 PM',
                     showBorder: true,
                   ),
-                  _MovementTile(
+                  MovementTile(
                     initial: 'C',
                     avatarBg: Color(0xFFE8F5E9),
                     avatarFg: Color(0xFF2E7D32),
@@ -306,112 +301,6 @@ class StoreSummaryScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// Widget auxiliar para cada item de movimiento
-class _MovementTile extends StatelessWidget {
-  const _MovementTile({
-    required this.initial,
-    required this.avatarBg,
-    required this.avatarFg,
-    required this.name,
-    required this.subtitle,
-    required this.amount,
-    required this.isPositive,
-    required this.time,
-    required this.showBorder,
-  });
-
-  final String initial;
-  final Color avatarBg;
-  final Color avatarFg;
-  final String name;
-  final String subtitle;
-  final String amount;
-  final bool isPositive;
-  final String time;
-  final bool showBorder;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        border: showBorder
-            ? const Border(
-                bottom: BorderSide(color: Color(0xFFF0F3F6), width: 1),
-              )
-            : null,
-      ),
-      child: Row(
-        children: [
-          // Avatar con Inicial
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: avatarBg,
-            child: Text(
-              initial,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: avatarFg,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-
-          // Nombre y detalle de productos
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.ink,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.inkMuted,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-
-          // Monto y hora
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                amount,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: isPositive
-                      ? const Color(0xFF148F8B)
-                      : const Color(0xFFE53935),
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                time,
-                style: const TextStyle(fontSize: 11, color: AppColors.inkMuted),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

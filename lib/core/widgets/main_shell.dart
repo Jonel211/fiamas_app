@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
 import 'app_bottom_nav.dart';
+import '../../main.dart';
 import '../../features/dashboard/presentation/screens/store_summary_screen.dart';
 import '../../features/inventory/presentation/screens/products_screen.dart';
 import '../../features/inventory/presentation/screens/new_product_screen.dart';
@@ -28,12 +29,12 @@ class _MainShellScreenState extends State<MainShellScreen> {
     _currentIndex = widget.initialIndex;
   }
 
-  // ✅ LISTA DE 5 PANTALLAS (Índices 0 a 4)
+  // LISTA DE 5 PANTALLAS (Índices 0 a 4)
   final List<Widget> _pages = const [
     StoreSummaryScreen(), // 0: Inicio
     ProductsScreen(), // 1: Productos
-    DebtsScreen(), // 2: Fiados (Gestión de deudas)
-    CustomerListScreen(), // 3: Clientes (Lista de clientes)
+    DebtsScreen(), // 2: Fiados
+    CustomerListScreen(), // 3: Clientes
     HelpScreen(), // 4: Más / Ayuda
   ];
 
@@ -46,7 +47,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
         backgroundColor: AppColors.teal,
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text(
-          'Nuevo producto',
+          'producto',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
       );
@@ -64,7 +65,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
         ),
       );
     }
-    // ✅ Ya NO hay FAB para Clientes (índice 3)
+    // Ya NO hay FAB para Clientes (índice 3)
     return null;
   }
 
@@ -91,10 +92,8 @@ class _MainShellScreenState extends State<MainShellScreen> {
           });
         },
         onFiadoTap: () {
-          // El botón central "+" siempre lleva a Fiados (índice 2)
-          setState(() {
-            _currentIndex = 2;
-          });
+          // CORREGIDO: Ahora abre la pantalla de Registro Fiado
+          Navigator.of(context).pushNamed(AppRoutes.registroFiado);
         },
       ),
     );

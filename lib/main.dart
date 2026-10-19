@@ -16,9 +16,14 @@ import 'features/auth/presentation/screens/reset_code_screen.dart';
 import 'features/auth/presentation/screens/new_password_screen.dart';
 import 'features/menu/presentation/screens/menu_screen.dart';
 import 'features/profile/presentation/screens/profile_screen.dart';
+import 'features/profile/presentation/screens/edit_profile_screen.dart';
+import 'features/notifications/presentation/screens/notifications_screen.dart';
 import 'features/stores/presentation/screens/my_stores_screen.dart';
 import 'features/stores/presentation/screens/new_store_screen.dart';
+import 'features/stores/presentation/screens/edit_store_screen.dart';
 import 'features/inventory/presentation/screens/new_product_screen.dart';
+import 'features/inventory/presentation/screens/categories_screen.dart';
+import 'features/inventory/presentation/screens/new_category_screen.dart';
 import 'features/help/presentation/screens/help_screen.dart';
 import 'features/help/presentation/screens/about_screen.dart';
 import 'features/help/presentation/screens/terms_screen.dart';
@@ -29,6 +34,11 @@ import 'features/customers/presentation/screens/scoring_history_screen.dart';
 import 'features/debts/domain/debt.dart';
 import 'features/debts/presentation/screens/debt_detail_screen.dart';
 import 'features/debts/presentation/screens/debt_history_screen.dart';
+import 'features/debts/presentation/screens/registro_fiado_screen.dart';
+import 'features/debts/presentation/screens/nuevo_cliente_screen.dart';
+import 'features/debts/presentation/screens/nuevo_cliente_qr_screen.dart';
+import 'features/debts/presentation/screens/scanner_view_screen.dart';
+import 'features/debts/presentation/screens/finalizar_fiado_screen.dart';
 
 void main() {
   runApp(
@@ -57,28 +67,38 @@ class AppRoutes {
   // Navegación principal
   static const menu = '/menu';
   static const profile = '/profile';
+  static const editProfile = '/edit-profile';
+  static const notifications = '/notifications';
   static const stores = '/stores';
   static const newStore = '/new-store';
   static const summary = '/summary';
 
   // Inventario
   static const newProduct = '/new-product';
+  static const categories = '/categories';
+  static const newCategory = '/new-category';
+  static const editStore = '/edit-store';
 
   // Fiados
   static const debts = '/debts';
   static const debtDetail = '/debt-detail';
   static const debtHistory = '/debt-history';
+  static const registroFiado = '/registro-fiado';
+  static const newClient = '/new-client';
+  static const newClientQr = '/new-client-qr';
+  static const scannerView = '/scanner-view';
+  static const finalizarFiado = '/finalizar-fiado';
+
+  // Clientes
+  static const customers = '/customers';
+  static const customerProfile = '/customer-profile';
+  static const scoringHistory = '/scoring-history';
 
   // Configuración y legales
   static const help = '/help';
   static const about = '/about';
   static const terms = '/terms';
   static const privacy = '/privacy';
-
-  // Clientes
-  static const customers = '/customers';
-  static const customerProfile = '/customer-profile';
-  static const scoringHistory = '/scoring-history';
 
   static void goHome(BuildContext context) {
     Navigator.of(context).popUntil((route) => route.settings.name == summary);
@@ -111,12 +131,17 @@ class FiamasApp extends StatelessWidget {
         // Navegación principal
         AppRoutes.menu: (_) => const MenuScreen(),
         AppRoutes.profile: (_) => const ProfileScreen(),
+        AppRoutes.editProfile: (_) => const EditProfileScreen(),
+        AppRoutes.notifications: (_) => const NotificationsScreen(),
         AppRoutes.stores: (_) => const MyStoresScreen(),
         AppRoutes.newStore: (_) => const NewStoreScreen(),
         AppRoutes.summary: (_) => const MainShellScreen(),
 
         // Inventario
         AppRoutes.newProduct: (_) => const NewProductScreen(),
+        AppRoutes.categories: (_) => const CategoriesScreen(),
+        AppRoutes.newCategory: (_) => const NewCategoryScreen(),
+        AppRoutes.editStore: (_) => const EditStoreScreen(),
 
         // Fiados
         AppRoutes.debts: (_) => const MainShellScreen(initialIndex: 2),
@@ -130,7 +155,13 @@ class FiamasApp extends StatelessWidget {
                   as Map<String, dynamic>;
           return DebtHistoryScreen(customer: customer);
         },
-
+        AppRoutes.registroFiado: (_) => const RegistroFiadoScreen(),
+        AppRoutes.newClient: (_) => const NuevoClienteScreen(),
+        AppRoutes.newClientQr: (_) => const NuevoClienteQrScreen(),
+        AppRoutes.scannerView: (_) => const ScannerViewScreen(),
+        AppRoutes.finalizarFiado: (_) => const FinalizarFiadoScreen(),
+        
+        // AppRoutes.debts: (_) => const DebtsScreen(),
         // Configuración y legales
         AppRoutes.help: (_) => const HelpScreen(),
         AppRoutes.about: (_) => const AboutScreen(),
