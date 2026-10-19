@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
 import 'app_bottom_nav.dart';
+import '../../main.dart'; // <-- Importante para usar AppRoutes
 import '../../features/dashboard/presentation/screens/store_summary_screen.dart';
 import '../../features/inventory/presentation/screens/products_screen.dart';
 import '../../features/inventory/presentation/screens/new_product_screen.dart';
@@ -29,9 +30,9 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
   final List<Widget> _pages = const [
     StoreSummaryScreen(), // Índice 0: Inicio
-    ProductsScreen(), // Índice 1: Productos
-    DebtsScreen(), // Índice 2: Clientes / Fiados
-    HelpScreen(), // Índice 3: Más / Ayuda
+    ProductsScreen(),     // Índice 1: Productos
+    DebtsScreen(),        // Índice 2: Clientes / Fiados
+    HelpScreen(),         // Índice 3: Más / Ayuda
   ];
 
   Widget? _buildFab() {
@@ -76,9 +77,8 @@ class _MainShellScreenState extends State<MainShellScreen> {
           });
         },
         onFiadoTap: () {
-          setState(() {
-            _currentIndex = 2; // Redirige a la pestaña de fiados
-          });
+          // CORREGIDO: Ahora abre la pantalla de Registro Fiado
+          Navigator.of(context).pushNamed(AppRoutes.registroFiado);
         },
       ),
     );

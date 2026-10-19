@@ -28,6 +28,11 @@ import 'features/help/presentation/screens/help_screen.dart';
 import 'features/help/presentation/screens/about_screen.dart';
 import 'features/help/presentation/screens/terms_screen.dart';
 import 'features/help/presentation/screens/privacy_screen.dart';
+import 'features/debts/presentation/screens/registro_fiado_screen.dart';
+import 'features/debts/presentation/screens/nuevo_cliente_screen.dart';
+import 'features/debts/presentation/screens/nuevo_cliente_qr_screen.dart';
+import 'features/debts/presentation/screens/scanner_view_screen.dart';
+import 'features/debts/presentation/screens/finalizar_fiado_screen.dart';
 
 void main() {
   runApp(
@@ -66,6 +71,11 @@ class AppRoutes {
   static const about = '/about';
   static const terms = '/terms';
   static const privacy = '/privacy';
+  static const registroFiado = '/registro-fiado';
+  static const newClient = '/new-client';
+  static const newClientQr = '/new-client-qr';
+  static const scannerView = '/scanner-view';
+  static const finalizarFiado = '/finalizar-fiado';
 
   /// Salta directo al Resumen de Tienda (pantalla "Inicio"), sin importar
   /// cuántas pantallas haya en el stack de navegación. Se usa desde el
@@ -112,6 +122,11 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.about: (_) => const AboutScreen(),
         AppRoutes.terms: (_) => const TermsScreen(),
         AppRoutes.privacy: (_) => const PrivacyScreen(),
+        AppRoutes.registroFiado: (_) => const RegistroFiadoScreen(),
+        AppRoutes.newClient: (_) => const NuevoClienteScreen(),
+        AppRoutes.newClientQr: (_) => const NuevoClienteQrScreen(),
+        AppRoutes.scannerView: (_) => const ScannerViewScreen(),
+        AppRoutes.finalizarFiado: (_) => const FinalizarFiadoScreen(),
       },
     );
   }
