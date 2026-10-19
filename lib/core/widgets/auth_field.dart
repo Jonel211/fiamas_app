@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
 
 /// Campo de texto con la etiqueta arriba y borde redondeado, sin íconos.
-/// Es el estilo de los formularios de autenticación del diseño.
+/// Es el estilo de los formularios de autenticación y de perfil.
+/// Con `enabled: false` se muestra de solo lectura (fondo gris).
 class AuthField extends StatelessWidget {
   const AuthField({
     super.key,
@@ -15,6 +16,7 @@ class AuthField extends StatelessWidget {
     this.suffixIcon,
     this.maxLength,
     this.digitsOnly = false,
+    this.enabled = true,
     this.textCapitalization = TextCapitalization.none,
     this.bottomSpacing = 16,
   });
@@ -27,8 +29,15 @@ class AuthField extends StatelessWidget {
   final Widget? suffixIcon;
   final int? maxLength;
   final bool digitsOnly;
+  final bool enabled;
   final TextCapitalization textCapitalization;
   final double bottomSpacing;
+
+  /// Método auxiliar para reutilizar la configuración del borde
+  OutlineInputBorder _border(Color color, [double width = 1]) => OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: color, width: width),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -49,32 +58,29 @@ class AuthField extends StatelessWidget {
           TextFormField(
             controller: controller,
             validator: validator,
+            enabled: enabled,
             keyboardType: keyboardType,
             obscureText: obscureText,
             maxLength: maxLength,
             textCapitalization: textCapitalization,
             inputFormatters:
                 digitsOnly ? [FilteringTextInputFormatter.digitsOnly] : null,
-            style: const TextStyle(fontSize: 15, color: AppColors.ink),
+            style: TextStyle(
+              fontSize: 15,
+              color: enabled ? AppColors.ink : AppColors.inkMuted,
+            ),
             decoration: InputDecoration(
               counterText: '',
               isDense: true,
+              filled: !enabled,
+              
               suffixIcon: suffixIcon,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.mist),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.mist),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide:
-                    const BorderSide(color: AppColors.teal, width: 1.5),
-              ),
+              border: _border(AppColors.mist),
+              enabledBorder: _border(AppColors.mist),
+              disabledBorder: _border(AppColors.mist),
+              focusedBorder: _border(AppColors.teal, 1.5),
             ),
           ),
         ],

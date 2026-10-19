@@ -43,7 +43,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
         backgroundColor: AppColors.teal,
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text(
-          'Nuevo producto',
+          'producto',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
       );

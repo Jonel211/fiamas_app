@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../main.dart';
+import '../../domain/user_profile.dart';
+import '../widgets/profile_app_bar.dart';
 import '../widgets/profile_badge.dart';
 import '../widgets/profile_field_tile.dart';
 import '../widgets/profile_header_card.dart';
@@ -8,30 +11,53 @@ import '../widgets/profile_section.dart';
 
 /// Pantalla "Mi Perfil" del tendero.
 /// Se abre al tocar la tarjeta de usuario en el Menú.
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
-  // TODO: reemplazar por los datos reales del usuario (API / sesión).
-  static const _names = 'Jonel';
-  static const _lastNames = 'Villanueva';
-  static const _dni = '45872631';
-  static const _email = 'jonel@email.com';
-  static const _phone = '+51 999 999 999';
-  static const _address = 'Av. Universitaria 789, Lima';
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
 
-  void _edit(BuildContext context, String field) {
-    // TODO: abrir la edición del campo.
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('Editar $field: próximamente')));
+class _ProfileScreenState extends State<ProfileScreen> {
+  // TODO: reemplazar por los datos reales del usuario (API / sesión).
+  UserProfile _profile = const UserProfile(
+    names: 'Jonel',
+    lastNames: 'Villanueva',
+    dni: '45872631',
+    email: 'jonel@email.com',
+    phone: '999999999',
+    address: 'Av. Universitaria 789, Lima',
+  );
+
+  void _snack(String message) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+
+  /// Abre "Editar perfil" y, si se guardó, actualiza los datos en pantalla.
+  Future<void> _openEdit() async {
+    final result = await Navigator.of(context)
+        .pushNamed(AppRoutes.editProfile, arguments: _profile);
+
+    if (result == null || !mounted) return;
+
+    if (result is UserProfile) {
+      setState(() => _profile = result);
+      _snack('Perfil actualizado');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final p = _profile;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          _ProfileAppBar(onEdit: () => _edit(context, 'perfil')),
+          ProfileAppBar(
+            title: 'Mi Perfil',
+            actionIcon: Icons.edit_outlined,
+            onAction: _openEdit,
+          ),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
@@ -44,31 +70,19 @@ class ProfileScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ProfileHeaderCard(
-                    name: '$_names $_lastNames',
-                    email: _email,
-                    onChangePhoto: () => _edit(context, 'foto'),
+                    name: p.fullName,
+                    email: p.email,
+                    onChangePhoto: _openEdit,
                   ),
                   const SizedBox(height: 24),
 
                   ProfileSection(
                     title: 'Información personal',
                     children: [
-                      ProfileFieldTile(
-                        label: 'Nombres',
-                        value: _names,
-                        onTap: () => _edit(context, 'nombres'),
-                      ),
-                      ProfileFieldTile(
-                        label: 'Apellidos',
-                        value: _lastNames,
-                        onTap: () => _edit(context, 'apellidos'),
-                      ),
-                      ProfileFieldTile(
-                        label: 'DNI',
-                        value: _dni,
-                        onTap: () => _edit(context, 'DNI'),
-                      ),
-                      
+                      ProfileFieldTile(label: 'Nombres', value: p.names, onTap: _openEdit),
+                      ProfileFieldTile(label: 'Apellidos', value: p.lastNames, onTap: _openEdit),
+                      // El DNI no se edita: sin flecha ni toque.
+                      ProfileFieldTile(label: 'DNI', value: p.dni),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -76,15 +90,16 @@ class ProfileScreen extends StatelessWidget {
                   ProfileSection(
                     title: 'Contacto',
                     children: [
-                      const ProfileFieldTile(
+                      ProfileFieldTile(
                         label: 'Teléfono móvil',
-                        value: _phone,
-                        trailing: ProfileBadge(label: 'Verificado'),
+                        value: p.phoneDisplay,
+                        onTap: _openEdit,
+                        trailing: const ProfileBadge(label: 'Verificado'),
                       ),
                       ProfileFieldTile(
                         label: 'Dirección particular',
-                        value: _address,
-                        onTap: () => _edit(context, 'dirección'),
+                        value: p.address.isEmpty ? 'Sin registrar' : p.address,
+                        onTap: _openEdit,
                       ),
                     ],
                   ),
@@ -93,50 +108,6 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Barra superior: flecha de regreso, título centrado y lápiz de editar.
-class _ProfileAppBar extends StatelessWidget {
-  const _ProfileAppBar({required this.onEdit});
-
-  final VoidCallback onEdit;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.background,
-
-      child: SafeArea(
-        bottom: false,
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            children: [
-              IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.arrow_back, color: AppColors.ink),
-              ),
-              const Expanded(
-                child: Text(
-                  'Mi Perfil',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.ink,
-                  ),
-                ),
-              ),
-              IconButton(
-                onPressed: onEdit,
-                icon: const Icon(Icons.edit_outlined, color: AppColors.ink),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

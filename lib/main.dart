@@ -16,9 +16,14 @@ import 'features/auth/presentation/screens/reset_code_screen.dart';
 import 'features/auth/presentation/screens/new_password_screen.dart';
 import 'features/menu/presentation/screens/menu_screen.dart';
 import 'features/profile/presentation/screens/profile_screen.dart';
+import 'features/profile/presentation/screens/edit_profile_screen.dart';
+import 'features/notifications/presentation/screens/notifications_screen.dart';
 import 'features/stores/presentation/screens/my_stores_screen.dart';
 import 'features/stores/presentation/screens/new_store_screen.dart';
+import 'features/stores/presentation/screens/edit_store_screen.dart';
 import 'features/inventory/presentation/screens/new_product_screen.dart';
+import 'features/inventory/presentation/screens/categories_screen.dart';
+import 'features/inventory/presentation/screens/new_category_screen.dart';
 import 'features/help/presentation/screens/help_screen.dart';
 import 'features/help/presentation/screens/about_screen.dart';
 import 'features/help/presentation/screens/terms_screen.dart';
@@ -52,10 +57,15 @@ class AppRoutes {
   static const newPassword = '/new-password';
   static const menu = '/menu';
   static const profile = '/profile';
+  static const editProfile = '/edit-profile';
+  static const notifications = '/notifications';
   static const stores = '/stores';
   static const newStore = '/new-store';
   static const summary = '/summary';
   static const newProduct = '/new-product';
+  static const categories = '/categories';
+  static const newCategory = '/new-category';
+  static const editStore = '/edit-store';
   static const debts = '/debts';
   static const help = '/help';
   static const about = '/about';
@@ -98,11 +108,16 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.newPassword: (_) => const NewPasswordScreen(),
         AppRoutes.menu: (_) => const MenuScreen(),
         AppRoutes.profile: (_) => const ProfileScreen(),
+        AppRoutes.editProfile: (_) => const EditProfileScreen(),
+        AppRoutes.notifications: (_) => const NotificationsScreen(),
         AppRoutes.stores: (_) => const MyStoresScreen(),
         AppRoutes.newStore: (_) => const NewStoreScreen(),
         AppRoutes.summary: (_) => const MainShellScreen(),
         AppRoutes.newProduct: (_) => const NewProductScreen(),
-       // AppRoutes.debts: (_) => const DebtsScreen(),
+        AppRoutes.categories: (_) => const CategoriesScreen(),
+        AppRoutes.newCategory: (_) => const NewCategoryScreen(),
+        AppRoutes.editStore: (_) => const EditStoreScreen(),
+        // AppRoutes.debts: (_) => const DebtsScreen(),
         AppRoutes.help: (_) => const HelpScreen(),
         AppRoutes.about: (_) => const AboutScreen(),
         AppRoutes.terms: (_) => const TermsScreen(),
