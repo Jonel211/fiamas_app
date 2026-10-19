@@ -224,7 +224,8 @@ class StoreSummaryScreen extends StatelessWidget {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {},
+                  onTap: () =>
+                      Navigator.of(context).pushNamed(AppRoutes.customers),
                   child: Row(
                     children: const [
                       Text(

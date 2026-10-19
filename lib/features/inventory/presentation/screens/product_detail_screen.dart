@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/simple_app_bar.dart';
+import '../../domain/sale_unit.dart';
 import '../widgets/product_detail_field.dart';
+import 'new_product_screen.dart';
 
 /// Detalle de un producto (solo lectura) con acceso a "Editar producto".
 class ProductDetailScreen extends StatelessWidget {
@@ -28,11 +30,28 @@ class ProductDetailScreen extends StatelessWidget {
 
   bool _hasText(String? s) => s != null && s.trim().isNotEmpty;
 
-  void _edit(BuildContext context) {
-    // TODO: abrir la pantalla de edición (NewProductScreen en modo edición).
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('La edición estará disponible pronto')),
+  Future<void> _edit(BuildContext context) async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => NewProductScreen(
+          initialName: name,
+          initialCategory: category,
+          initialPrice: price,
+          initialDescription: description,
+          initialBarcode: barcode,
+          initialUnit: perKilo ? SaleUnit.kilo : SaleUnit.unit,
+          isEditing: true,
+        ),
+      ),
     );
+    if (result != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Producto actualizado correctamente'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
@@ -102,7 +121,7 @@ class _ProductImage extends StatelessWidget {
               width: 140,
               height: 140,
               fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => placeholder,
+              errorBuilder: (_, _, _) => placeholder,
             ),
     );
   }

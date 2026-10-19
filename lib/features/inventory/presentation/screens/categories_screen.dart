@@ -4,6 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/simple_app_bar.dart';
 import '../../../../main.dart';
 import '../../domain/category.dart';
+import 'new_category_screen.dart';
 import '../widgets/category_tile.dart';
 
 /// Lista de categorías de productos de la tienda.
@@ -67,6 +68,21 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     final created = await Navigator.of(context).pushNamed(AppRoutes.newCategory);
     if (created is! Category || !mounted) return;
     setState(() => _categories.add(created));
+  }
+
+  Future<void> _editCategory(Category category) async {
+    final updated = await Navigator.of(context).push<Category>(
+      MaterialPageRoute(
+        builder: (_) => NewCategoryScreen(category: category),
+      ),
+    );
+    if (updated == null || !mounted) return;
+    setState(() {
+      final index = _categories.indexWhere((c) => c.id == updated.id);
+      if (index != -1) {
+        _categories[index] = updated;
+      }
+    });
   }
 
   Future<void> _deleteCategory(Category category) async {
@@ -149,8 +165,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                           child: CategoryTile(
                             category: c,
                             selected: c.id == _selectedId,
-                            // TODO: abrir la edición de la categoría.
-                            onTap: () => setState(() => _selectedId = c.id),
+                            onTap: () {
+                              setState(() => _selectedId = c.id);
+                              _editCategory(c);
+                            },
                           ),
                         ),
                     ],
