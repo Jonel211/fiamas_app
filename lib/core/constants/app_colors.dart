@@ -31,7 +31,13 @@ class AppColors {
   static const Color surface = Colors.white; // tarjetas
   static const Color danger = Color(0xFFB3452C); // errores
 
-  // ── Estados (avisos, notificaciones y formularios) ───────────
+  // NUEVOS COLORES para pantallas de clientes
+  /// Verde para estados exitosos (pagado, al día).
+  static const Color success = Color(0xFF22C55E);
+
+  /// Morado para avatares y acentos.
+  static const Color purple = Color(0xFF8B5CF6);
+  // Estados (avisos, notificaciones y formularios)
   /// Fondo suave para elementos en rojo (errores, urgencias).
   static const Color dangerSoft = Color(0xFFFDECEC);
 
@@ -44,7 +50,7 @@ class AppColors {
   /// Fondo de tarjetas leídas, campos de solo lectura y selectores inactivos.
   static const Color surfaceMuted = Color(0xFFF1F4F8);
 
-  // ── Extras ───────────────────────────────────────────────────
+  // Extras
   /// Verde del ícono de WhatsApp.
   static const Color whatsapp = Color(0xFF25D366);
 }

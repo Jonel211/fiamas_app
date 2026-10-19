@@ -56,25 +56,25 @@ class AppBottomNav extends StatelessWidget {
                   isSelected: currentIndex == 1,
                   onTap: () => onTap?.call(1),
                 ),
-                
-                // HUECO EN EL CENTRO para el botón
-                const SizedBox(width: 60), 
 
-                // 2: Clientes
+                // HUECO EN EL CENTRO para el botón de Fiado
+                const SizedBox(width: 60),
+
+                // 3: Clientes (índice 3 en main_shell)
                 _NavItem(
                   icon: Icons.people_outline_rounded,
                   activeIcon: Icons.people_rounded,
                   label: 'Clientes',
-                  isSelected: currentIndex == 2,
-                  onTap: () => onTap?.call(2),
+                  isSelected: currentIndex == 3,
+                  onTap: () => onTap?.call(3),
                 ),
-                // 3: Más
+                // 4: Más
                 _NavItem(
                   icon: Icons.grid_view_outlined,
                   activeIcon: Icons.grid_view_rounded,
                   label: 'Más',
-                  isSelected: currentIndex == 3,
-                  onTap: () => onTap?.call(3),
+                  isSelected: currentIndex == 4,
+                  onTap: () => onTap?.call(4),
                 ),
               ],
             ),
@@ -87,8 +87,7 @@ class AppBottomNav extends StatelessWidget {
               onTap: onFiadoTap,
               behavior: HitTestBehavior.opaque,
               child: Container(
-                // Hacemos el área de toque más ancha (80px) 
-                // y transparente para que no se cuele el clic a Clientes
+                // Área de toque más ancha para evitar toques accidentales
                 width: 80,
                 color: Colors.transparent,
                 child: Column(

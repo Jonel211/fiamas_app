@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
 import 'app_bottom_nav.dart';
-import '../../main.dart'; // <-- Importante para usar AppRoutes
+import '../../main.dart';
 import '../../features/dashboard/presentation/screens/store_summary_screen.dart';
 import '../../features/inventory/presentation/screens/products_screen.dart';
 import '../../features/inventory/presentation/screens/new_product_screen.dart';
 import '../../features/debts/presentation/screens/debts_screen.dart';
 import '../../features/debts/presentation/screens/new_debt_customer_screen.dart';
 import '../../features/help/presentation/screens/help_screen.dart';
+import '../../features/customers/presentation/screens/customer_list_screen.dart';
 
 class MainShellScreen extends StatefulWidget {
   const MainShellScreen({super.key, this.initialIndex = 0});
@@ -28,15 +29,18 @@ class _MainShellScreenState extends State<MainShellScreen> {
     _currentIndex = widget.initialIndex;
   }
 
+  // LISTA DE 5 PANTALLAS (Índices 0 a 4)
   final List<Widget> _pages = const [
-    StoreSummaryScreen(), // Índice 0: Inicio
-    ProductsScreen(),     // Índice 1: Productos
-    DebtsScreen(),        // Índice 2: Clientes / Fiados
-    HelpScreen(),         // Índice 3: Más / Ayuda
+    StoreSummaryScreen(), // 0: Inicio
+    ProductsScreen(), // 1: Productos
+    DebtsScreen(), // 2: Fiados
+    CustomerListScreen(), // 3: Clientes
+    HelpScreen(), // 4: Más / Ayuda
   ];
 
   Widget? _buildFab() {
     if (_currentIndex == 1) {
+      // FAB para Productos
       return FloatingActionButton.extended(
         onPressed: () => Navigator.of(context)
             .push(MaterialPageRoute(builder: (_) => const NewProductScreen())),
@@ -48,6 +52,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
         ),
       );
     } else if (_currentIndex == 2) {
+      // FAB para Fiados
       return FloatingActionButton.extended(
         onPressed: () => Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const NewDebtCustomerScreen()),
@@ -60,6 +65,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
         ),
       );
     }
+    // Ya NO hay FAB para Clientes (índice 3)
     return null;
   }
 
@@ -72,8 +78,17 @@ class _MainShellScreenState extends State<MainShellScreen> {
       bottomNavigationBar: AppBottomNav(
         currentIndex: _currentIndex,
         onTap: (index) {
+          // MAPEO EXPLÍCITO Y SEGURO DE ÍNDICES
           setState(() {
-            _currentIndex = index;
+            if (index == 0) {
+              _currentIndex = 0; // Inicio
+            } else if (index == 1) {
+              _currentIndex = 1; // Productos
+            } else if (index == 2) {
+              _currentIndex = 3; // Clientes (Salta el índice 2 que es Fiados)
+            } else if (index == 3) {
+              _currentIndex = 4; // Más / Ayuda
+            }
           });
         },
         onFiadoTap: () {
