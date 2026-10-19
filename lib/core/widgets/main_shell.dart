@@ -78,18 +78,11 @@ class _MainShellScreenState extends State<MainShellScreen> {
       bottomNavigationBar: AppBottomNav(
         currentIndex: _currentIndex,
         onTap: (index) {
-          // MAPEO EXPLÍCITO Y SEGURO DE ÍNDICES
-          setState(() {
-            if (index == 0) {
-              _currentIndex = 0; // Inicio
-            } else if (index == 1) {
-              _currentIndex = 1; // Productos
-            } else if (index == 2) {
-              _currentIndex = 3; // Clientes (Salta el índice 2 que es Fiados)
-            } else if (index == 3) {
-              _currentIndex = 4; // Más / Ayuda
-            }
-          });
+          if (index >= 0 && index < _pages.length) {
+            setState(() {
+              _currentIndex = index;
+            });
+          }
         },
         onFiadoTap: () {
           // CORREGIDO: Ahora abre la pantalla de Registro Fiado

@@ -12,11 +12,12 @@ class RegisterClientScreen extends StatelessWidget {
   static const double _headerHeight = 130;
   static const double _logoHeight = 240;
 
-  void _onScan(BuildContext context) {
-    // TODO: abrir el escáner de la cámara (lib/core/hardware) y, con el
-    // código leído, crear la cuenta del cliente en la API.
+  void _openStore(BuildContext context, String platform) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('El escáner estará disponible pronto')),
+      SnackBar(
+        content: Text('Descarga para $platform próximamente disponible'),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
@@ -40,7 +41,6 @@ class RegisterClientScreen extends StatelessWidget {
                   color: AppColors.surface,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
                 ),
-                // Rellena todo el panel; si el contenido no cabe, se desplaza.
                 child: CustomScrollView(
                   slivers: [
                     SliverFillRemaining(
@@ -58,25 +58,41 @@ class RegisterClientScreen extends StatelessWidget {
                                 color: AppColors.ink,
                               ),
                             ),
-                            const SizedBox(height: 18),
+                            const SizedBox(height: 14),
                             const Text(
-                              'Empieza a ver tus notas de crédito',
+                              'Empieza a ver tus notas de\ncredito',
                               style: TextStyle(
                                 fontSize: 20,
                                 color: AppColors.ink,
                                 height: 1.3,
                               ),
                             ),
-
-                            // Instrucción y botón. Para subirlos o bajarlos
-                            // cambia los flex: menos arriba / más abajo = sube.
-                            const Spacer(flex: 1),
-                            const Center(child: _Instruction()),
-                            const SizedBox(height: 36),
-                            Center(
-                              child: _ScanButton(onTap: () => _onScan(context)),
+                            const Spacer(flex: 2),
+                            const Center(
+                              child: Text(
+                                'Descargue la app para su\ndispositivo aquí',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.teal,
+                                  height: 1.35,
+                                ),
+                              ),
                             ),
-                            const Spacer(flex: 4),
+                            const SizedBox(height: 36),
+                            _StoreButton(
+                              label: 'Android',
+                              icon: const _GooglePlayBadge(),
+                              onTap: () => _openStore(context, 'Android'),
+                            ),
+                            const SizedBox(height: 18),
+                            _StoreButton(
+                              label: 'iPhone',
+                              icon: const _AppStoreBadge(),
+                              onTap: () => _openStore(context, 'iPhone'),
+                            ),
+                            const Spacer(flex: 3),
                           ],
                         ),
                       ),
@@ -112,8 +128,6 @@ class _Header extends StatelessWidget {
         clipBehavior: Clip.none,
         alignment: Alignment.center,
         children: [
-          // OverflowBox: el PNG trae espacio transparente alrededor, así
-          // que se dibuja más grande que la franja sin recortarse.
           OverflowBox(
             maxWidth: double.infinity,
             maxHeight: double.infinity,
@@ -137,31 +151,16 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _Instruction extends StatelessWidget {
-  const _Instruction();
+/// Botón dorado con badge de tienda y texto blanco.
+class _StoreButton extends StatelessWidget {
+  const _StoreButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
 
-  @override
-  Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 8),
-      child: Text(
-        'Haga clic en el botón para crear su cuenta',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.w700,
-          color: AppColors.teal,
-          height: 1.35,
-        ),
-      ),
-    );
-  }
-}
-
-/// Botón dorado grande con el ícono de escáner.
-class _ScanButton extends StatelessWidget {
-  const _ScanButton({required this.onTap});
-
+  final String label;
+  final Widget icon;
   final VoidCallback onTap;
 
   @override
@@ -169,22 +168,158 @@ class _ScanButton extends StatelessWidget {
     return Material(
       color: AppColors.gold,
       borderRadius: BorderRadius.circular(14),
+      elevation: 0,
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
         onTap: onTap,
-        child: SizedBox(
-          width: 200,
-          height: 180,
-          child: Center(
-            child: Image.asset(
-              'assets/icons/scanner.png',
-              width: 100,
-              height: 120,
-              fit: BoxFit.contain,
-            ),
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          height: 56,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              icon,
+              const SizedBox(width: 14),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
+}
+
+class _GooglePlayBadge extends StatelessWidget {
+  const _GooglePlayBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 36,
+      height: 36,
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: CustomPaint(
+        painter: _PlayStorePainter(),
+      ),
+    );
+  }
+}
+
+class _PlayStorePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    final pTop = Offset(w * 0.15, h * 0.12);
+    final pBottom = Offset(w * 0.15, h * 0.88);
+    final pRight = Offset(w * 0.88, h * 0.5);
+    final pInner = Offset(w * 0.52, h * 0.5);
+
+    // Left base
+    final pathLeft = Path()
+      ..moveTo(pTop.dx, pTop.dy)
+      ..lineTo(pBottom.dx, pBottom.dy)
+      ..lineTo(pInner.dx, pInner.dy)
+      ..close();
+    canvas.drawPath(pathLeft, Paint()..color = const Color(0xFFC78F28));
+
+    // Top fold
+    final pathTop = Path()
+      ..moveTo(pTop.dx, pTop.dy)
+      ..lineTo(pInner.dx, pInner.dy)
+      ..lineTo(pRight.dx, pRight.dy)
+      ..close();
+    canvas.drawPath(pathTop, Paint()..color = const Color(0xFFE8B652));
+
+    // Bottom fold
+    final pathBottom = Path()
+      ..moveTo(pBottom.dx, pBottom.dy)
+      ..lineTo(pInner.dx, pInner.dy)
+      ..lineTo(pRight.dx, pRight.dy)
+      ..close();
+    canvas.drawPath(pathBottom, Paint()..color = const Color(0xFFB87E1C));
+
+    // Right tip fold
+    final pathRight = Path()
+      ..moveTo(pInner.dx, pInner.dy)
+      ..lineTo(w * 0.75, h * 0.32)
+      ..lineTo(pRight.dx, pRight.dy)
+      ..lineTo(w * 0.75, h * 0.68)
+      ..close();
+    canvas.drawPath(pathRight, Paint()..color = const Color(0xFFF5CE68));
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _AppStoreBadge extends StatelessWidget {
+  const _AppStoreBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 36,
+      height: 36,
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: CustomPaint(
+        painter: _AppStorePainter(),
+      ),
+    );
+  }
+}
+
+class _AppStorePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFFD69A30)
+      ..strokeWidth = size.width * 0.16
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    final w = size.width;
+    final h = size.height;
+
+    // Left bar (diagonal)
+    canvas.drawLine(
+      Offset(w * 0.22, h * 0.88),
+      Offset(w * 0.48, h * 0.15),
+      paint,
+    );
+
+    // Right bar (diagonal)
+    canvas.drawLine(
+      Offset(w * 0.78, h * 0.88),
+      Offset(w * 0.52, h * 0.15),
+      paint,
+    );
+
+    // Horizontal bar
+    canvas.drawLine(
+      Offset(w * 0.25, h * 0.62),
+      Offset(w * 0.75, h * 0.62),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

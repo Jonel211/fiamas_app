@@ -6,10 +6,13 @@ import '../widgets/category_icon_picker.dart';
 import '../widgets/category_style.dart';
 import '../widgets/light_app_bar.dart';
 
-/// Formulario para crear una categoría. Al guardar devuelve la [Category]
-/// creada a la pantalla anterior.
+/// Formulario para crear o editar una categoría. Al guardar devuelve la [Category]
+/// modificada o creada a la pantalla anterior.
 class NewCategoryScreen extends StatefulWidget {
-  const NewCategoryScreen({super.key});
+  const NewCategoryScreen({super.key, this.category});
+
+  final Category? category;
+  bool get isEditing => category != null;
 
   @override
   State<NewCategoryScreen> createState() => _NewCategoryScreenState();
@@ -25,6 +28,18 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
   String _iconKey = CategoryStyle.icons.keys.first;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.isEditing) {
+      _name.text = widget.category!.name;
+      _description.text = widget.category!.description;
+      _active = widget.category!.active;
+      _color = widget.category!.color;
+      _iconKey = widget.category!.iconKey;
+    }
+  }
+
+  @override
   void dispose() {
     _name.dispose();
     _description.dispose();
@@ -34,9 +49,8 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
   void _save() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    // TODO: guardar la categoría en la API.
     Navigator.of(context).pop(Category(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: widget.category?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
       name: _name.text.trim(),
       description: _description.text.trim(),
       color: _color,
@@ -50,7 +64,7 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(children: [
-        const LightAppBar(title: 'Nueva Categoría'),
+        LightAppBar(title: widget.isEditing ? 'Editar Categoría' : 'Nueva Categoría'),
         Expanded(
           child: SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(24, 16, 24, 32 + MediaQuery.of(context).padding.bottom),
@@ -93,7 +107,7 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
                     textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text('Guardar Categoría'),
+                  child: Text(widget.isEditing ? 'Guardar Cambios' : 'Guardar Categoría'),
                 ),
               ]),
             ),

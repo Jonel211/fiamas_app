@@ -9,11 +9,28 @@ import '../widgets/product_input_style.dart';
 import '../widgets/product_photo_picker.dart';
 import '../widgets/sale_unit_selector.dart';
 
-/// Registro de un producto. Una sola pantalla: al cambiar "Se vende por"
+/// Registro y edición de un producto. Una sola pantalla: al cambiar "Se vende por"
 /// entre Unidad y Kilo, cambian los campos (el código de barras solo aplica
 /// a los productos por unidad).
 class NewProductScreen extends StatefulWidget {
-  const NewProductScreen({super.key});
+  const NewProductScreen({
+    super.key,
+    this.initialName,
+    this.initialCategory,
+    this.initialPrice,
+    this.initialDescription,
+    this.initialBarcode,
+    this.initialUnit,
+    this.isEditing = false,
+  });
+
+  final String? initialName;
+  final String? initialCategory;
+  final double? initialPrice;
+  final String? initialDescription;
+  final String? initialBarcode;
+  final SaleUnit? initialUnit;
+  final bool isEditing;
 
   @override
   State<NewProductScreen> createState() => _NewProductScreenState();
@@ -36,6 +53,23 @@ class _NewProductScreenState extends State<NewProductScreen> {
   bool get _byUnit => _unit == SaleUnit.unit;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.isEditing || widget.initialName != null) {
+      _name.text = widget.initialName ?? '';
+      _description.text = widget.initialDescription ?? '';
+      _barcode.text = widget.initialBarcode ?? '';
+      if (widget.initialPrice != null) {
+        _price.text = widget.initialPrice!.toStringAsFixed(2);
+      }
+      _category = widget.initialCategory;
+      if (widget.initialUnit != null) {
+        _unit = widget.initialUnit!;
+      }
+    }
+  }
+
+  @override
   void dispose() {
     for (final c in [_name, _description, _barcode, _price]) {
       c.dispose();
@@ -45,9 +79,16 @@ class _NewProductScreenState extends State<NewProductScreen> {
 
   void _save() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    // TODO: conectar con InventoryRepository.createProduct()
-    // (el código de barras solo se envía si _byUnit).
-    Navigator.of(context).pop();
+    // Retorna los datos guardados o editados a la pantalla anterior
+    Navigator.of(context).pop({
+      'name': _name.text.trim(),
+      'category': _category,
+      'price': double.tryParse(_price.text.replaceAll(',', '.')) ?? 0.0,
+      'description': _description.text.trim(),
+      'barcode': _barcode.text.trim(),
+      'unit': _unit,
+      'active': _active,
+    });
   }
 
   void _scanBarcode() {
@@ -62,16 +103,18 @@ class _NewProductScreenState extends State<NewProductScreen> {
     return Scaffold(
       backgroundColor: AppColors.ivory,
       body: Column(children: [
-        const SimpleAppBar(title: 'Nuevo Producto'),
+        SimpleAppBar(title: widget.isEditing ? 'Editar Producto' : 'Nuevo Producto'),
         Expanded(
           child: SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(24, 20, 24, 32 + MediaQuery.of(context).padding.bottom),
             child: Form(
               key: _formKey,
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                const Text('Agrega un artículo a tu lista',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.ink)),
+                Text(
+                  widget.isEditing ? 'Modifica los datos del artículo' : 'Agrega un artículo a tu lista',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.ink),
+                ),
                 const SizedBox(height: 16),
                 ProductPhotoPicker(onTap: () {
                   // TODO: abrir selector de imagen / cámara
@@ -140,7 +183,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                     textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text('Guardar producto'),
+                  child: Text(widget.isEditing ? 'Guardar cambios' : 'Guardar producto'),
                 ),
               ]),
             ),
