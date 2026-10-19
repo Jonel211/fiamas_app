@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../main.dart' show AppRoutes;
 import '../../domain/product.dart';
-import '../widgets/product_tile.dart';
+import '../widgets/product_card.dart';
+import '../widgets/products_search_bar.dart';
+import '../widgets/products_top_bar.dart';
+import 'product_detail_screen.dart';
 
 class ProductsScreen extends StatefulWidget {
   const ProductsScreen({super.key});
@@ -12,6 +16,7 @@ class ProductsScreen extends StatefulWidget {
 }
 
 class _ProductsScreenState extends State<ProductsScreen> {
+
   static const _products = [
     Product(
       id: '1',
@@ -45,191 +50,216 @@ class _ProductsScreenState extends State<ProductsScreen> {
     'Otros',
   ];
 
+  final _search = TextEditingController();
+  final Set<String> _inactive = {};
+  String _query = '';
   String? _selectedCategory;
-  final _searchFocusNode = FocusNode();
 
   @override
   void dispose() {
-    _searchFocusNode.dispose();
+    _search.dispose();
     super.dispose();
   }
 
   List<Product> get _filteredProducts {
-    if (_selectedCategory == null) return _products;
-    return _products.where((p) => p.category == _selectedCategory).toList();
+    final q = _query.trim().toLowerCase();
+    return _products.where((p) {
+      final matchesCategory =
+          _selectedCategory == null || p.category == _selectedCategory;
+      final matchesQuery =
+          q.isEmpty ||
+          p.name.toLowerCase().contains(q) ||
+          p.category.toLowerCase().contains(q);
+      return matchesCategory && matchesQuery;
+    }).toList();
   }
 
-  void _openFilterSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return Container(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-              decoration: const BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: AppColors.mist,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  Text(
-                    'Filtrar por categoría',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Elige una categoría para ver solo esos productos',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _FilterChip(
-                        label: 'Todos',
-                        selected: _selectedCategory == null,
-                        onTap: () =>
-                            setSheetState(() => _selectedCategory = null),
-                      ),
-                      for (final category in _categories)
-                        _FilterChip(
-                          label: category,
-                          selected: _selectedCategory == category,
-                          onTap: () =>
-                              setSheetState(() => _selectedCategory = category),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {});
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text('Aplicar filtro'),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+  void _toggleCategory(String category) {
+    setState(
+      () => _selectedCategory = _selectedCategory == category ? null : category,
+    );
+  }
+
+  void _clearFilters() {
+    _search.clear();
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _query = '';
+      _selectedCategory = null;
+    });
+  }
+
+  void _openDetail(Product product) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ProductDetailScreen(
+          name: product.name,
+          category: product.category,
+          price: product.price,
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+    final products = _filteredProducts;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ProductsTopBar(
+          storeName: 'Bodega Gian Carlos',
+          onBellTap: () =>
+              Navigator.of(context).pushNamed(AppRoutes.notifications),
+        ),
+        Expanded(
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        'Mis Productos',
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'Mostrando ${_filteredProducts.length}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.inkMuted,
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(
+                            width: double.infinity,
+                            child: Text(
+                              'Mis productos',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.ink,
+                              ),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 6),
-                        GestureDetector(
-                          onTap: _openFilterSheet,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 7,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.filter_list,
-                                  size: 14,
-                                  color: AppColors.ink,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  _selectedCategory ?? 'Filtrar',
-                                  style: const TextStyle(
-                                    fontSize: 12,
+                          const SizedBox(height: 14),
+                          ProductsSearchBar(
+                            controller: _search,
+                            onChanged: (v) => setState(() => _query = v),
+                            onFilter: _clearFilters,
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'Categorías',
+                                  style: TextStyle(
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color: AppColors.ink,
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                              GestureDetector(
+                                onTap: () =>
+                                    Navigator.of(context)
+                                        .pushNamed(AppRoutes.categories),
+                                child: const Text(
+                                  'Ver todo',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF2B6CB0),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
+                          const SizedBox(height: 8),
+                        ],
+                      ),
+                    ),
+                    SizedBox(
+                      height: 32,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount: _categories.length + 1,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (context, i) {
+                          if (i == 0) {
+                            return _CategoryChip(
+                              label: 'Todos',
+                              selected: _selectedCategory == null,
+                              onTap: () =>
+                                  setState(() => _selectedCategory = null),
+                            );
+                          }
+                          final c = _categories[i - 1];
+                          return _CategoryChip(
+                            label: c,
+                            selected: _selectedCategory == c,
+                            onTap: () => _toggleCategory(c),
+                          );
+                        },
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
+                      child: Text(
+                        'Productos Recientes',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.ink,
                         ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
+                sliver: products.isEmpty
+                    ? SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 40),
+                          child: Center(
+                            child: Text(
+                              'No se encontraron productos',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                        ),
+                      )
+                    : SliverGrid(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                              childAspectRatio: 0.8,
+                            ),
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final product = products[index];
+                          return ProductCard(
+                            product: product,
+                            active: !_inactive.contains(product.id),
+                            onTap: () => _openDetail(product),
+                            onToggle: (on) => setState(() {
+                              on
+                                  ? _inactive.remove(product.id)
+                                  : _inactive.add(product.id);
+                            }),
+                          );
+                        }, childCount: products.length),
+                      ),
+              ),
+            ],
           ),
-          Expanded(
-            child: _filteredProducts.isEmpty
-                ? Center(
-                    child: Text(
-                      'No hay productos en esta categoría',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
-                    itemCount: _filteredProducts.length,
-                    separatorBuilder: (_, __) =>
-                        const Divider(height: 1, color: AppColors.mist),
-                    itemBuilder: (context, index) {
-                      final product = _filteredProducts[index];
-                      return ProductTile(product: product);
-                    },
-                  ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({
+class _CategoryChip extends StatelessWidget {
+  const _CategoryChip({
     required this.label,
     required this.selected,
     required this.onTap,
@@ -244,17 +274,18 @@ class _FilterChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: selected ? AppColors.ink : AppColors.mist,
+          color: selected ? AppColors.ink : AppColors.teal,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: selected ? Colors.white : AppColors.inkMuted,
+            color: Colors.white,
           ),
         ),
       ),
