@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../domain/store.dart';
 
-/// Tarjeta vertical de una tienda.
-/// Círculo con ilustración + botón de edición flotante + nombre + ciudad.
+import '../../../../core/constants/app_colors.dart';
+import '../../../auth/data/models/tienda_model.dart'; 
+
 class StoreListItem extends StatelessWidget {
   const StoreListItem({
     super.key,
@@ -12,7 +11,7 @@ class StoreListItem extends StatelessWidget {
     this.onEdit,
   });
 
-  final Store store;
+  final TiendaModel store; 
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
 
@@ -32,7 +31,6 @@ class StoreListItem extends StatelessWidget {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                // Círculo con la imagen de la tienda
                 Container(
                   width: _circleSize,
                   height: _circleSize,
@@ -46,8 +44,6 @@ class StoreListItem extends StatelessWidget {
                     size: 62,
                   ),
                 ),
-
-                // Botón de edición flotante (esquina superior derecha)
                 Positioned(
                   top: 4,
                   right: -4,
@@ -72,26 +68,31 @@ class StoreListItem extends StatelessWidget {
               ],
             ),
           ),
+// ... (mantén todo el código igual hasta la parte del texto)
+
           const SizedBox(height: 14),
-          Text(
-            store.name,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.ink,
-              height: 1.2,
+          Flexible(
+            child: Text(
+              store.nombre,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: AppColors.ink,
+                height: 1.2,
+              ),
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            store.city,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.inkMuted,
+          Flexible(
+            child: Text(
+              store.direccion ?? 'Sin dirección',
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 13, color: AppColors.inkMuted),
             ),
           ),
         ],

@@ -49,6 +49,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // ✅ MÉTODO registerTendero (sin "o" final) - coincide con register_screen.dart
   Future<bool> registerTendero({
     required String dni,
     required String nombres,

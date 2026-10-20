@@ -75,3 +75,9 @@ macos/Flutter/Flutter-Release.xcconfig
 *.mode1v3
 *.mode2v3
 *.perspectivev3
+
+# iOS build artifacts and CocoaPods
+ios/Podfile
+ios/Podfile.lock
+ios/Pods/
+.symlinks/

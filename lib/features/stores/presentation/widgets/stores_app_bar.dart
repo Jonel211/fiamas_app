@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/constants/app_colors.dart';
 
 /// Barra superior de la pantalla "Mis Tiendas".
 /// Fondo teal + hamburguesa + título centrado + campana.
 class StoresAppBar extends StatelessWidget {
+  // ✅ ASEGÚRATE DE QUE ESTOS DOS PARÁMETROS ESTÉN AQUÍ
   const StoresAppBar({super.key, this.onMenuTap, this.onBellTap});
 
   final VoidCallback? onMenuTap;
@@ -21,6 +23,7 @@ class StoresAppBar extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // ✅ Botón de menú que ejecuta la acción que le pasamos
           IconButton(
             onPressed: onMenuTap,
             icon: const Icon(Icons.menu_rounded, color: Colors.white),
@@ -40,7 +43,10 @@ class StoresAppBar extends StatelessWidget {
           ),
           IconButton(
             onPressed: onBellTap,
-            icon: const Icon(Icons.notifications_none_rounded, color: Colors.white),
+            icon: const Icon(
+              Icons.notifications_none_rounded,
+              color: Colors.white,
+            ),
             splashRadius: 22,
           ),
         ],
