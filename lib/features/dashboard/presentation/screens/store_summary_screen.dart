@@ -2,10 +2,39 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../main.dart';
+import '../../../notifications/data/notification_repository.dart';
 import '../widgets/movement_tile.dart';
 
-class StoreSummaryScreen extends StatelessWidget {
+class StoreSummaryScreen extends StatefulWidget {
   const StoreSummaryScreen({super.key});
+
+  @override
+  State<StoreSummaryScreen> createState() => _StoreSummaryScreenState();
+}
+
+class _StoreSummaryScreenState extends State<StoreSummaryScreen> {
+  final _notifRepo = NotificationRepository();
+  int _unread = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUnread();
+  }
+
+  Future<void> _loadUnread() async {
+    try {
+      final count = await _notifRepo.unreadCount();
+      if (mounted) setState(() => _unread = count);
+    } catch (_) {
+      // Sin conexión: el badge queda como está
+    }
+  }
+
+  Future<void> _openNotifications() async {
+    await Navigator.of(context).pushNamed(AppRoutes.notifications);
+    _loadUnread(); // refresca el contador al volver de la lista
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,13 +80,17 @@ class StoreSummaryScreen extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        onPressed: () =>
-                            Navigator.of(context)
-                                .pushNamed(AppRoutes.notifications),
-                        icon: const Icon(
-                          Icons.notifications_none_rounded,
-                          color: Colors.white,
-                          size: 24,
+                        onPressed: _openNotifications,
+                        icon: Badge(
+                          isLabelVisible: _unread > 0,
+                          label: Text(_unread > 9 ? '9+' : '$_unread'),
+                          backgroundColor: const Color(0xFFE5A93C),
+                          textColor: const Color(0xFF2C2208),
+                          child: const Icon(
+                            Icons.notifications_none_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
                         ),
                       ),
                     ],
@@ -111,7 +144,6 @@ class StoreSummaryScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    // AQUÍ CONECTAMOS EL BOTÓN CON LA NUEVA PANTALLA
                     onPressed: () {
                       Navigator.of(context).pushNamed(AppRoutes.registroFiado);
                     },
@@ -200,7 +232,8 @@ class StoreSummaryScreen extends StatelessWidget {
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           TextSpan(
-                            text: 'Don Roberto Ruiz está al 95% de su crédito autorizado.',
+                            text:
+                                'Don Roberto Ruiz está al 95% de su crédito autorizado.',
                           ),
                         ],
                       ),

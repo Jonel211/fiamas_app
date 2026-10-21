@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../domain/app_notification.dart';
 import '../widgets/notification_card.dart';
 import '../widgets/notification_group_header.dart';
+import '../../data/notification_repository.dart';
 
 /// Pantalla "Notificaciones" del tendero.
 /// Se abre al tocar la campanita del dashboard.
@@ -14,87 +16,127 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  // TODO: reemplazar por las notificaciones reales (API).
-  List<AppNotification> _items = const [
-    AppNotification(
-      id: '1', type: NotificationType.urgent, group: NotificationGroup.today,
-      title: 'Doña Martha Gómez alcanzó su límite',
-      body: 'Está al 100% de su crédito autorizado (S/ 500.00)',
-      timeLabel: 'Hace 2 horas',
-    ),
-    AppNotification(
-      id: '2', type: NotificationType.creditLimit, group: NotificationGroup.today,
-      title: 'Don Roberto Ruiz está al 80% de su límite',
-      body: 'Le queda S/ 100.00 de crédito disponible',
-      timeLabel: 'Hace 5 horas',
-    ),
-    AppNotification(
-      id: '3', type: NotificationType.dueSoon, group: NotificationGroup.today,
-      title: 'Don Roberto Ruiz debe S/ 95.00',
-      body: 'Fiado vencido hace 7 días',
-      timeLabel: 'Hace 6 horas', isRead: true,
-    ),
-    AppNotification(
-      id: '4', type: NotificationType.collection, group: NotificationGroup.yesterday,
-      title: 'Luis Paredes debe S/ 150.00',
-      body: 'Fiado vencido hace 15 días',
-      timeLabel: 'Ayer 6:15 pm',
-    ),
-    AppNotification(
-      id: '5', type: NotificationType.creditLimit, group: NotificationGroup.thisWeek,
-      title: 'Ana Quispe está al 80% de su límite',
-      body: 'Le queda S/ 60.00 de crédito disponible',
-      timeLabel: 'Hace 3 días', isRead: true,
-    ),
-    AppNotification(
-      id: '6', type: NotificationType.overdue, group: NotificationGroup.older,
-      title: 'Pedro Sánchez debe S/ 22.50',
-      body: 'Fiado vencido hace 20 días',
-      timeLabel: 'Hace 2 semanas', isRead: true,
-    ),
-  ];
+  final _repo = NotificationRepository();
+  List<AppNotification> _items = const [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final items = await _repo.fetchAll();
+      if (!mounted) return;
+      setState(() {
+        _items = items;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'No se pudieron cargar las notificaciones.';
+        _loading = false;
+      });
+    }
+  }
 
   int get _unread => _items.where((n) => !n.isRead).length;
 
-  void _markAsRead(String id) => setState(() {
-        _items = [for (final n in _items) n.id == id ? n.markAsRead() : n];
-      });
+  // Actualiza al instante y revierte si la API falla
+  Future<void> _markAsRead(String id) async {
+    final previous = _items;
+    setState(
+      () => _items = [for (final n in _items) n.id == id ? n.markAsRead() : n],
+    );
+    try {
+      await _repo.markAsRead(id);
+    } catch (_) {
+      if (mounted) setState(() => _items = previous);
+    }
+  }
 
-  void _markAllAsRead() => setState(() {
-        _items = [for (final n in _items) n.markAsRead()];
-      });
+  Future<void> _markAllAsRead() async {
+    final previous = _items;
+    setState(() => _items = [for (final n in _items) n.markAsRead()]);
+    try {
+      await _repo.markAllAsRead();
+    } catch (_) {
+      if (mounted) setState(() => _items = previous);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Column(children: [
-          _Header(unread: _unread),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-              children: [
-                OutlinedButton.icon(
-                  onPressed: _unread == 0 ? null : _markAllAsRead,
-                  icon: const Icon(Icons.done_all_rounded, size: 20),
-                  label: const Text('Marcar todas como leídas'),
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: AppColors.teal,
-                    side: const BorderSide(color: AppColors.mist),
-                    minimumSize: const Size.fromHeight(46),
-                    textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                for (final group in NotificationGroup.values)
-                  ..._buildGroup(group),
-              ],
+        child: Column(
+          children: [
+            _Header(unread: _unread),
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(_error!),
+                              TextButton(
+                                onPressed: _load,
+                                child: const Text('Reintentar'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _load,
+                          child: ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                            children: [
+                              OutlinedButton.icon(
+                                onPressed: _unread == 0 ? null : _markAllAsRead,
+                                icon: const Icon(Icons.done_all_rounded, size: 20),
+                                label: const Text('Marcar todas como leídas'),
+                                style: OutlinedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: AppColors.teal,
+                                  side: const BorderSide(color: AppColors.mist),
+                                  minimumSize: const Size.fromHeight(46),
+                                  textStyle: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              if (_items.isEmpty)
+                                const Padding(
+                                  padding: EdgeInsets.only(top: 40),
+                                  child: Center(
+                                    child: Text('No tienes notificaciones'),
+                                  ),
+                                ),
+                              for (final group in NotificationGroup.values)
+                                ..._buildGroup(group),
+                            ],
+                          ),
+                        ),
             ),
-          ),
-        ]),
+          ],
+        ),
       ),
     );
   }
@@ -130,7 +172,11 @@ class _Header extends StatelessWidget {
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onTap,
-          child: SizedBox(width: 40, height: 40, child: Icon(icon, size: 20, color: AppColors.ink)),
+          child: SizedBox(
+            width: 40,
+            height: 40,
+            child: Icon(icon, size: 20, color: AppColors.ink),
+          ),
         ),
       );
 
@@ -138,20 +184,36 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Row(children: [
-        _roundButton(Icons.arrow_back, () => Navigator.of(context).pop()),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
-            const Text('Notificaciones',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.ink)),
-            Text(unread == 0 ? 'Todo al día' : '$unread sin leer',
-                style: const TextStyle(fontSize: 13, color: AppColors.inkMuted)),
-          ]),
-        ),
-        // TODO: opciones de notificaciones (el ícono exacto está en Figma).
-        _roundButton(Icons.delete_sweep_outlined, () {}),
-      ]),
+      child: Row(
+        children: [
+          _roundButton(Icons.arrow_back, () => Navigator.of(context).pop()),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Text(
+                  'Notificaciones',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
+                ),
+                Text(
+                  unread == 0 ? 'Todo al día' : '$unread sin leer',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.inkMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // TODO: opciones de notificaciones (el ícono exacto está en Figma).
+          _roundButton(Icons.delete_sweep_outlined, () {}),
+        ],
+      ),
     );
   }
 }
