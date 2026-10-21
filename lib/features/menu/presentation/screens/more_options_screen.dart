@@ -70,6 +70,12 @@ class MoreOptionsScreen extends StatelessWidget {
                       color: Colors.purpleAccent,
                       onTap: () => Navigator.of(context).pushNamed(AppRoutes.help),
                     ),
+                    MoreOptionCard(
+                      icon: Icons.message_rounded,
+                      label: 'Cobros',
+                      color: const Color.fromARGB(255, 5, 148, 60),
+                      onTap: () => Navigator.of(context).pushNamed(AppRoutes.whatsappCollection),
+                    ),
                   ],
                 ),
                 

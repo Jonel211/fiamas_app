@@ -45,6 +45,7 @@ import 'features/debts/presentation/screens/scanner_view_screen.dart';
 import 'features/debts/presentation/screens/finalizar_fiado_screen.dart';
 import 'features/menu/presentation/screens/more_options_screen.dart';
 import 'features/reports/presentation/screens/reports_screen.dart'; 
+import 'features/dashboard/presentation/screens/whatsapp_collection_screen.dart';
 
 void main() {
   runApp(
@@ -81,6 +82,7 @@ class AppRoutes {
   static const stores = '/stores';
   static const newStore = '/new-store';
   static const summary = '/summary';
+  static const whatsappCollection = '/whatsapp-collection';
 
   // Inventario
   static const newProduct = '/new-product';
@@ -149,6 +151,7 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.stores: (_) => const MyStoresScreen(),
         AppRoutes.newStore: (_) => const NewStoreScreen(),
         AppRoutes.summary: (_) => const MainShellScreen(),
+        AppRoutes.whatsappCollection: (_) => const WhatsappCollectionScreen(),
 
         // Inventario
         AppRoutes.newProduct: (_) => const NewProductScreen(),

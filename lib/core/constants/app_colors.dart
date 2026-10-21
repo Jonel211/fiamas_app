@@ -11,6 +11,9 @@ class AppColors {
   /// Acento de acción: botones destacados, badges, saldos pendientes.
   static const Color gold = Color(0xFFE0AA3D);
 
+  /// Fondo suave teal: chips, etiquetas y superficies de marca.
+  static const Color tealSoft = Color(0xFFE3F3F2);
+
   /// Azul claro: fondos suaves, chips, estados informativos.
   static const Color skyBlue = Color(0xFFB1D8F7);
 
