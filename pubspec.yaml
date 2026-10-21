@@ -45,6 +45,10 @@ dependencies:
 
   # Escáner de cámara
   mobile_scanner: ^5.1.0
+
+  # Gráficas
+  fl_chart: ^0.68.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -102,5 +106,3 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
-
-mobile_scanner: ^5.1.0
