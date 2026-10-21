@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/main_shell.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
+import 'features/auth/data/models/tienda_model.dart';
+import 'features/auth/presentation/providers/tienda_provider.dart';
 import 'features/auth/presentation/screens/splash_screen.dart';
 import 'features/auth/presentation/screens/welcome_screen.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
@@ -47,7 +49,10 @@ import 'features/reports/presentation/screens/reports_screen.dart';
 void main() {
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
+      providers: [
+      ChangeNotifierProvider(create: (_) => AuthProvider()),
+      ChangeNotifierProvider(create: (_) => TiendaProvider()),
+      ],
       child: const FiamasApp(),
     ),
   );
@@ -149,7 +154,11 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.newProduct: (_) => const NewProductScreen(),
         AppRoutes.categories: (_) => const CategoriesScreen(),
         AppRoutes.newCategory: (_) => const NewCategoryScreen(),
-        AppRoutes.editStore: (_) => const EditStoreScreen(),
+        AppRoutes.editStore: (context) {
+                  final tienda =
+                      ModalRoute.of(context)!.settings.arguments as TiendaModel;
+                  return EditStoreScreen(tienda: tienda);
+                },
 
         // Fiados
         AppRoutes.debts: (_) => const MainShellScreen(initialIndex: 2),

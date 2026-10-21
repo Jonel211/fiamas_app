@@ -1,104 +1,139 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../main.dart';
-import '../../domain/store.dart';
+import '../../../auth/presentation/providers/tienda_provider.dart';
+import '../../../auth/data/models/tienda_model.dart';
 import '../widgets/stores_app_bar.dart';
-import '../widgets/store_list_item.dart';
 import '../widgets/add_store_item.dart';
+import '../widgets/store_list_item.dart';
+import 'new_store_screen.dart';
 
-/// Pantalla "Mis Tiendas": el tendero elige qué tienda gestionar
-/// o agrega una nueva.
-///
-/// El layout es responsive:
-/// - 1–2 tiendas → 1 columna (card grande).
-/// - 3 o más tiendas → 2 columnas.
-class MyStoresScreen extends StatelessWidget {
+class MyStoresScreen extends StatefulWidget {
   const MyStoresScreen({super.key});
 
-  // TODO: reemplazar por datos reales desde StoresRepository
-  static const _stores = [
-    Store(id: '1', name: 'Bodega "Gian Carlos"', city: 'Chiclín'),
-    Store(id: '2', name: 'Bodega "El Sol"', city: 'Sullana'),
-  ];
+  @override
+  State<MyStoresScreen> createState() => _MyStoresScreenState();
+}
+
+class _MyStoresScreenState extends State<MyStoresScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TiendaProvider>().cargarMisTiendas();
+    });
+  }
+
+  void _openMenu() {
+    Navigator.pushNamed(context, AppRoutes.menu);
+  }
+
+  void _openNotifications() {
+    // Asegúrate de que esta ruta exista en main.dart, o coméntala si no la usas aún
+    // Navigator.pushNamed(context, AppRoutes.notifications);
+  }
+
+  Future<void> _onRefresh() async {
+    await context.read<TiendaProvider>().cargarMisTiendas();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.ivory,
-      body: Column(
-        children: [
-          // ↓ AQUÍ va el botón de hamburguesa conectado al menú
-          StoresAppBar(
-            onMenuTap: () => Navigator.of(context).pushNamed(AppRoutes.menu),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-              child: Column(
-                children: [
-                  // Subtítulo
-                  const Text(
-                    'Elige la tienda que quieres gestionar',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.inkMuted,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight + 40),
+        child: StoresAppBar(
+          onMenuTap: _openMenu,
+          onBellTap: _openNotifications,
+        ),
+      ),
+      body: Consumer<TiendaProvider>(
+        builder: (context, provider, _) {
+          if (provider.isLoading && provider.tiendas.isEmpty) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.teal),
+            );
+          }
 
-                  // Grid dinámico
-                  _StoresGrid(stores: _stores),
+          if (provider.error != null && provider.tiendas.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    provider.error!,
+                    style: const TextStyle(color: AppColors.inkMuted),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => provider.cargarMisTiendas(),
+                    child: const Text('Reintentar'),
+                  ),
                 ],
               ),
+            );
+          }
+
+          if (provider.tiendas.isEmpty) {
+            return Center(
+              child: AddStoreItem(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NewStoreScreen()),
+                ),
+              ),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: _onRefresh,
+            color: AppColors.teal,
+            backgroundColor: Colors.white,
+            child: GridView.builder(
+              padding: const EdgeInsets.all(24),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 20,
+                mainAxisSpacing: 20,
+                childAspectRatio: 0.85,
+              ),
+              itemCount: provider.tiendas.length + 1,
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return AddStoreItem(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const NewStoreScreen()),
+                    ),
+                  );
+                }
+
+                final tienda = provider.tiendas[index - 1];
+                return StoreListItem(
+                  store: tienda,
+                  onTap: () {
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.summary,
+                      arguments: {'tienda': tienda},
+                    );
+                  },
+                  onEdit: () {
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.editStore,
+                      arguments: tienda,
+                    );
+                  },
+                );
+              },
             ),
-          ),
-        ],
+          );
+        },
       ),
-    );
-  }
-}
-
-/// Grid responsive que decide cuántas columnas usar según la cantidad
-/// de tiendas y el ancho de la pantalla.
-class _StoresGrid extends StatelessWidget {
-  const _StoresGrid({required this.stores});
-  final List<Store> stores;
-
-  @override
-  Widget build(BuildContext context) {
-    // Regla: 3+ tiendas → 2 columnas, si no → 1 columna.
-    final crossAxisCount = stores.length >= 3 ? 2 : 1;
-
-    // Aspect ratio diferente según las columnas para que las cards se vean bien.
-    final aspectRatio = crossAxisCount == 1 ? 1.35 : 0.85;
-
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: crossAxisCount,
-      mainAxisSpacing: 28,
-      crossAxisSpacing: 16,
-      childAspectRatio: aspectRatio,
-      children: [
-        for (final store in stores)
-          StoreListItem(
-            store: store,
-            onTap: () {
-              // Navegación al resumen de esa tienda
-              Navigator.of(context).pushNamed(AppRoutes.summary);
-            },
-            // Abre "Editar Tienda" con los datos de esta tienda
-            onEdit: () => Navigator.of(context).pushNamed(
-              AppRoutes.editStore,
-              arguments: store,
-            ),
-          ),
-        AddStoreItem(
-          onTap: () => Navigator.of(context).pushNamed(AppRoutes.newStore),
-        ),
-      ],
     );
   }
 }

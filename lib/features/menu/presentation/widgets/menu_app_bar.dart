@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/constants/app_colors.dart';
 
-/// Barra superior de la pantalla "Menú".
-/// Fondo teal + flecha atrás + título centrado.
 class MenuAppBar extends StatelessWidget {
   const MenuAppBar({super.key, this.onBack});
 
@@ -22,13 +21,16 @@ class MenuAppBar extends StatelessWidget {
         children: [
           IconButton(
             onPressed: onBack ?? () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                color: Colors.white, size: 20),
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
             splashRadius: 22,
           ),
           const Expanded(
             child: Text(
-              'Menú',
+              'Menu',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white,
