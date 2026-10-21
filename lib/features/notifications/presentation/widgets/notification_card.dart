@@ -3,8 +3,19 @@ import '../../../../core/constants/app_colors.dart';
 import '../../domain/app_notification.dart';
 
 /// Colores e ícono de cada tipo de aviso.
-({IconData icon, Color color, Color bg}) _styleOf(NotificationType type) {
-  switch (type) {
+/// Colores e ícono de cada notificación.
+({IconData icon, Color color, Color bg}) _styleOf(AppNotification n) {
+  switch (n.type) {
+    case NotificationType.adminNotice:
+      switch (n.priority) {
+        case 'alta':
+        case 'urgente':
+          return (icon: Icons.campaign_outlined, color: const Color(0xFFC62828), bg: const Color(0xFFFDECEC));
+        case 'baja':
+          return (icon: Icons.campaign_outlined, color: const Color(0xFF5F6B7A), bg: const Color(0xFFE9EDF2));
+        default:
+          return (icon: Icons.campaign_outlined, color: const Color(0xFFD98A1B), bg: const Color(0xFFFFF3D6));
+      }
     case NotificationType.urgent:
     case NotificationType.collection:
       return (icon: Icons.warning_amber_rounded, color: const Color(0xFFC62828), bg: const Color(0xFFFDECEC));
@@ -27,7 +38,7 @@ class NotificationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final n = notification;
-    final style = _styleOf(n.type);
+    final style = _styleOf(n);
     final read = n.isRead;
 
     return Material(

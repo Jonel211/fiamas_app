@@ -1,5 +1,6 @@
 /// Tipos de aviso que recibe el tendero.
 enum NotificationType {
+  adminNotice('Aviso de Fiamas'),
   urgent('Atención urgente'),
   creditLimit('Aviso de cupo'),
   dueSoon('Vencimiento'),
@@ -29,6 +30,7 @@ class AppNotification {
     required this.title,
     required this.body,
     required this.timeLabel,
+    this.priority = 'media',
     this.isRead = false,
   });
 
@@ -40,6 +42,9 @@ class AppNotification {
 
   /// Texto ya formateado, ej: "Hace 2 horas".
   final String timeLabel;
+
+  /// baja | media | alta | urgente (viene del backend).
+  final String priority;
   final bool isRead;
 
   AppNotification markAsRead() => AppNotification(
@@ -49,6 +54,7 @@ class AppNotification {
         title: title,
         body: body,
         timeLabel: timeLabel,
+        priority: priority,
         isRead: true,
       );
 }
