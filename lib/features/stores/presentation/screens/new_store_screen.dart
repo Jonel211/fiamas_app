@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../main.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../widgets/store_form.dart'; // ✅ Ruta corregida
+import '../widgets/store_form.dart';
+
 class NewStoreScreen extends StatelessWidget {
   const NewStoreScreen({super.key});
 
@@ -54,7 +54,7 @@ class NewStoreScreen extends StatelessWidget {
 
               if (context.mounted) {
                 if (success) {
-                  Navigator.pop(context); // Volver a la lista
+                  Navigator.pop(context);
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

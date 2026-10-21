@@ -9,7 +9,6 @@ import '../widgets/stores_app_bar.dart';
 import '../widgets/add_store_item.dart';
 import '../widgets/store_list_item.dart';
 import 'new_store_screen.dart';
-import 'edit_store_screen.dart';
 
 class MyStoresScreen extends StatefulWidget {
   const MyStoresScreen({super.key});
@@ -22,7 +21,6 @@ class _MyStoresScreenState extends State<MyStoresScreen> {
   @override
   void initState() {
     super.initState();
-    // Carga inicial
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TiendaProvider>().cargarMisTiendas();
     });
@@ -33,10 +31,10 @@ class _MyStoresScreenState extends State<MyStoresScreen> {
   }
 
   void _openNotifications() {
-    Navigator.pushNamed(context, AppRoutes.notifications);
+    // Asegúrate de que esta ruta exista en main.dart, o coméntala si no la usas aún
+    // Navigator.pushNamed(context, AppRoutes.notifications);
   }
 
-  // ✅ FUNCIÓN PARA RECARGAR AL DESLIZAR
   Future<void> _onRefresh() async {
     await context.read<TiendaProvider>().cargarMisTiendas();
   }
@@ -54,14 +52,12 @@ class _MyStoresScreenState extends State<MyStoresScreen> {
       ),
       body: Consumer<TiendaProvider>(
         builder: (context, provider, _) {
-          // Estado de carga inicial
           if (provider.isLoading && provider.tiendas.isEmpty) {
             return const Center(
               child: CircularProgressIndicator(color: AppColors.teal),
             );
           }
 
-          // Estado de error inicial
           if (provider.error != null && provider.tiendas.isEmpty) {
             return Center(
               child: Column(
@@ -81,22 +77,20 @@ class _MyStoresScreenState extends State<MyStoresScreen> {
             );
           }
 
-          // Estado vacío (sin tiendas)
           if (provider.tiendas.isEmpty) {
             return Center(
               child: AddStoreItem(
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => NewStoreScreen()),
+                  MaterialPageRoute(builder: (_) => const NewStoreScreen()),
                 ),
               ),
             );
           }
 
-          // ✅ WRAPPER DE REFRESH INDICATOR (Deslizar para recargar)
           return RefreshIndicator(
             onRefresh: _onRefresh,
-            color: AppColors.teal, // Color de la "pelotita" de carga
+            color: AppColors.teal,
             backgroundColor: Colors.white,
             child: GridView.builder(
               padding: const EdgeInsets.all(24),
@@ -112,7 +106,7 @@ class _MyStoresScreenState extends State<MyStoresScreen> {
                   return AddStoreItem(
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => NewStoreScreen()),
+                      MaterialPageRoute(builder: (_) => const NewStoreScreen()),
                     ),
                   );
                 }
