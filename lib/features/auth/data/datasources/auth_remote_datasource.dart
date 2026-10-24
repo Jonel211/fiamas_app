@@ -81,6 +81,30 @@ class AuthRemoteDataSource {
     }
   }
 
+  // Cambiar contraseña de tendero
+  Future<String> cambiarPassword({
+    required String passwordActual,
+    required String passwordNuevo,
+  }) async {
+    try {
+      final response = await _dio.put(
+        '/tenderos/cambiar-password',
+        data: {
+          'password_actual': passwordActual,
+          'password_nuevo': passwordNuevo,
+        },
+      );
+
+      final data = response.data;
+      if (data is Map && data['msg'] != null) {
+        return data['msg'] as String;
+      }
+      return 'Contraseña actualizada exitosamente.';
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   String _handleError(DioException e) {
     if (e.response != null) {
       final data = e.response?.data;

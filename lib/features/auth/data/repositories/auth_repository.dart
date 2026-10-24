@@ -70,6 +70,17 @@ class AuthRepository {
     );
   }
 
+  // ─── Cambiar Contraseña ──────────────────────────────────
+  Future<String> cambiarPassword({
+    required String passwordActual,
+    required String passwordNuevo,
+  }) async {
+    return await _remoteDataSource.cambiarPassword(
+      passwordActual: passwordActual,
+      passwordNuevo: passwordNuevo,
+    );
+  }
+
   // ─── Token ───────────────────────────────────────────────
   Future<String?> getToken() async {
     return await _storage.read(key: _tokenKey);

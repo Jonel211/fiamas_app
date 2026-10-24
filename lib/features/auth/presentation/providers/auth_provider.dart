@@ -122,6 +122,31 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // función de gestión de estados de carga y errores
+  Future<bool> cambiarPassword({
+    required String passwordActual,
+    required String passwordNuevo,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _repository.cambiarPassword(
+        passwordActual: passwordActual,
+        passwordNuevo: passwordNuevo,
+      );
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     await _repository.logout();
     _user = null;

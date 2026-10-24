@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/labeled_field.dart';
 import '../../../../core/widgets/simple_app_bar.dart';
+import '../providers/auth_provider.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -15,6 +17,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _currentController = TextEditingController();
   final _newController = TextEditingController();
   final _confirmController = TextEditingController();
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -24,10 +27,40 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     super.dispose();
   }
 
-  void _handleSave() {
-    if (_formKey.currentState?.validate() ?? false) {
-      // TODO: conectar con backend
+  // función para manejar el guardado de la contraseña
+  Future<void> _handleSave() async {
+    if (_submitting) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    setState(() => _submitting = true);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    final success = await authProvider.cambiarPassword(
+      passwordActual: _currentController.text.trim(),
+      passwordNuevo: _newController.text.trim(),
+    );
+
+    if (!mounted) return;
+    setState(() => _submitting = false);
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Contraseña actualizada exitosamente.'),
+          backgroundColor: AppColors.teal,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       Navigator.of(context).pop();
+    } else {
+      final errorMsg = authProvider.errorMessage ?? 'Error al actualizar la contraseña.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMsg),
+          backgroundColor: AppColors.danger,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -114,8 +147,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      onPressed: _handleSave,
-                      child: const Text('Guardar'),
+                      onPressed: _submitting ? null : _handleSave,
+                      child: _submitting
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text('Guardar'),
                     ),
                   ],
                 ),
