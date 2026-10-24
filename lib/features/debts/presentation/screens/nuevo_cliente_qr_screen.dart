@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart'; 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/simple_app_bar.dart';
+import '../../../../core/widgets/app_header.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart'; // <-- Importamos el de tiendas
 
 class NuevoClienteQrScreen extends StatelessWidget {
@@ -21,7 +21,7 @@ class NuevoClienteQrScreen extends StatelessWidget {
       backgroundColor: AppColors.ivory,
       body: Column(
         children: [
-          const SimpleAppBar(title: 'Código QR de la tienda'),
+          const AppHeader(title: 'Código QR de la tienda', showBack: true),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),

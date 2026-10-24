@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_header.dart';
 import '../../domain/category.dart';
 import '../../domain/inventory_provider.dart';
 import '../widgets/category_color_picker.dart';
 import '../widgets/category_icon_picker.dart';
 import '../widgets/category_style.dart';
-import '../widgets/light_app_bar.dart';
 
 class NewCategoryScreen extends StatefulWidget {
   const NewCategoryScreen({super.key, this.category});
@@ -112,7 +112,10 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(children: [
-        LightAppBar(title: widget.isEditing ? 'Editar Categoría' : 'Nueva Categoría'),
+        AppHeader(
+          title: widget.isEditing ? 'Editar Categoría' : 'Nueva Categoría',
+          showBack: true,
+        ),
         Expanded(
           child: SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(24, 16, 24, 32 + MediaQuery.of(context).padding.bottom),

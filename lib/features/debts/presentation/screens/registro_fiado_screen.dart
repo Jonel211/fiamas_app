@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/simple_app_bar.dart';
+import '../../../../core/widgets/app_header.dart';
 import '../../../../main.dart'; // Para usar AppRoutes
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
@@ -28,7 +28,7 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _cargarDatos());
   }
 
-  // ✅ CORRECCIÓN: Ahora es async y espera a que el backend responda
+  // CORRECCIÓN: Ahora es async y espera a que el backend responda
   Future<void> _cargarDatos() async {
     final tiendaId = context.read<AuthProvider>().user?.tiendaId;
     if (tiendaId != null && tiendaId.isNotEmpty) {
@@ -60,8 +60,7 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
       backgroundColor: AppColors.ivory,
       body: Column(
         children: [
-          const SimpleAppBar(title: 'Nuevo Fiado'),
-          // ✅ El Expanded hace que el contenido ocupe toda la pantalla al no haber botón abajo
+          const AppHeader(title: 'Nuevo Fiado', showBack: true),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 40), // Aumenté un poco el padding de abajo
@@ -156,7 +155,7 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
                                     arguments: query,
                                   );
                                   if (!mounted) return;
-                                  await _cargarDatos(); // ✅ Refresca la lista al volver
+                                  await _cargarDatos(); // Refresca la lista al volver
                                 },
                               ),
 
@@ -228,7 +227,6 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
               ),
             ),
           ),
-          // ❌ EL BOTÓN "SIGUIENTE" HA SIDO ELIMINADO
         ],
       ),
     );

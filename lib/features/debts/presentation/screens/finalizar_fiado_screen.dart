@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/simple_app_bar.dart';
+import '../../../../core/widgets/app_header.dart';
 import '../../../../main.dart'; // <-- Para usar AppRoutes.summary
 import '../widgets/fiado_product_item.dart';
 
@@ -103,7 +103,7 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
       backgroundColor: AppColors.ivory,
       body: Column(
         children: [
-          const SimpleAppBar(title: 'Finalizar fiado'),
+          const AppHeader(title: 'Finalizar fiado', showBack: true),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),

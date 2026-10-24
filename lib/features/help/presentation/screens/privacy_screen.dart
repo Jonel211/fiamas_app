@@ -1,21 +1,29 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/simple_app_bar.dart';
+import '../../../../core/widgets/app_header.dart';
 import '../../data/privacy_text.dart';
 
 /// Pantalla "Política de Privacidad".
 /// Muestra el texto legal dentro de una tarjeta scrollable con un
 /// único botón "Entendido" al final (dorado).
-class PrivacyScreen extends StatelessWidget {
+class PrivacyScreen extends StatefulWidget {
   const PrivacyScreen({super.key});
 
+  @override
+  State<PrivacyScreen> createState() => _PrivacyScreenState();
+}
+
+class _PrivacyScreenState extends State<PrivacyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.ivory,
       body: Column(
         children: [
-          const SimpleAppBar(title: 'Política de Privacidad'),
+          const AppHeader(title: 'Política de Privacidad', 
+          showBack: true,
+          centerTitle: true,),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
@@ -30,15 +38,12 @@ class PrivacyScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    // ── Texto scrollable ───────────────────
                     Expanded(
                       child: SingleChildScrollView(
                         child: _buildContent(),
                       ),
                     ),
                     const SizedBox(height: 20),
-
-                    // ── Botón único ───────────────────────
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -82,40 +87,26 @@ class PrivacyScreen extends StatelessWidget {
       children: [
         const Text(PrivacyText.intro, style: baseStyle),
         const SizedBox(height: 14),
-
-        // ── Datos recopilados ──────────────────────────
         const Text(PrivacyText.collectIntro, style: baseStyle),
         const SizedBox(height: 8),
         _buildBulletList(PrivacyText.collectedData, baseStyle),
         const SizedBox(height: 14),
-
-        // ── Fines de uso ───────────────────────────────
         const Text(PrivacyText.purposesIntro, style: baseStyle),
         const SizedBox(height: 8),
         _buildBulletList(PrivacyText.purposes, baseStyle),
         const SizedBox(height: 14),
-
-        // ── Avisos ─────────────────────────────────────
         const Text(PrivacyText.balance, style: baseStyle),
         const SizedBox(height: 14),
         const Text(PrivacyText.availability, style: baseStyle),
         const SizedBox(height: 14),
-
-        // ── Terceros ───────────────────────────────────
         const Text(PrivacyText.thirdPartiesIntro, style: baseStyle),
         const SizedBox(height: 8),
         _buildBulletList(PrivacyText.thirdParties, baseStyle),
         const SizedBox(height: 14),
-
-        // ── Derechos ───────────────────────────────────
         const Text(PrivacyText.rights, style: baseStyle),
         const SizedBox(height: 14),
-
-        // ── Actualizaciones ────────────────────────────
         const Text(PrivacyText.updates, style: baseStyle),
         const SizedBox(height: 14),
-
-        // ── Contacto ───────────────────────────────────
         const Text(PrivacyText.contactIntro, style: baseStyle),
         const SizedBox(height: 8),
         _buildBulletList(PrivacyText.contactChannels, baseStyle),

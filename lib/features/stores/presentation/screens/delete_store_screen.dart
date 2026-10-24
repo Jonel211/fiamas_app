@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_header.dart';
 import '../../../../main.dart';
 import '../../../auth/data/models/tienda_model.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
@@ -50,9 +51,13 @@ class _DeleteStoreScreenState extends State<DeleteStoreScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
-      Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.stores, (route) => false);
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRoutes.stores,
+        (route) => false,
+      );
     } else {
-      final err = context.read<TiendaProvider>().error ?? 'Error al eliminar la tienda';
+      final err =
+          context.read<TiendaProvider>().error ?? 'Error al eliminar la tienda';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(err),
@@ -75,154 +80,228 @@ class _DeleteStoreScreenState extends State<DeleteStoreScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.ivory,
-      appBar: AppBar(
-        backgroundColor: AppColors.ivory,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.ink, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text(
-          'Eliminar tienda',
-          style: TextStyle(color: AppColors.ink, fontSize: 18, fontWeight: FontWeight.w700),
-        ),
-        centerTitle: true,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
+      body: Column(
         children: [
-          const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 60),
-          const SizedBox(height: 16),
-          Text(
-            '¿Eliminar $nombreTienda?',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.ink),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Esta acción es permanente y no\nse puede deshacer',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: AppColors.inkMuted),
-          ),
-          const SizedBox(height: 24),
-
-          // Información sobre impacto
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.red.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
-            ),
-            child: const Text(
-              'Todos los clientes, deudas, inventario y registros asociados a esta tienda serán eliminados permanentemente.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.red),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          const Text('Se eliminará', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink)),
-          const SizedBox(height: 12),
-          const Column(
-            children: [
-              DeleteStoreListItem(text: 'Clientes y límites de crédito'),
-              DeleteStoreListItem(text: 'Historial de fiados y pagos'),
-              DeleteStoreListItem(text: 'Inventario y categorías'),
-              DeleteStoreListItem(text: 'Reportes y estadísticas'),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          const Text('Confirmación', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink)),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.mist),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+          const AppHeader(title: 'Eliminar tienda', showBack: true),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(20),
               children: [
-                DropdownButtonFormField<String>(
-                  initialValue: _reason,
-                  hint: const Text('Motivo (opcional)', style: TextStyle(fontSize: 13)),
-                  decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'Cerré el negocio', child: Text('Cerré el negocio', style: TextStyle(fontSize: 13))),
-                    DropdownMenuItem(value: 'Problemas técnicos', child: Text('Problemas técnicos', style: TextStyle(fontSize: 13))),
-                    DropdownMenuItem(value: 'Otro', child: Text('Otro', style: TextStyle(fontSize: 13))),
-                  ],
-                  onChanged: (val) => setState(() => _reason = val),
+                const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.red,
+                  size: 60,
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _confirmController,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    hintText: "Escribe 'ELIMINAR'",
-                    hintStyle: const TextStyle(fontSize: 13),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                const SizedBox(height: 16),
+                Text(
+                  '¿Eliminar $nombreTienda?',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.ink,
                   ),
                 ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Esta acción es permanente y no\nse puede deshacer',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, color: AppColors.inkMuted),
+                ),
+                const SizedBox(height: 24),
+
+                // Información sobre impacto
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Colors.red.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: const Text(
+                    'Todos los clientes, deudas, inventario y registros asociados a esta tienda serán eliminados permanentemente.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.red,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                const Text(
+                  'Se eliminará',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
+                ),
                 const SizedBox(height: 12),
-                Row(
+                const Column(
                   children: [
-                    Checkbox(
-                      value: _isUnderstood,
-                      activeColor: AppColors.teal,
-                      onChanged: (val) => setState(() => _isUnderstood = val ?? false),
-                    ),
-                    const Expanded(
-                      child: Text('Entiendo que no se puede deshacer', style: TextStyle(fontSize: 12, color: AppColors.inkMuted)),
-                    ),
+                    DeleteStoreListItem(text: 'Clientes y límites de crédito'),
+                    DeleteStoreListItem(text: 'Historial de fiados y pagos'),
+                    DeleteStoreListItem(text: 'Inventario y categorías'),
+                    DeleteStoreListItem(text: 'Reportes y estadísticas'),
                   ],
+                ),
+                const SizedBox(height: 24),
+
+                const Text(
+                  'Confirmación',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.mist),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      DropdownButtonFormField<String>(
+                        initialValue: _reason,
+                        hint: const Text(
+                          'Motivo (opcional)',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                        decoration: InputDecoration(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'Cerré el negocio',
+                            child: Text(
+                              'Cerré el negocio',
+                              style: TextStyle(fontSize: 13),
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Problemas técnicos',
+                            child: Text(
+                              'Problemas técnicos',
+                              style: TextStyle(fontSize: 13),
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Otro',
+                            child: Text(
+                              'Otro',
+                              style: TextStyle(fontSize: 13),
+                            ),
+                          ),
+                        ],
+                        onChanged: (val) => setState(() => _reason = val),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _confirmController,
+                        onChanged: (_) => setState(() {}),
+                        decoration: InputDecoration(
+                          hintText: "Escribe 'ELIMINAR'",
+                          hintStyle: const TextStyle(fontSize: 13),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 14,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _isUnderstood,
+                            activeColor: AppColors.teal,
+                            onChanged: (val) =>
+                                setState(() => _isUnderstood = val ?? false),
+                          ),
+                          const Expanded(
+                            child: Text(
+                              'Entiendo que no se puede deshacer',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.inkMuted,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                OutlinedButton.icon(
+                  onPressed: (_canDelete && !_isDeleting && tienda != null)
+                      ? () => _handleDelete(tienda.id)
+                      : null,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    disabledForegroundColor: AppColors.mist,
+                    side: BorderSide(
+                      color: _canDelete ? Colors.red : AppColors.mist,
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  icon: _isDeleting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.red,
+                          ),
+                        )
+                      : const Icon(Icons.delete_outline_rounded, size: 20),
+                  label: Text(
+                    _isDeleting
+                        ? 'Eliminando tienda...'
+                        : 'Eliminar tienda definitivamente',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.ink,
+                    side: const BorderSide(color: AppColors.mist),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text(
+                    'Cancelar, conservar tienda',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 24),
-
-          OutlinedButton.icon(
-            onPressed: (_canDelete && !_isDeleting && tienda != null)
-                ? () => _handleDelete(tienda.id)
-                : null,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.red,
-              disabledForegroundColor: AppColors.mist,
-              side: BorderSide(color: _canDelete ? Colors.red : AppColors.mist),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            icon: _isDeleting
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red),
-                  )
-                : const Icon(Icons.delete_outline_rounded, size: 20),
-            label: Text(
-              _isDeleting ? 'Eliminando tienda...' : 'Eliminar tienda definitivamente',
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          OutlinedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.ink,
-              side: const BorderSide(color: AppColors.mist),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('Cancelar, conservar tienda', style: TextStyle(fontWeight: FontWeight.w600)),
           ),
         ],
       ),

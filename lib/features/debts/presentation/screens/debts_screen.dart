@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../domain/debt.dart';
 import '../widgets/debt_tile.dart';
-import 'debt_detail_screen.dart';
+import 'debt_detail_multiple_screen.dart';
 import 'debts_overview_screen.dart';
 
 class DebtsScreen extends StatefulWidget {
@@ -175,7 +175,10 @@ class _DebtsScreenState extends State<DebtsScreen> {
                         debt: debt,
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) => DebtDetailScreen(debt: debt),
+                            builder: (_) => DebtDetailMultipleScreen(
+                            customer: {'name': debt.customerName, 'phone': debt.phone},
+                            debts: [debt],
+                          ),
                           ),
                         ),
                       );

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'core/providers/app_bar_controller.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/main_shell.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
@@ -35,18 +35,17 @@ import 'features/help/presentation/screens/help_screen.dart';
 import 'features/help/presentation/screens/about_screen.dart';
 import 'features/help/presentation/screens/terms_screen.dart';
 import 'features/help/presentation/screens/privacy_screen.dart';
-import 'features/customers/presentation/screens/customer_list_screen.dart';
 import 'features/customers/presentation/screens/customer_profile_screen.dart';
 import 'features/customers/presentation/screens/scoring_history_screen.dart';
 import 'features/debts/domain/debt.dart';
-import 'features/debts/presentation/screens/debt_detail_screen.dart';
+import 'features/debts/presentation/screens/debt_detail_multiple_screen.dart';
 import 'features/debts/presentation/screens/debt_history_screen.dart';
 import 'features/debts/presentation/screens/registro_fiado_screen.dart';
 import 'features/debts/presentation/screens/nuevo_cliente_screen.dart';
 import 'features/debts/presentation/screens/nuevo_cliente_qr_screen.dart';
 import 'features/debts/presentation/screens/scanner_view_screen.dart';
 import 'features/debts/presentation/screens/finalizar_fiado_screen.dart';
-import 'features/menu/presentation/screens/more_options_screen.dart';
+
 import 'features/reports/presentation/screens/reports_screen.dart';
 import 'features/dashboard/presentation/screens/whatsapp_collection_screen.dart';
 
@@ -58,6 +57,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => TiendaProvider()),
         ChangeNotifierProvider(create: (_) => InventoryProvider()),
         ChangeNotifierProvider(create: (_) => ClienteProvider()), 
+        ChangeNotifierProvider(create: (_) => AppBarController()),
       ],
       child: const FiamasApp(),
     ),
@@ -67,7 +67,6 @@ void main() {
 class AppRoutes {
   AppRoutes._();
 
-  // Autenticación
   static const splash = '/';
   static const welcome = '/welcome';
   static const login = '/login';
@@ -79,7 +78,6 @@ class AppRoutes {
   static const resetCode = '/reset-code';
   static const newPassword = '/new-password';
 
-  // Navegación principal
   static const menu = '/menu';
   static const profile = '/profile';
   static const editProfile = '/edit-profile';
@@ -89,13 +87,11 @@ class AppRoutes {
   static const summary = '/summary';
   static const whatsappCollection = '/whatsapp-collection';
 
-  // Inventario
   static const newProduct = '/new-product';
   static const categories = '/categories';
   static const newCategory = '/new-category';
   static const editStore = '/edit-store';
 
-  // Fiados
   static const debts = '/debts';
   static const debtDetail = '/debt-detail';
   static const debtHistory = '/debt-history';
@@ -105,12 +101,10 @@ class AppRoutes {
   static const scannerView = '/scanner-view';
   static const finalizarFiado = '/finalizar-fiado';
 
-  // Clientes
   static const customers = '/customers';
   static const customerProfile = '/customer-profile';
   static const scoringHistory = '/scoring-history';
 
-  // Configuración y legales
   static const help = '/help';
   static const about = '/about';
   static const terms = '/terms';
@@ -136,7 +130,6 @@ class FiamasApp extends StatelessWidget {
       theme: AppTheme.light,
       initialRoute: AppRoutes.splash,
       routes: {
-        // Autenticación
         AppRoutes.splash: (_) => const SplashScreen(),
         AppRoutes.welcome: (_) => const WelcomeScreen(),
         AppRoutes.login: (_) => const LoginScreen(),
@@ -147,8 +140,6 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.forgotPassword: (_) => const ForgotPasswordScreen(),
         AppRoutes.resetCode: (_) => const ResetCodeScreen(),
         AppRoutes.newPassword: (_) => const NewPasswordScreen(),
-
-        // Navegación principal
         AppRoutes.menu: (_) => const MenuScreen(),
         AppRoutes.profile: (_) => const ProfileScreen(),
         AppRoutes.editProfile: (_) => const EditProfileScreen(),
@@ -157,8 +148,6 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.newStore: (_) => const NewStoreScreen(),
         AppRoutes.summary: (_) => const MainShellScreen(),
         AppRoutes.whatsappCollection: (_) => const WhatsappCollectionScreen(),
-
-        // Inventario
         AppRoutes.newProduct: (_) => const NewProductScreen(),
         AppRoutes.categories: (_) => const CategoriesScreen(),
         AppRoutes.newCategory: (_) => const NewCategoryScreen(),
@@ -166,12 +155,14 @@ class FiamasApp extends StatelessWidget {
           final tienda = ModalRoute.of(context)!.settings.arguments as TiendaModel;
           return EditStoreScreen(tienda: tienda);
         },
-
         // Fiados
         AppRoutes.debts: (_) => const MainShellScreen(initialIndex: 2),
         AppRoutes.debtDetail: (context) {
           final debt = ModalRoute.of(context)!.settings.arguments as Debt;
-          return DebtDetailScreen(debt: debt);
+          return DebtDetailMultipleScreen(
+            customer: {'name': debt.customerName, 'phone': debt.phone},
+            debts: [debt],
+          );
         },
         AppRoutes.debtHistory: (context) {
           final customer =
@@ -188,15 +179,11 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.newClientQr: (_) => const NuevoClienteQrScreen(),
         AppRoutes.scannerView: (_) => const ScannerViewScreen(),
         AppRoutes.finalizarFiado: (_) => const FinalizarFiadoScreen(),
-
-        // Configuración y legales
         AppRoutes.help: (_) => const HelpScreen(),
         AppRoutes.about: (_) => const AboutScreen(),
         AppRoutes.terms: (_) => const TermsScreen(),
         AppRoutes.privacy: (_) => const PrivacyScreen(),
-
-        // Clientes
-        AppRoutes.customers: (_) => const CustomerListScreen(),
+        AppRoutes.customers: (_) => const MainShellScreen(initialIndex: 3),
         AppRoutes.customerProfile: (context) {
           final cliente = ModalRoute.of(context)!.settings.arguments as ClienteModel;
           return CustomerProfileScreen(customer: cliente);
@@ -206,8 +193,7 @@ class FiamasApp extends StatelessWidget {
           final customer = args is Map<String, dynamic> ? args : null;
           return ScoringHistoryScreen(customer: customer);
         },
-
-        AppRoutes.moreOptions: (_) => const MoreOptionsScreen(),
+        AppRoutes.moreOptions: (_) => const MainShellScreen(initialIndex: 4),
         AppRoutes.reports: (_) => const ReportsScreen(),
         AppRoutes.storeProfile: (_) => const StoreProfileScreen(),
         AppRoutes.deleteStore: (_) => const DeleteStoreScreen(),
@@ -215,3 +201,4 @@ class FiamasApp extends StatelessWidget {
     );
   }
 }
+

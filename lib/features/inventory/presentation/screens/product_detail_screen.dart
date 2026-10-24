@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/simple_app_bar.dart';
+import '../../../../core/widgets/app_header.dart';
 import '../../domain/product.dart';
 import '../../domain/sale_unit.dart';
 import '../../domain/inventory_provider.dart';
@@ -59,7 +59,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       backgroundColor: AppColors.ivory,
       body: Column(
         children: [
-          const SimpleAppBar(title: 'Detalle del producto'),
+          const AppHeader(title: 'Detalle del producto', showBack: true),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
@@ -93,8 +93,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                 ],
               ),
-            ),
-          ),
           Padding(
             padding: EdgeInsets.fromLTRB(
               24,

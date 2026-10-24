@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/simple_app_bar.dart';
+import '../../../../core/widgets/app_header.dart';
 import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
@@ -44,7 +44,7 @@ class _NuevoClienteScreenState extends State<NuevoClienteScreen> {
   }
 
   Future<void> _registrarCliente() async {
-    // ✅ 1. Validar campos de texto
+    // 1. Validar campos de texto
     if (_nameController.text.trim().isEmpty ||
         _lastNameController.text.trim().isEmpty ||
         _phoneController.text.trim().isEmpty) {
@@ -62,7 +62,7 @@ class _NuevoClienteScreenState extends State<NuevoClienteScreen> {
       return;
     }
 
-    // ✅ 2. VALIDAR LÍMITE DE CRÉDITO
+    // 2. VALIDAR LÍMITE DE CRÉDITO
     if (_limitController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor, ingresa un límite de crédito')),
@@ -123,7 +123,7 @@ class _NuevoClienteScreenState extends State<NuevoClienteScreen> {
       backgroundColor: AppColors.ivory,
       body: Column(
         children: [
-          const SimpleAppBar(title: 'Nuevo Cliente'),
+          const AppHeader(title: 'Nuevo Cliente', showBack: true),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),

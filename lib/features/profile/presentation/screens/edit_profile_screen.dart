@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_header.dart';
 import '../../../../core/widgets/auth_field.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/user_profile.dart';
-import '../widgets/profile_app_bar.dart';
 import '../widgets/profile_avatar.dart';
 
 /// Edita los datos del tendero. Recibe el [UserProfile] como argumento de
@@ -22,7 +22,9 @@ class EditProfileScreen extends StatelessWidget {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          const ProfileAppBar(title: 'Editar perfil'),
+          const AppHeader(title: 'Editar perfil', showBack: true,
+           centerTitle: true,
+           ),
           Expanded(child: _EditProfileForm(profile: profile)),
         ],
       ),
@@ -161,12 +163,12 @@ class _EditProfileFormState extends State<_EditProfileForm> {
               ),
               onPressed: _saving ? null : _save,
               child: _saving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Text('Guardar cambios'),
+                ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                )
+              : const Text('Guardar cambios'),
             ),
           ],
         ),

@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/simple_app_bar.dart';
+import '../../../../core/widgets/app_header.dart';
 import '../widgets/about_section_title.dart';
 import '../widgets/feature_card.dart';
 import '../widgets/contact_link.dart';
 
 /// Pantalla "Acerca de Fiamas".
 /// Se abre desde el Menú > Legal.
-class AboutScreen extends StatelessWidget {
+class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
 
+  @override
+  State<AboutScreen> createState() => _AboutScreenState();
+}
+
+class _AboutScreenState extends State<AboutScreen> {
   static const String _logo = 'assets/images/fiamas-vertical.png';
 
   @override
@@ -18,7 +24,9 @@ class AboutScreen extends StatelessWidget {
       backgroundColor: AppColors.ivory,
       body: Column(
         children: [
-          const SimpleAppBar(title: 'Acerca de Fiamas'),
+          const AppHeader(title: 'Acerca de Fiamas',
+          showBack: true,
+          centerTitle: true,),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
@@ -59,10 +67,7 @@ class AboutScreen extends StatelessWidget {
                   const Text(
                     'versión 1.0.0 build 1',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.inkMuted,
-                    ),
+                    style: TextStyle(fontSize: 12, color: AppColors.inkMuted),
                   ),
                   const SizedBox(height: 32),
 
@@ -126,20 +131,18 @@ class AboutScreen extends StatelessWidget {
                   const SizedBox(height: 32),
 
                   // ── Copyright ─────────────────────────
+                  // ── Copyright ─────────────────────────
                   const Text(
                     '© 2026 Fiamas',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.inkMuted,
-                    ),
+                    style: TextStyle(fontSize: 12, color: AppColors.inkMuted),
                   ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+                ], // children de la Column interna
+              ), // Column interna
+            ), // SingleChildScrollView
+          ), // Expanded
+        ], // children de la Column externa
+      ), // Column externa
+    ); // Scaffold
   }
 }

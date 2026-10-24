@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_header.dart';
 import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../../domain/debt.dart';
-import 'debt_detail_screen.dart';
+import 'debt_detail_multiple_screen.dart';
 import 'select_debts_screen.dart';
 
 class DebtHistoryScreen extends StatefulWidget {
@@ -87,23 +88,14 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
         .where((d) => d.status == DebtStatus.pagado)
         .fold(0.0, (sum, item) => sum + item.amount);
 
-    // ✅ VERIFICAMOS SI HAY DEUDAS PENDIENTES
+    // VERIFICAMOS SI HAY DEUDAS PENDIENTES
     final tieneDeudasPendientes = provider.fiadosCliente.any((d) => d.status == DebtStatus.pendiente);
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Historial de Cliente', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.w600)),
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.ink,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
       body: Column(
         children: [
+          const AppHeader(title: 'Historial de Cliente', showBack: true),
           GestureDetector(
             onTap: () {
               Navigator.pushNamed(context, AppRoutes.customerProfile, arguments: clienteCompleto);
@@ -235,8 +227,7 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
           ),
         ],
       ),
-
-      // ✅ BOTÓN FLOTANTE CONDICIONAL: Solo se muestra si hay deudas pendientes
+      // BOTÓN FLOTANTE CONDICIONAL: Solo se muestra si hay deudas pendientes
       floatingActionButton: tieneDeudasPendientes
           ? FloatingActionButton.extended(
               onPressed: () {
@@ -274,7 +265,15 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
   Widget _buildDebtCard(Debt debt) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => DebtDetailScreen(debt: debt)));
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DebtDetailMultipleScreen(
+              customer: {'name': debt.customerName, 'phone': debt.phone},
+              debts: [debt],
+            ),
+          ),
+        );
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),

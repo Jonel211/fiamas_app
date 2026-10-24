@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/simple_app_bar.dart';
+import '../../../../core/widgets/app_header.dart';
 import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
@@ -85,7 +85,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       backgroundColor: AppColors.ivory,
       body: Column(
         children: [
-          const SimpleAppBar(title: 'Categorías'),
+          const AppHeader(title: 'Categorías', showBack: true),
           Expanded(
             child: Consumer<InventoryProvider>(
               builder: (context, provider, child) {

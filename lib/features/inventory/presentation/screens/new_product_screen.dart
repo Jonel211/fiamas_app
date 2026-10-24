@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_header.dart';
 import '../../domain/product.dart';
 import '../../domain/sale_unit.dart';
 import '../../domain/inventory_provider.dart';
@@ -234,20 +235,15 @@ class _NewProductScreenState extends State<NewProductScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: AppColors.teal,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text(
-          'Nuevo Producto',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-        ),
-      ),
-      body: SingleChildScrollView(
+      backgroundColor: AppColors.ivory,
+      body: Column(
+        children: [
+          AppHeader(
+            title: widget.isEditing ? 'Editar Producto' : 'Nuevo Producto',
+            showBack: true,
+          ),
+          Expanded(
+            child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + MediaQuery.of(context).padding.bottom),
         child: Form(
           key: _formKey,
@@ -261,7 +257,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
               ),
               const SizedBox(height: 24),
               
-              // ✅ SELECTOR DE IMAGEN CIRCULAR
+              // SELECTOR DE IMAGEN CIRCULAR
               GestureDetector(
                 onTap: _showImageSourceDialog,
                 child: Column(
@@ -304,7 +300,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
               ),
               const SizedBox(height: 32),
 
-              // ✅ NOMBRE DEL PRODUCTO
+              // NOMBRE DEL PRODUCTO
               const Text(
                 'Nombre del producto',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
@@ -328,7 +324,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
               ),
               const SizedBox(height: 20),
 
-              // ✅ ELEGIR CATEGORÍA
+              // ELEGIR CATEGORÍA
               const Text(
                 'Elegir categoría',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
@@ -366,7 +362,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
               ),
               const SizedBox(height: 20),
 
-              // ✅ SE VENDE POR
+              // SE VENDE POR
               const Text(
                 'Se vende por',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
@@ -393,7 +389,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
               ),
               const SizedBox(height: 20),
 
-              // ✅ DESCRIPCIÓN
+              // DESCRIPCIÓN
               const Text(
                 'Descripción (Opcional)',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
@@ -418,7 +414,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
               ),
               const SizedBox(height: 20),
 
-              // ✅ CÓDIGO DE BARRAS CON ESCÁNER FUNCIONAL
+              // CÓDIGO DE BARRAS CON ESCÁNER FUNCIONAL
               const Text(
                 'Código de barras',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
@@ -439,14 +435,14 @@ class _NewProductScreenState extends State<NewProductScreen> {
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.qr_code_scanner, color: AppColors.teal, size: 24),
                     onPressed: () async {
-                      // ✅ ABRIR EL ESCÁNER (SIN const)
+                      // ABRIR EL ESCÁNER (SIN const)
                       final scannedCode = await Navigator.of(context).push<String>(
                         MaterialPageRoute(
-                          builder: (_) => BarcodeScannerScreen(), // ✅ Sin const
+                          builder: (_) => BarcodeScannerScreen(), // Sin const
                         ),
                       );
                       
-                      // ✅ SI SE ESCANEÓ UN CÓDIGO, PONERLO EN EL CAMPO
+                      // SI SE ESCANEÓ UN CÓDIGO, PONERLO EN EL CAMPO
                       if (scannedCode != null && mounted) {
                         setState(() {
                           _barcode.text = scannedCode;
@@ -466,7 +462,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
               ),
               const SizedBox(height: 20),
 
-              // ✅ PRECIO VENTA
+              // PRECIO VENTA
               const Text(
                 'Precio venta',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
@@ -496,7 +492,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
               ),
               const SizedBox(height: 24),
 
-              // ✅ PRODUCTO ACTIVO
+              // PRODUCTO ACTIVO
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -513,7 +509,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
               ),
               const SizedBox(height: 24),
 
-              // ✅ BOTÓN GUARDAR
+              // BOTÓN GUARDAR
               ElevatedButton(
                 onPressed: _isUploading ? null : _save,
                 style: ElevatedButton.styleFrom(
@@ -527,18 +523,20 @@ class _NewProductScreenState extends State<NewProductScreen> {
                   ),
                 ),
                 child: _isUploading
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                      )
-                    : const Text('Guardar producto'),
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    )
+                  : const Text('Guardar producto'),
               ),
             ],
           ),
         ),
       ),
-    );
+    ),
+  ],
+),
   }
 }
 

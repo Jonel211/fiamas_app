@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_header.dart';
 import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../widgets/menu_app_bar.dart';
 import '../widgets/user_card.dart';
 import '../widgets/menu_section.dart';
 import '../widgets/menu_item.dart';
@@ -34,9 +34,11 @@ class _MenuScreenState extends State<MenuScreen> {
       backgroundColor: AppColors.ivory,
       body: Column(
         children: [
-          // ✅ AppBar teal con flecha atrás y "Menu" centrado
-          const MenuAppBar(),
-
+          const AppHeader(title: 'Menú', 
+          showBack: true,
+          centerTitle: true,
+          ),
+          
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),

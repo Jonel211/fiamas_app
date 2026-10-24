@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_header.dart';
 import '../../../../main.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../auth/data/models/tienda_model.dart';
@@ -26,15 +27,11 @@ class _EditStoreScreenState extends State<EditStoreScreen> {
   @override
   void initState() {
     super.initState();
-    // Inicializar con los datos actuales de la tienda
+    // Inicializamos los controladores con los datos actuales
     _nameController = TextEditingController(text: widget.tienda.nombre);
-    _addressController = TextEditingController(
-      text: widget.tienda.direccion ?? '',
-    );
+    _addressController = TextEditingController(text: widget.tienda.direccion ?? '');
     _rucController = TextEditingController(text: widget.tienda.ruc ?? '');
-    _phoneController = TextEditingController(
-      text: widget.tienda.telefono ?? '',
-    );
+    _phoneController = TextEditingController(text: widget.tienda.telefono ?? '');
   }
 
   @override
@@ -50,83 +47,83 @@ class _EditStoreScreenState extends State<EditStoreScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.ivory,
-      appBar: AppBar(
-        backgroundColor: AppColors.teal,
-        foregroundColor: Colors.white,
-        title: const Text(
-          'Editar Tienda',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_outline_rounded, color: Colors.white),
-            tooltip: 'Eliminar Tienda',
-            onPressed: () {
-              Navigator.pushNamed(
-                context,
-                AppRoutes.deleteStore,
-                arguments: widget.tienda,
-              );
-            },
+      body: Column(
+        children: [
+          AppHeader(
+            title: 'Editar Tienda',
+            showBack: true,
+            actions: [
+              AppHeaderIconAction(
+                icon: Icons.delete_outline_rounded,
+                onTap: () {
+                  Navigator.pushNamed(
+                    context,
+                    AppRoutes.deleteStore,
+                    arguments: widget.tienda,
+                  );
+                },
+              ),
+            ],
           ),
-        ],
-      ),
-      body: Consumer<TiendaProvider>(
-        builder: (context, provider, _) {
-          if (provider.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.teal),
-            );
-          }
-
-          return StoreForm(
-            // Key única para evitar problemas de reconstrucción
-            key: ValueKey('edit-${widget.tienda.id}'),
-            submitLabel: 'Guardar Cambios',
-            initialName: _nameController.text,
-            initialAddress: _addressController.text,
-            initialRuc: _rucController.text,
-            initialPhone: _phoneController.text,
-            onSubmit: (formData) async {
-              //  CORRECCIÓN CRÍTICA:
-              // Si el campo está vacío, mantenemos el valor original
-              // NO enviamos null para no sobrescribir datos existentes
-              final success = await provider.updateTienda(
-                tiendaId: widget.tienda.id, //  ID correcto de la tienda
-                nombre: formData.name.trim().isEmpty
-                    ? widget.tienda.nombre
-                    : formData.name,
-                direccion: formData.address.trim().isEmpty
-                    ? widget.tienda.direccion
-                    : formData.address,
-                ruc: formData.ruc.trim().isEmpty
-                    ? widget.tienda.ruc
-                    : formData.ruc,
-                telefono: formData.phone.trim().isEmpty
-                    ? widget.tienda.telefono
-                    : formData.phone,
-              );
-
-              if (context.mounted) {
-                if (success) {
-                  // Recargar la lista antes de cerrar
-                  await context.read<TiendaProvider>().cargarMisTiendas();
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                  }
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(provider.error ?? 'Error al actualizar'),
-                      backgroundColor: AppColors.danger,
-                    ),
+          Expanded(
+            child: Consumer<TiendaProvider>(
+              builder: (context, provider, _) {
+                if (provider.isLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppColors.teal),
                   );
                 }
-              }
-            },
-          );
-        },
+
+                return StoreForm(
+                  // Key única para evitar problemas de reconstrucción
+                  key: ValueKey('edit-${widget.tienda.id}'),
+                  submitLabel: 'Guardar Cambios',
+                  initialName: _nameController.text,
+                  initialAddress: _addressController.text,
+                  initialRuc: _rucController.text,
+                  initialPhone: _phoneController.text,
+                  onSubmit: (formData) async {
+                    // CORRECCIÓN CRÍTICA:
+                    // Si el campo está vacío, mantenemos el valor original
+                    // NO enviamos null para no sobrescribir datos existentes
+                    final success = await provider.updateTienda(
+                      tiendaId: widget.tienda.id,
+                      nombre: formData.name.trim().isEmpty
+                          ? widget.tienda.nombre
+                          : formData.name,
+                      direccion: formData.address.trim().isEmpty
+                          ? widget.tienda.direccion
+                          : formData.address,
+                      ruc: formData.ruc.trim().isEmpty
+                          ? widget.tienda.ruc
+                          : formData.ruc,
+                      telefono: formData.phone.trim().isEmpty
+                          ? widget.tienda.telefono
+                          : formData.phone,
+                    );
+
+                    if (context.mounted) {
+                      if (success) {
+                        // Recargar la lista antes de cerrar
+                        await context.read<TiendaProvider>().cargarMisTiendas();
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                        }
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(provider.error ?? 'Error al actualizar'),
+                            backgroundColor: AppColors.danger,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

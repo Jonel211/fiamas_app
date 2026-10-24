@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
 import 'app_bottom_nav.dart';
+import 'app_header.dart';
 import '../../main.dart';
 import '../../features/dashboard/presentation/screens/store_summary_screen.dart';
 import '../../features/inventory/presentation/screens/products_screen.dart';
 import '../../features/inventory/presentation/screens/new_product_screen.dart';
 import '../../features/debts/presentation/screens/debts_screen.dart';
-import '../../features/debts/presentation/screens/new_debt_customer_screen.dart';
 import '../../features/customers/presentation/screens/customer_list_screen.dart';
 import '../../features/menu/presentation/screens/more_options_screen.dart';
 
@@ -29,14 +29,31 @@ class _MainShellScreenState extends State<MainShellScreen> {
     _currentIndex = widget.initialIndex;
   }
 
-  // 🔥 AQUÍ ESTÁ LA CORRECCIÓN: 5 páginas para que coincidan con los índices 0, 1, 2, 3 y 4
   final List<Widget> _pages = const [
-    StoreSummaryScreen(), // 0: Inicio
-    ProductsScreen(),     // 1: Productos
-    DebtsScreen(),        // 2: Fiados (El botón central lo salta, pero el índice debe existir)
-    CustomerListScreen(), // 3: Clientes
-    MoreOptionsScreen(),  // 4: Más (Tu nueva pantalla)
+    StoreSummaryScreen(),
+    ProductsScreen(),
+    DebtsScreen(),
+    CustomerListScreen(),
+    MoreOptionsScreen(),
   ];
+
+  List<Widget> _buildHeaderActions() {
+    if (_currentIndex == 3) {
+      return [
+        AppHeaderPillAction(
+          label: 'scoring',
+          onTap: () =>
+              Navigator.of(context).pushNamed(AppRoutes.scoringHistory),
+        ),
+      ];
+    }
+    return [
+      AppHeaderIconAction(
+        icon: Icons.notifications_none,
+        onTap: () => Navigator.of(context).pushNamed(AppRoutes.notifications),
+      ),
+    ];
+  }
 
   Widget? _buildFab() {
     if (_currentIndex == 1) {
@@ -45,16 +62,21 @@ class _MainShellScreenState extends State<MainShellScreen> {
             .push(MaterialPageRoute(builder: (_) => const NewProductScreen())),
         backgroundColor: AppColors.teal,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('producto', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        label: const Text(
+          'producto',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
       );
     } else if (_currentIndex == 2) {
       return FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const NewDebtCustomerScreen()),
-        ),
+        onPressed: () =>
+            Navigator.of(context).pushNamed(AppRoutes.registroFiado),
         backgroundColor: AppColors.teal,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Nuevo fiado', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        label: const Text(
+          'Nuevo fiado',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
       );
     }
     return null;
@@ -64,7 +86,23 @@ class _MainShellScreenState extends State<MainShellScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.ivory,
-      body: IndexedStack(index: _currentIndex, children: _pages),
+      body: Column(
+        children: [
+          if (_currentIndex != 0)
+            AppHeader(
+              title: 'Bodega Gian Carlos',
+              actions: _buildHeaderActions(),
+              centerTitle: true,
+            ),
+          Expanded(
+            child: MediaQuery.removePadding(
+              context: context,
+              removeTop: _currentIndex != 0,
+              child: IndexedStack(index: _currentIndex, children: _pages),
+            ),
+          ),
+        ],
+      ),
       floatingActionButton: _buildFab(),
       bottomNavigationBar: AppBottomNav(
         currentIndex: _currentIndex,

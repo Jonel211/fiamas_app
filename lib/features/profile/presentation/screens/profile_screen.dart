@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_header.dart';
 import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/user_profile.dart';
-import '../widgets/profile_app_bar.dart';
 import '../widgets/profile_badge.dart';
 import '../widgets/profile_field_tile.dart';
 import '../widgets/profile_header_card.dart';
@@ -61,10 +61,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          ProfileAppBar(
+          AppHeader(
             title: 'Mi Perfil',
-            actionIcon: Icons.edit_outlined,
-            onAction: () => _openEdit(p),
+            showBack: true,
+            centerTitle: true,
+            actions: [
+              AppHeaderIconAction(icon: Icons.edit_outlined, onTap: () => _openEdit(p)),
+            ],
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -83,7 +86,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onChangePhoto: () => _openEdit(p),
                   ),
                   const SizedBox(height: 24),
-
                   ProfileSection(
                     title: 'Información personal',
                     children: [
@@ -93,7 +95,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-
                   ProfileSection(
                     title: 'Contacto',
                     children: [
