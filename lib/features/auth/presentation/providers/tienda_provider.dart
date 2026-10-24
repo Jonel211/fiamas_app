@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/network/dio_client.dart';
 import '../../data/models/tienda_model.dart';
@@ -8,12 +9,42 @@ class TiendaProvider extends ChangeNotifier {
   final Dio _dio = DioClient.create();
 
   List<TiendaModel> _tiendas = [];
+  String? _tiendaSeleccionadaId;
   bool _isLoading = false;
   String? _error;
 
   List<TiendaModel> get tiendas => _tiendas;
+  String? get tiendaSeleccionadaId => _tiendaSeleccionadaId;
   bool get isLoading => _isLoading;
   String? get error => _error;
+
+  TiendaProvider() {
+    _cargarTiendaSeleccionada();
+  }
+
+  Future<void> _cargarTiendaSeleccionada() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _tiendaSeleccionadaId = prefs.getString('tienda_seleccionada_id');
+      notifyListeners();
+    } catch (e) {
+      // Ignorar error silenciosamente en carga inicial
+    }
+  }
+
+  Future<void> seleccionarTienda(String tiendaId) async {
+    _tiendaSeleccionadaId = tiendaId;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('tienda_seleccionada_id', tiendaId);
+    notifyListeners();
+  }
+
+  Future<void> limpiarSeleccion() async {
+    _tiendaSeleccionadaId = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('tienda_seleccionada_id');
+    notifyListeners();
+  }
 
   Future<void> cargarMisTiendas() async {
     _isLoading = true;
@@ -22,7 +53,6 @@ class TiendaProvider extends ChangeNotifier {
 
     try {
       final response = await _dio.get('/tiendas/mis-tiendas');
-
       if (response.data['tiendas'] != null) {
         _tiendas = (response.data['tiendas'] as List)
             .map((json) => TiendaModel.fromJson(json))
@@ -62,16 +92,12 @@ class TiendaProvider extends ChangeNotifier {
           if (telefono != null && telefono.isNotEmpty) 'telefono': telefono,
         },
       );
-
       if (response.data['tienda'] != null) {
         _tiendas.add(TiendaModel.fromJson(response.data['tienda']));
       }
       return true;
     } on DioException catch (e) {
       _error = e.response?.data['error'] ?? 'Error al crear tienda';
-      return false;
-    } catch (e) {
-      _error = 'Error desconocido';
       return false;
     } finally {
       _isLoading = false;
@@ -92,7 +118,7 @@ class TiendaProvider extends ChangeNotifier {
 
     try {
       final response = await _dio.put(
-        '/tiendas/$tiendaId', 
+        '/tiendas/$tiendaId',
         data: {
           'nombre': nombre,
           if (direccion != null) 'direccion': direccion,
@@ -100,21 +126,14 @@ class TiendaProvider extends ChangeNotifier {
           if (telefono != null) 'telefono': telefono,
         },
       );
-
       if (response.data['tienda'] != null) {
-        final tiendaActualizada = TiendaModel.fromJson(response.data['tienda']);
         final index = _tiendas.indexWhere((t) => t.id == tiendaId);
-        if (index != -1) {
-          _tiendas[index] =
-              tiendaActualizada; 
-        }
+        if (index != -1)
+          _tiendas[index] = TiendaModel.fromJson(response.data['tienda']);
       }
       return true;
     } on DioException catch (e) {
       _error = e.response?.data['error'] ?? 'Error al actualizar tienda';
-      return false;
-    } catch (e) {
-      _error = 'Error desconocido';
       return false;
     } finally {
       _isLoading = false;
@@ -133,9 +152,6 @@ class TiendaProvider extends ChangeNotifier {
       return true;
     } on DioException catch (e) {
       _error = e.response?.data['error'] ?? 'Error al eliminar tienda';
-      return false;
-    } catch (e) {
-      _error = 'Error desconocido';
       return false;
     } finally {
       _isLoading = false;

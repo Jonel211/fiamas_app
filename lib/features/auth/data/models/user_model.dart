@@ -3,6 +3,7 @@ class UserModel {
   final String nombre;
   final String rol; // 'tendero' | 'cliente'
   final String? tiendaId;
+  
 
   UserModel({
     required this.id,

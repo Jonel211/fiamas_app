@@ -1,26 +1,19 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../domain/product.dart';
 
 class ProductTile extends StatelessWidget {
-  const ProductTile({super.key, required this.product, this.onTap, this.onEdit});
+  const ProductTile({
+    super.key,
+    required this.product,
+    this.onTap,
+    this.onEdit,
+  });
 
   final Product product;
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
-
-  IconData get _icon {
-    switch (product.icon) {
-      case IconName.bottle:
-        return Icons.water_drop_outlined;
-      case IconName.cookie:
-        return Icons.cookie_outlined;
-      case IconName.bread:
-        return Icons.bakery_dining_outlined;
-      case IconName.generic:
-        return Icons.inventory_2_outlined;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +40,11 @@ class ProductTile extends StatelessWidget {
                     color: AppColors.mist,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(_icon, color: AppColors.ink, size: 20),
+                  child: const Icon(
+                    Icons.inventory_2_outlined,
+                    color: AppColors.ink,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -55,7 +52,7 @@ class ProductTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        product.name,
+                        product.nombre,
                         style: const TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 14,
@@ -64,7 +61,8 @@ class ProductTile extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        product.category.toUpperCase(),
+                        (product.categoria?.nombre ?? 'Sin categoría')
+                            .toUpperCase(),
                         style: const TextStyle(
                           fontSize: 11,
                           letterSpacing: 0.3,
@@ -78,7 +76,7 @@ class ProductTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      'S/ ${product.price.toStringAsFixed(2)}',
+                      'S/ ${product.precioVenta.toStringAsFixed(2)}',
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,

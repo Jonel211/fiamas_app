@@ -114,12 +114,21 @@ class _MyStoresScreenState extends State<MyStoresScreen> {
                 final tienda = provider.tiendas[index - 1];
                 return StoreListItem(
                   store: tienda,
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      AppRoutes.summary,
-                      arguments: {'tienda': tienda},
+
+                  onTap: () async {
+                    // 1. Guardar la tienda seleccionada en el Provider y en SharedPreferences
+                    await context.read<TiendaProvider>().seleccionarTienda(
+                      tienda.id,
                     );
+
+                    // 2. Navegar a la pantalla principal solo si el widget sigue montado
+                    if (mounted) {
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.summary,
+                        arguments: {'tienda': tienda},
+                      );
+                    }
                   },
                   onEdit: () {
                     Navigator.pushNamed(

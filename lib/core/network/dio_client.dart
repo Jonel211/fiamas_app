@@ -5,7 +5,7 @@ class DioClient {
   static Dio create() {
     final dio = Dio(
       BaseOptions(
-        baseUrl: 'https://fiamas-tiendas.onrender.com/api',
+        baseUrl: 'http://192.168.1.36:3000/api',
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 15),
         headers: {
