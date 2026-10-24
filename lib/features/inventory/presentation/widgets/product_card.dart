@@ -7,128 +7,130 @@ class ProductCard extends StatelessWidget {
   const ProductCard({
     super.key,
     required this.product,
-    required this.active,
-    required this.onTap,
-    required this.onToggle,
+    this.active = true,
+    this.onTap,
+    this.onToggle,
   });
 
   final Product product;
   final bool active;
-  final VoidCallback onTap;
-  final ValueChanged<bool> onToggle;
+  final VoidCallback? onTap;
+  final ValueChanged<bool>? onToggle;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.mist,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Column(
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: _MiniSwitch(value: active, onChanged: onToggle),
-              ),
-              const SizedBox(height: 6),
-              Expanded(
-                child: Center(
-                  child: AspectRatio(
-                    aspectRatio: 1,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.inventory_2_outlined,
-                        size: 36,
-                        color: AppColors.inkMuted,
-                      ),
+    final priceText = 'S/ ${product.precioVenta.toStringAsFixed(2)}';
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFE8E8E8),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Stack(
+          children: [
+            // Contenido principal
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                children: [
+                  // Imagen del producto
+                  Container(
+                    width: double.infinity,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
                     ),
+                    child:
+                        product.imagenUrl != null &&
+                            product.imagenUrl!.isNotEmpty
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              product.imagenUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => const Icon(
+                                Icons.image_outlined,
+                                size: 40,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          )
+                        : const Icon(
+                            Icons.image_outlined,
+                            size: 40,
+                            color: Colors.grey,
+                          ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Nombre del producto
+                  Text(
+                    product.nombre,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+
+                  // Precio
+                  Text(
+                    priceText,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ✅ TOGGLE SWITCH FUNCIONAL CON ANIMACIÓN
+            Positioned(
+              top: 4,
+              left: 4,
+              child: GestureDetector(
+                onTap: () {
+                  if (onToggle != null) {
+                    onToggle!(!active);
+                  }
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 40,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: active
+                        ? const Color(0xFFFFA500)
+                        : Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 20,
+                        height: 20,
+                        margin: EdgeInsets.only(left: active ? 18 : 2),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                product.nombre,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 13, color: AppColors.ink),
-              ),
-              const SizedBox(height: 2),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'S/ ${product.precioVenta.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.ink,
-                    ),
-                  ),
-                  if (product.stockActual != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: product.hasLowStock
-                            ? Colors.red.withOpacity(0.1)
-                            : Colors.blue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        'Stock: ${product.stockActual}',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: product.hasLowStock ? Colors.red : Colors.blue,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MiniSwitch extends StatelessWidget {
-  const _MiniSwitch({required this.value, required this.onChanged});
-  final bool value;
-  final ValueChanged<bool> onChanged;
-  static const _gold = Color(0xFFE0AB3C);
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => onChanged(!value),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        width: 38,
-        height: 22,
-        padding: const EdgeInsets.all(2),
-        alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-        decoration: BoxDecoration(
-          color: value ? _gold : AppColors.teal,
-          borderRadius: BorderRadius.circular(11),
-        ),
-        child: Container(
-          width: 18,
-          height: 18,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-          ),
+            ),
+          ],
         ),
       ),
     );

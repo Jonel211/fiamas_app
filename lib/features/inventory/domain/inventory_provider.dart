@@ -160,8 +160,8 @@ class InventoryProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> createProduct(Product product) async {
-    if (_productService == null) return;
+  Future<Product?> createProduct(Product product) async {
+    if (_productService == null) return null;
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -170,6 +170,7 @@ class InventoryProvider extends ChangeNotifier {
       _products.add(newProduct);
       _error = null;
       notifyListeners();
+      return newProduct;
     } catch (e) {
       _error = e.toString();
       notifyListeners();
@@ -180,8 +181,8 @@ class InventoryProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> updateProduct(String id, Product product) async {
-    if (_productService == null) return;
+  Future<Product?> updateProduct(String id, Product product) async {
+    if (_productService == null) return null;
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -191,6 +192,7 @@ class InventoryProvider extends ChangeNotifier {
       if (index != -1) _products[index] = updated;
       _error = null;
       notifyListeners();
+      return updated;
     } catch (e) {
       _error = e.toString();
       notifyListeners();
@@ -198,6 +200,39 @@ class InventoryProvider extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  // ✅ NUEVO MÉTODO: Activar/Desactivar producto con un solo clic
+  Future<void> toggleProductActive(String productId, bool nuevoEstado) async {
+    if (_productService == null) return;
+
+    final index = _products.indexWhere((p) => p.id == productId);
+    if (index == -1) return;
+
+    final productoActual = _products[index];
+
+    final productoActualizado = Product(
+      id: productoActual.id,
+      tiendaId: productoActual.tiendaId,
+      categoriaId: productoActual.categoriaId,
+      nombre: productoActual.nombre,
+      descripcion: productoActual.descripcion,
+      codigoBarras: productoActual.codigoBarras,
+      tipoVenta: productoActual.tipoVenta,
+      unidadMedida: productoActual.unidadMedida,
+      precioVenta: productoActual.precioVenta,
+      activo: nuevoEstado,
+      imagenUrl: productoActual.imagenUrl,
+      categoria: productoActual.categoria,
+    );
+
+    try {
+      await _productService!.updateProduct(productId, productoActualizado);
+      _products[index] = productoActualizado;
+      notifyListeners();
+    } catch (e) {
+      rethrow;
     }
   }
 

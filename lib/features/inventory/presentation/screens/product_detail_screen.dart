@@ -1,25 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/simple_app_bar.dart';
 import '../../domain/product.dart';
 import '../../domain/sale_unit.dart';
+import '../../domain/inventory_provider.dart';
 import '../widgets/product_detail_field.dart';
 import 'new_product_screen.dart';
 
-class ProductDetailScreen extends StatelessWidget {
+class ProductDetailScreen extends StatefulWidget {
   const ProductDetailScreen({super.key, required this.product});
 
   final Product product;
+
+  @override
+  State<ProductDetailScreen> createState() => _ProductDetailScreenState();
+}
+
+class _ProductDetailScreenState extends State<ProductDetailScreen> {
+  late Product _currentProduct;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentProduct = widget.product;
+  }
 
   static const _gold = Color(0xFFE0AB3C);
 
   bool _hasText(String? s) => s != null && s.trim().isNotEmpty;
 
+  // ✅ MÉTODO PARA ACTUALIZAR EL PRODUCTO LOCAL CUANDO VUELVE DE LA EDICIÓN
+  Future<void> _editProduct() async {
+    final result = await Navigator.of(context).push<Product>(
+      MaterialPageRoute(
+        builder: (_) => NewProductScreen(product: _currentProduct),
+      ),
+    );
+
+    // Si el resultado no es nulo, significa que se guardó exitosamente
+    if (result != null && mounted) {
+      setState(() {
+        _currentProduct = result;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final priceText =
-        'S/. ${product.precioVenta.toStringAsFixed(2)}${product.tipoVenta == SaleUnit.kilo ? ' / kg' : ''}';
+        'S/. ${_currentProduct.precioVenta.toStringAsFixed(2)}${_currentProduct.tipoVenta.toString().toLowerCase().contains('kg') ? ' / kg' : ''}';
+    final esPorKilo =
+        _currentProduct.tipoVenta.toString().toLowerCase().contains('kg') ||
+        _currentProduct.tipoVenta.toString().toLowerCase().contains('kilo');
 
     return Scaffold(
       backgroundColor: AppColors.ivory,
@@ -32,28 +66,30 @@ class ProductDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(child: _ProductImage(url: product.imagenUrl)),
+                  Center(child: _ProductImage(url: _currentProduct.imagenUrl)),
                   const SizedBox(height: 28),
-                  ProductDetailField(label: 'Nombre', value: product.nombre),
+                  ProductDetailField(
+                    label: 'Nombre',
+                    value: _currentProduct.nombre,
+                  ),
                   ProductDetailField(
                     label: 'Categoría',
-                    value: product.categoria?.nombre ?? 'Sin categoría',
+                    value: _currentProduct.categoria?.nombre ?? 'Sin categoría',
                   ),
-                  if (_hasText(product.descripcion))
+                  if (_hasText(_currentProduct.descripcion))
                     ProductDetailField(
                       label: 'Descripción',
-                      value: product.descripcion!,
+                      value: _currentProduct.descripcion!,
                     ),
-                  if (!product.tipoVenta.value.contains('kg') &&
-                      _hasText(product.codigoBarras))
+                  if (!esPorKilo && _hasText(_currentProduct.codigoBarras))
                     ProductDetailField(
                       label: 'Código de barras',
-                      value: product.codigoBarras!,
+                      value: _currentProduct.codigoBarras!,
                     ),
                   ProductDetailField(label: 'Precio', value: priceText),
                   ProductDetailField(
                     label: 'Estado',
-                    value: product.activo ? 'Activo' : 'Inactivo',
+                    value: _currentProduct.activo ? 'Activo' : 'Inactivo',
                   ),
                 ],
               ),
@@ -67,21 +103,7 @@ class ProductDetailScreen extends StatelessWidget {
               24 + MediaQuery.of(context).padding.bottom,
             ),
             child: ElevatedButton(
-              onPressed: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => NewProductScreen(product: product),
-                  ),
-                );
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Producto actualizado correctamente'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              },
+              onPressed: _editProduct,
               style: ElevatedButton.styleFrom(
                 backgroundColor: _gold,
                 foregroundColor: Colors.white,
@@ -113,7 +135,10 @@ class _ProductImage extends StatelessWidget {
     final placeholder = Container(
       width: 140,
       height: 140,
-      color: const Color(0xFFF1F1F1),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F1F1),
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: const Icon(
         Icons.image_outlined,
         size: 40,
@@ -129,7 +154,7 @@ class _ProductImage extends StatelessWidget {
               url!,
               width: 140,
               height: 140,
-              fit: BoxFit.contain,
+              fit: BoxFit.cover,
               errorBuilder: (_, _, _) => placeholder,
             ),
     );

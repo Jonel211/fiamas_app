@@ -32,6 +32,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
   final _price = TextEditingController();
 
   String? _categoriaId;
+  Category? _categoriaObjeto; // ✅ NUEVO: Guardar el objeto Category completo
   SaleUnit _unit = SaleUnit.unit;
   bool _active = true;
 
@@ -50,6 +51,8 @@ class _NewProductScreenState extends State<NewProductScreen> {
       _barcode.text = widget.product!.codigoBarras ?? '';
       _price.text = widget.product!.precioVenta.toStringAsFixed(2);
       _categoriaId = widget.product!.categoriaId;
+      _categoriaObjeto =
+          widget.product!.categoria; // ✅ Guardar el objeto categoría
       _unit = widget.product!.tipoVenta;
       _active = widget.product!.activo;
     }
@@ -64,17 +67,73 @@ class _NewProductScreenState extends State<NewProductScreen> {
     super.dispose();
   }
 
-  void _save() {
+  // ✅ MÉTODO PARA ACTUALIZAR EL OBJETO CATEGORÍA CUANDO EL USUARIO SELECCIONA UNA
+  void _onCategoriaChanged(String? nuevaCategoriaId) {
+    setState(() {
+      _categoriaId = nuevaCategoriaId;
+      // Buscar el objeto Category completo en la lista del provider
+      final provider = context.read<InventoryProvider>();
+      _categoriaObjeto = provider.categories.firstWhere(
+        (c) => c.id == nuevaCategoriaId,
+        orElse: () => Category(
+          id: nuevaCategoriaId ?? '',
+          tiendaId: '',
+          nombre: 'Sin categoría',
+        ),
+      );
+    });
+  }
+
+  void _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final provider = context.read<InventoryProvider>();
-    // TODO: Obtener el tienda_id real del usuario logueado (AuthProvider/TiendaProvider)
-    const tiendaId = 'TIENDA_ID_TEMP';
+    provider.ensureInitialized(context);
+    final realTiendaId = provider.tiendaId;
+
+    if (realTiendaId == null || realTiendaId.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error: No se pudo identificar la tienda.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (_categoriaId == null || _categoriaId!.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error: Debes seleccionar una categoría.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    double precioFinal = 0.0;
+    try {
+      precioFinal = double.parse(_price.text.replaceAll(',', '.'));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error: El precio no es válido.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
 
     final newProduct = Product(
       id: widget.product?.id ?? '',
-      tiendaId: tiendaId,
-      categoriaId: _categoriaId ?? '',
+      tiendaId: realTiendaId,
+      categoriaId: _categoriaId!,
       nombre: _name.text.trim(),
       descripcion: _description.text.trim().isEmpty
           ? null
@@ -82,19 +141,44 @@ class _NewProductScreenState extends State<NewProductScreen> {
       codigoBarras: _barcode.text.trim().isEmpty ? null : _barcode.text.trim(),
       tipoVenta: _unit,
       unidadMedida: _byUnit ? 'unidad' : 'kg',
-      precioVenta: double.tryParse(_price.text.replaceAll(',', '.')) ?? 0.0,
+      precioVenta: precioFinal,
       activo: _active,
-      // TODO: Conectar con la lógica de subida de imagen real
       imagenUrl: widget.product?.imagenUrl,
+      categoria: _categoriaObjeto, // ✅ USAR EL OBJETO CATEGORÍA ACTUALIZADO
     );
 
-    if (widget.isEditing) {
-      provider.updateProduct(widget.product!.id, newProduct);
-    } else {
-      provider.createProduct(newProduct);
-    }
+    try {
+      Product? productoFinal;
 
-    if (mounted) Navigator.of(context).pop();
+      if (widget.isEditing) {
+        productoFinal = await provider.updateProduct(
+          widget.product!.id,
+          newProduct,
+        );
+      } else {
+        productoFinal = await provider.createProduct(newProduct);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Producto guardado exitosamente'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pop(productoFinal);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al guardar: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
   }
 
   void _scanBarcode() {
@@ -162,23 +246,34 @@ class _NewProductScreenState extends State<NewProductScreen> {
                     const ProductFieldLabel('Elegir categoría'),
                     Consumer<InventoryProvider>(
                       builder: (context, provider, child) {
-                        final categories = provider.categories;
+                        final categories = provider.categories
+                            .where((c) => c.activo)
+                            .toList();
+
+                        // ✅ ASEGURAR QUE EL VALUE EXISTA EN LOS ITEMS
+                        final categoriaExiste = categories.any(
+                          (c) => c.id == _categoriaId,
+                        );
+                        final valorInicial = categoriaExiste
+                            ? _categoriaId
+                            : null;
+
                         return DropdownButtonFormField<String>(
-                          initialValue: _categoriaId,
+                          value: valorInicial,
+                          hint: const Text('Selecciona una categoría'),
                           icon: const Icon(
                             Icons.keyboard_arrow_down,
                             color: AppColors.inkMuted,
                           ),
-                          decoration: productInputDecoration(
-                            hint: 'Selecciona una categoría',
-                          ),
+                          decoration: productInputDecoration(),
                           items: categories.map((Category c) {
                             return DropdownMenuItem(
                               value: c.id,
                               child: Text(c.nombre),
                             );
                           }).toList(),
-                          onChanged: (v) => setState(() => _categoriaId = v),
+                          onChanged:
+                              _onCategoriaChanged, // ✅ USAR EL MÉTODO CORREGIDO
                           validator: (v) =>
                               v == null ? 'Selecciona una categoría' : null,
                         );
