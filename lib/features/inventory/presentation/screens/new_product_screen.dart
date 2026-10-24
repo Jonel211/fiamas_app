@@ -1,18 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/simple_app_bar.dart';
 import '../../domain/product.dart';
 import '../../domain/sale_unit.dart';
 import '../../domain/inventory_provider.dart';
 import '../../domain/category.dart';
-import '../widgets/active_switch_row.dart';
-import '../widgets/barcode_field.dart';
-import '../widgets/price_field.dart';
-import '../widgets/product_input_style.dart';
-import '../widgets/product_photo_picker.dart';
-import '../widgets/sale_unit_selector.dart';
+import 'barcode_scanner_screen.dart';
 
 class NewProductScreen extends StatefulWidget {
   const NewProductScreen({super.key, this.product});
@@ -30,13 +25,14 @@ class _NewProductScreenState extends State<NewProductScreen> {
   final _description = TextEditingController();
   final _barcode = TextEditingController();
   final _price = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
 
   String? _categoriaId;
-  Category? _categoriaObjeto; // ✅ NUEVO: Guardar el objeto Category completo
+  Category? _categoriaObjeto;
   SaleUnit _unit = SaleUnit.unit;
   bool _active = true;
-
-  bool get _byUnit => _unit == SaleUnit.unit;
+  File? _imagenFile;
+  bool _isUploading = false;
 
   @override
   void initState() {
@@ -51,8 +47,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
       _barcode.text = widget.product!.codigoBarras ?? '';
       _price.text = widget.product!.precioVenta.toStringAsFixed(2);
       _categoriaId = widget.product!.categoriaId;
-      _categoriaObjeto =
-          widget.product!.categoria; // ✅ Guardar el objeto categoría
+      _categoriaObjeto = widget.product!.categoria;
       _unit = widget.product!.tipoVenta;
       _active = widget.product!.activo;
     }
@@ -67,19 +62,82 @@ class _NewProductScreenState extends State<NewProductScreen> {
     super.dispose();
   }
 
-  // ✅ MÉTODO PARA ACTUALIZAR EL OBJETO CATEGORÍA CUANDO EL USUARIO SELECCIONA UNA
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _imagenFile = File(image.path);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al seleccionar imagen: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  void _showImageSourceDialog() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Seleccionar imagen',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 24),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppColors.teal),
+              title: const Text('Galería'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: AppColors.teal),
+              title: const Text('Cámara'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+            if (_imagenFile != null || widget.product?.imagenUrl != null)
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('Eliminar imagen'),
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() {
+                    _imagenFile = null;
+                  });
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _onCategoriaChanged(String? nuevaCategoriaId) {
     setState(() {
       _categoriaId = nuevaCategoriaId;
-      // Buscar el objeto Category completo en la lista del provider
       final provider = context.read<InventoryProvider>();
       _categoriaObjeto = provider.categories.firstWhere(
         (c) => c.id == nuevaCategoriaId,
-        orElse: () => Category(
-          id: nuevaCategoriaId ?? '',
-          tiendaId: '',
-          nombre: 'Sin categoría',
-        ),
+        orElse: () => Category(id: nuevaCategoriaId ?? '', tiendaId: '', nombre: 'Sin categoría'),
       );
     });
   }
@@ -94,10 +152,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
     if (realTiendaId == null || realTiendaId.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error: No se pudo identificar la tienda.'),
-            backgroundColor: Colors.red,
-          ),
+          const SnackBar(content: Text('Error: No se pudo identificar la tienda.'), backgroundColor: Colors.red),
         );
       }
       return;
@@ -106,13 +161,17 @@ class _NewProductScreenState extends State<NewProductScreen> {
     if (_categoriaId == null || _categoriaId!.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error: Debes seleccionar una categoría.'),
-            backgroundColor: Colors.red,
-          ),
+          const SnackBar(content: Text('Error: Debes seleccionar una categoría.'), backgroundColor: Colors.red),
         );
       }
       return;
+    }
+
+    if (_categoriaObjeto == null || _categoriaObjeto!.id != _categoriaId) {
+      _categoriaObjeto = provider.categories.firstWhere(
+        (c) => c.id == _categoriaId,
+        orElse: () => Category(id: _categoriaId!, tiendaId: realTiendaId, nombre: 'Categoría'),
+      );
     }
 
     double precioFinal = 0.0;
@@ -121,10 +180,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error: El precio no es válido.'),
-            backgroundColor: Colors.red,
-          ),
+          const SnackBar(content: Text('Error: El precio no es válido.'), backgroundColor: Colors.red),
         );
       }
       return;
@@ -135,221 +191,390 @@ class _NewProductScreenState extends State<NewProductScreen> {
       tiendaId: realTiendaId,
       categoriaId: _categoriaId!,
       nombre: _name.text.trim(),
-      descripcion: _description.text.trim().isEmpty
-          ? null
-          : _description.text.trim(),
+      descripcion: _description.text.trim().isEmpty ? null : _description.text.trim(),
       codigoBarras: _barcode.text.trim().isEmpty ? null : _barcode.text.trim(),
       tipoVenta: _unit,
-      unidadMedida: _byUnit ? 'unidad' : 'kg',
+      unidadMedida: _unit == SaleUnit.unit ? 'unidad' : 'kg',
       precioVenta: precioFinal,
       activo: _active,
       imagenUrl: widget.product?.imagenUrl,
-      categoria: _categoriaObjeto, // ✅ USAR EL OBJETO CATEGORÍA ACTUALIZADO
+      categoria: _categoriaObjeto,
     );
+
+    setState(() => _isUploading = true);
 
     try {
       Product? productoFinal;
-
+      
       if (widget.isEditing) {
-        productoFinal = await provider.updateProduct(
-          widget.product!.id,
-          newProduct,
-        );
+        productoFinal = await provider.updateProduct(widget.product!.id, newProduct, imagenFile: _imagenFile);
       } else {
-        productoFinal = await provider.createProduct(newProduct);
+        productoFinal = await provider.createProduct(newProduct, imagenFile: _imagenFile);
       }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Producto guardado exitosamente'),
-            backgroundColor: Colors.green,
-          ),
+          const SnackBar(content: Text('Producto guardado exitosamente'), backgroundColor: Colors.green),
         );
         Navigator.of(context).pop(productoFinal);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al guardar: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
+          SnackBar(content: Text('Error al guardar: $e'), backgroundColor: Colors.red, duration: const Duration(seconds: 5)),
         );
       }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
     }
-  }
-
-  void _scanBarcode() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('El escáner estará disponible pronto')),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.ivory,
-      body: Column(
-        children: [
-          SimpleAppBar(
-            title: widget.isEditing ? 'Editar Producto' : 'Nuevo Producto',
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
-                24,
-                20,
-                24,
-                32 + MediaQuery.of(context).padding.bottom,
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: AppColors.teal,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Nuevo Producto',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + MediaQuery.of(context).padding.bottom),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Agrega un artículo a tu lista',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.black87),
               ),
-              child: Form(
-                key: _formKey,
+              const SizedBox(height: 24),
+              
+              // ✅ SELECTOR DE IMAGEN CIRCULAR
+              GestureDetector(
+                onTap: _showImageSourceDialog,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      widget.isEditing
-                          ? 'Modifica los datos del artículo'
-                          : 'Agrega un artículo a tu lista',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.ink,
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        shape: BoxShape.circle,
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    ProductPhotoPicker(
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Selector de imagen próximamente'),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 24),
-
-                    const ProductFieldLabel('Nombre del producto'),
-                    TextFormField(
-                      controller: _name,
-                      textCapitalization: TextCapitalization.sentences,
-                      decoration: productInputDecoration(),
-                      validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'Ingresa el nombre del producto'
-                          : null,
-                    ),
-                    const SizedBox(height: 20),
-
-                    const ProductFieldLabel('Elegir categoría'),
-                    Consumer<InventoryProvider>(
-                      builder: (context, provider, child) {
-                        final categories = provider.categories
-                            .where((c) => c.activo)
-                            .toList();
-
-                        // ✅ ASEGURAR QUE EL VALUE EXISTA EN LOS ITEMS
-                        final categoriaExiste = categories.any(
-                          (c) => c.id == _categoriaId,
-                        );
-                        final valorInicial = categoriaExiste
-                            ? _categoriaId
-                            : null;
-
-                        return DropdownButtonFormField<String>(
-                          value: valorInicial,
-                          hint: const Text('Selecciona una categoría'),
-                          icon: const Icon(
-                            Icons.keyboard_arrow_down,
-                            color: AppColors.inkMuted,
-                          ),
-                          decoration: productInputDecoration(),
-                          items: categories.map((Category c) {
-                            return DropdownMenuItem(
-                              value: c.id,
-                              child: Text(c.nombre),
-                            );
-                          }).toList(),
-                          onChanged:
-                              _onCategoriaChanged, // ✅ USAR EL MÉTODO CORREGIDO
-                          validator: (v) =>
-                              v == null ? 'Selecciona una categoría' : null,
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 20),
-
-                    const ProductFieldLabel('Se vende por'),
-                    SaleUnitSelector(
-                      selected: _unit,
-                      onChanged: (u) => setState(() => _unit = u),
-                    ),
-                    const SizedBox(height: 20),
-
-                    const ProductFieldLabel('Descripción (Opcional)'),
-                    TextFormField(
-                      controller: _description,
-                      minLines: 3,
-                      maxLines: 3,
-                      textCapitalization: TextCapitalization.sentences,
-                      decoration: productInputDecoration(),
-                    ),
-                    const SizedBox(height: 20),
-
-                    AnimatedSize(
-                      duration: const Duration(milliseconds: 200),
-                      alignment: Alignment.topCenter,
-                      child: _byUnit
-                          ? Column(
-                              children: [
-                                BarcodeField(
-                                  controller: _barcode,
-                                  onScan: _scanBarcode,
-                                ),
-                                const SizedBox(height: 20),
-                              ],
+                      child: _imagenFile != null
+                          ? ClipOval(
+                              child: Image.file(
+                                _imagenFile!,
+                                fit: BoxFit.cover,
+                              ),
                             )
-                          : const SizedBox(width: double.infinity),
+                          : widget.product?.imagenUrl != null && _imagenFile == null
+                              ? ClipOval(
+                                  child: Image.network(
+                                    widget.product!.imagenUrl!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, _, _) => const Icon(Icons.camera_alt, size: 40, color: Colors.grey),
+                                  ),
+                                )
+                              : const Icon(Icons.camera_alt, size: 40, color: Colors.grey),
                     ),
-
-                    PriceField(controller: _price, perKilo: !_byUnit),
-                    const SizedBox(height: 24),
-
-                    ActiveSwitchRow(
-                      value: _active,
-                      onChanged: (v) => setState(() => _active = v),
-                    ),
-                    const SizedBox(height: 16),
-
-                    ElevatedButton(
-                      onPressed: _save,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.teal,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        minimumSize: const Size.fromHeight(52),
-                        textStyle: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: Text(
-                        widget.isEditing
-                            ? 'Guardar cambios'
-                            : 'Guardar producto',
+                    const SizedBox(height: 8),
+                    Text(
+                      'Añadir imagen',
+                      style: TextStyle(
+                        color: AppColors.teal,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
+              const SizedBox(height: 32),
+
+              // ✅ NOMBRE DEL PRODUCTO
+              const Text(
+                'Nombre del producto',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _name,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  hintText: 'Ingresa el nombre',
+                  hintStyle: const TextStyle(fontSize: 14, color: Colors.grey),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Ingresa el nombre del producto' : null,
+              ),
+              const SizedBox(height: 20),
+
+              // ✅ ELEGIR CATEGORÍA
+              const Text(
+                'Elegir categoría',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
+              ),
+              const SizedBox(height: 8),
+              Consumer<InventoryProvider>(
+                builder: (context, provider, child) {
+                  final categories = provider.categories.where((c) => c.activo).toList();
+                  final categoriaExiste = categories.any((c) => c.id == _categoriaId);
+                  final valorInicial = categoriaExiste ? _categoriaId : null;
+
+                  return DropdownButtonFormField<String>(
+                    value: valorInicial,
+                    hint: const Text('Selecciona una categoría'),
+                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    ),
+                    items: categories.map((Category c) {
+                      return DropdownMenuItem(
+                        value: c.id,
+                        child: Text(c.nombre),
+                      );
+                    }).toList(),
+                    onChanged: _onCategoriaChanged,
+                    validator: (v) => v == null ? 'Selecciona una categoría' : null,
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // ✅ SE VENDE POR
+              const Text(
+                'Se vende por',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _SaleUnitChip(
+                      label: 'Unidad',
+                      selected: _unit == SaleUnit.unit,
+                      onTap: () => setState(() => _unit = SaleUnit.unit),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _SaleUnitChip(
+                      label: 'Kilo (kg)',
+                      selected: _unit == SaleUnit.kilo,
+                      onTap: () => setState(() => _unit = SaleUnit.kilo),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // ✅ DESCRIPCIÓN
+              const Text(
+                'Descripción (Opcional)',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _description,
+                minLines: 3,
+                maxLines: 4,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  hintText: 'Describe el producto',
+                  hintStyle: const TextStyle(fontSize: 14, color: Colors.grey),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.all(16),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // ✅ CÓDIGO DE BARRAS CON ESCÁNER FUNCIONAL
+              const Text(
+                'Código de barras',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _barcode,
+                decoration: InputDecoration(
+                  hintText: 'Escanea o ingresa el código',
+                  hintStyle: const TextStyle(fontSize: 14, color: Colors.grey),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.qr_code_scanner, color: AppColors.teal, size: 24),
+                    onPressed: () async {
+                      // ✅ ABRIR EL ESCÁNER (SIN const)
+                      final scannedCode = await Navigator.of(context).push<String>(
+                        MaterialPageRoute(
+                          builder: (_) => BarcodeScannerScreen(), // ✅ Sin const
+                        ),
+                      );
+                      
+                      // ✅ SI SE ESCANEÓ UN CÓDIGO, PONERLO EN EL CAMPO
+                      if (scannedCode != null && mounted) {
+                        setState(() {
+                          _barcode.text = scannedCode;
+                        });
+                        
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Código escaneado exitosamente'),
+                            backgroundColor: Colors.green,
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // ✅ PRECIO VENTA
+              const Text(
+                'Precio venta',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _price,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  prefixText: 'S/. ',
+                  prefixStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.black),
+                  hintText: '0.00',
+                  hintStyle: const TextStyle(fontSize: 16, color: Colors.grey),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Ingresa el precio';
+                  if (double.tryParse(v.replaceAll(',', '.')) == null) return 'Precio inválido';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+
+              // ✅ PRODUCTO ACTIVO
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Producto Activo',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87),
+                  ),
+                  Switch(
+                    value: _active,
+                    onChanged: (v) => setState(() => _active = v),
+                    activeColor: AppColors.teal,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // ✅ BOTÓN GUARDAR
+              ElevatedButton(
+                onPressed: _isUploading ? null : _save,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.teal,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  minimumSize: const Size.fromHeight(50),
+                  textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: _isUploading
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : const Text('Guardar producto'),
+              ),
+            ],
           ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SaleUnitChip extends StatelessWidget {
+  const _SaleUnitChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.teal.withOpacity(0.2) : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected ? AppColors.teal : Colors.grey.shade300,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            color: selected ? AppColors.teal : Colors.black87,
+          ),
+        ),
       ),
     );
   }

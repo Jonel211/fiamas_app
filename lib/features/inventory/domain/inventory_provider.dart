@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'dart:io'; 
 import '../data/services/product_service.dart';
 import '../data/services/category_service.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
@@ -160,13 +160,16 @@ class InventoryProvider extends ChangeNotifier {
     }
   }
 
-  Future<Product?> createProduct(Product product) async {
+  Future<Product?> createProduct(Product product, {File? imagenFile}) async {
     if (_productService == null) return null;
     _isLoading = true;
     _error = null;
     notifyListeners();
     try {
-      final newProduct = await _productService!.createProduct(product);
+      final newProduct = await _productService!.createProduct(
+        product,
+        imagenFile: imagenFile,
+      );
       _products.add(newProduct);
       _error = null;
       notifyListeners();
@@ -181,13 +184,22 @@ class InventoryProvider extends ChangeNotifier {
     }
   }
 
-  Future<Product?> updateProduct(String id, Product product) async {
+
+   Future<Product?> updateProduct(
+    String id,
+    Product product, {
+    File? imagenFile,
+  }) async {
     if (_productService == null) return null;
     _isLoading = true;
     _error = null;
     notifyListeners();
     try {
-      final updated = await _productService!.updateProduct(id, product);
+      final updated = await _productService!.updateProduct(
+        id,
+        product,
+        imagenFile: imagenFile,
+      );
       final index = _products.indexWhere((p) => p.id == id);
       if (index != -1) _products[index] = updated;
       _error = null;
