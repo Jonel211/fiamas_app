@@ -14,9 +14,6 @@ import 'features/customers/presentation/providers/cliente_provider.dart';
 import 'features/customers/data/models/cliente_model.dart'; 
 import 'features/auth/presentation/screens/splash_screen.dart';
 import 'features/auth/presentation/screens/welcome_screen.dart';
-import 'features/auth/presentation/screens/login_screen.dart';
-import 'features/auth/presentation/screens/register_screen.dart';
-import 'features/auth/presentation/screens/register_client_screen.dart';
 import 'features/auth/presentation/screens/verification_screen.dart';
 import 'features/auth/presentation/screens/change_password_screen.dart';
 import 'features/auth/presentation/screens/forgot_password_screen.dart';
@@ -73,9 +70,6 @@ class AppRoutes {
 
   static const splash = '/';
   static const welcome = '/welcome';
-  static const login = '/login';
-  static const register = '/register';
-  static const registerClient = '/register-client';
   static const verification = '/verification';
   static const changePassword = '/change-password';
   static const forgotPassword = '/forgot-password';
@@ -120,6 +114,12 @@ class AppRoutes {
 
   static void goHome(BuildContext context) {
     Navigator.of(context).popUntil((route) => route.settings.name == summary);
+  }
+
+  /// Lleva a la bienvenida con el panel de login ya abierto.
+  static void goToLogin(BuildContext context) {
+    Navigator.of(context)
+        .pushNamedAndRemoveUntil(welcome, (route) => false, arguments: 'login');
   }
 }
 
@@ -166,9 +166,6 @@ class FiamasApp extends StatelessWidget {
       routes: {
         AppRoutes.splash: (_) => const SplashScreen(),
         AppRoutes.welcome: (_) => const WelcomeScreen(),
-        AppRoutes.login: (_) => const LoginScreen(),
-        AppRoutes.register: (_) => const RegisterScreen(),
-        AppRoutes.registerClient: (_) => const RegisterClientScreen(),
         AppRoutes.verification: (_) => const VerificationScreen(),
         AppRoutes.changePassword: (_) => const ChangePasswordScreen(),
         AppRoutes.forgotPassword: (_) => const ForgotPasswordScreen(),

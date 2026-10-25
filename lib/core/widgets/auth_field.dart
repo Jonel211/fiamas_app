@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
 
-/// Campo de texto con la etiqueta arriba y borde redondeado, sin íconos.
+/// Campo de texto con la etiqueta arriba y borde redondeado.
 /// Es el estilo de los formularios de autenticación y de perfil.
+/// Admite un ícono opcional al inicio (`prefixIcon`).
 /// Con `enabled: false` se muestra de solo lectura (fondo gris).
 class AuthField extends StatelessWidget {
   const AuthField({
@@ -13,6 +14,7 @@ class AuthField extends StatelessWidget {
     this.validator,
     this.keyboardType,
     this.obscureText = false,
+    this.prefixIcon,
     this.suffixIcon,
     this.maxLength,
     this.digitsOnly = false,
@@ -26,6 +28,7 @@ class AuthField extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
   final bool obscureText;
+  final Widget? prefixIcon;
   final Widget? suffixIcon;
   final int? maxLength;
   final bool digitsOnly;
@@ -34,7 +37,8 @@ class AuthField extends StatelessWidget {
   final double bottomSpacing;
 
   /// Método auxiliar para reutilizar la configuración del borde
-  OutlineInputBorder _border(Color color, [double width = 1]) => OutlineInputBorder(
+  OutlineInputBorder _border(Color color, [double width = 1]) =>
+      OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: BorderSide(color: color, width: width),
       );
@@ -73,7 +77,7 @@ class AuthField extends StatelessWidget {
               counterText: '',
               isDense: true,
               filled: !enabled,
-              
+              prefixIcon: prefixIcon,
               suffixIcon: suffixIcon,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 14),

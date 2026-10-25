@@ -137,12 +137,7 @@ class _MenuScreenState extends State<MenuScreen> {
                   LogoutButton(
                     onTap: () async {
                       await authProvider.logout();
-                      if (context.mounted) {
-                        Navigator.of(context).pushNamedAndRemoveUntil(
-                          AppRoutes.login,
-                          (route) => false,
-                        );
-                      }
+                      if (context.mounted) AppRoutes.goToLogin(context);
                     },
                   ),
                 ],
