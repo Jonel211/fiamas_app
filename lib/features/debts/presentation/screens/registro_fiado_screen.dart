@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/app_header.dart';
+import '../../../../core/widgets/app_header_config.dart';
 import '../../../../main.dart'; // Para usar AppRoutes
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
@@ -56,178 +56,173 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
     final query = _searchQuery.trim();
     final buscando = query.isNotEmpty;
 
-    return Scaffold(
-      backgroundColor: AppColors.ivory,
-      body: Column(
-        children: [
-          const AppHeader(title: 'Nuevo Fiado', showBack: true),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 40), // Aumenté un poco el padding de abajo
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'Datos del fiadero',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.ink,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    '¿A quién le vas a fiar?',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.ink,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // BUSCADOR
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.skyBlue,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: (val) => setState(() => _searchQuery = val),
-                      decoration: InputDecoration(
-                        hintText: 'Busca por nombre o teléfono',
-                        hintStyle: TextStyle(
-                          color: AppColors.inkMuted.withOpacity(0.7),
-                          fontSize: 14,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.search_rounded,
-                          color: AppColors.inkMuted,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+    return AppHeaderConfig(
+      title: 'Nuevo Fiado',
+      showBack: true,
+      centerTitle: true,
+      child: Scaffold(
+        backgroundColor: AppColors.ivory,
+        body: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Datos del fiadero',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink,
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      '¿A quién le vas a fiar?',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
 
-                  const SizedBox(height: 16),
-
-                  Consumer<ClienteProvider>(
-                    builder: (context, provider, _) {
-                      if (provider.error != null) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 24),
-                          child: Center(
-                            child: Text(
-                              provider.error!,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.red),
-                            ),
+                    // BUSCADOR
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.skyBlue,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (val) => setState(() => _searchQuery = val),
+                        decoration: InputDecoration(
+                          hintText: 'Busca por nombre o teléfono',
+                          hintStyle: TextStyle(
+                            color: AppColors.inkMuted.withOpacity(0.7),
+                            fontSize: 14,
                           ),
-                        );
-                      }
+                          prefixIcon: const Icon(
+                            Icons.search_rounded,
+                            color: AppColors.inkMuted,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                      ),
+                    ),
 
-                      // ─────────── MODO BÚSQUEDA ───────────
-                      if (buscando) {
-                        if (provider.isLoading) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 24),
-                            child: Center(child: CircularProgressIndicator()),
+                    const SizedBox(height: 16),
+
+                    Consumer<ClienteProvider>(
+                      builder: (context, provider, _) {
+                        if (provider.error != null) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 24),
+                            child: Center(
+                              child: Text(
+                                provider.error!,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            ),
                           );
                         }
 
-                        final resultados = provider.buscarClienteLocal(query);
+                        // ─────────── MODO BÚSQUEDA ───────────
+                        if (buscando) {
+                          final resultados = provider.buscarClienteLocal(query);
+                          final puedeRegistrar =
+                              _telefonoValido.hasMatch(query) && resultados.isEmpty;
 
-                        // Registrar: solo con 9 dígitos y si no existe
-                        final puedeRegistrar =
-                            _telefonoValido.hasMatch(query) && resultados.isEmpty;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              if (puedeRegistrar)
+                                RegisterClientSuggestion(
+                                  phone: query,
+                                  onTap: () async {
+                                    await Navigator.of(context).pushNamed(
+                                      AppRoutes.newClient,
+                                      arguments: query,
+                                    );
+                                    if (!mounted) return;
+                                    await _cargarDatos(); // Refresca la lista al volver
+                                  },
+                                ),
 
+                              if (resultados.isEmpty && !puedeRegistrar)
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 24),
+                                  child: Center(
+                                    child: Text(
+                                      'No se encontraron clientes.\nEscribe los 9 dígitos del teléfono para registrar uno nuevo.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(color: AppColors.inkMuted),
+                                    ),
+                                  ),
+                                ),
+
+                              for (final cliente in resultados)
+                                RecentClientCard(
+                                  name: cliente.nombreCompleto,
+                                  phone: cliente.telefono,
+                                  onTap: () => _irAEscaner(cliente),
+                                ),
+                            ],
+                          );
+                        }
+
+                        // ─────────── MODO RECIENTES ───────────
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            if (puedeRegistrar)
-                              RegisterClientSuggestion(
-                                phone: query,
-                                onTap: () async {
-                                  await Navigator.of(context).pushNamed(
-                                    AppRoutes.newClient,
-                                    arguments: query,
-                                  );
-                                  if (!mounted) return;
-                                  await _cargarDatos(); // Refresca la lista al volver
-                                },
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Recientes',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.ink,
                               ),
+                            ),
+                            const SizedBox(height: 12),
 
-                            if (resultados.isEmpty && !puedeRegistrar)
+                            if (provider.isLoadingRecientes)
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 24),
+                                child: Center(child: CircularProgressIndicator()),
+                              )
+                            else if (provider.recientes.isEmpty)
                               const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 24),
                                 child: Center(
                                   child: Text(
-                                    'No se encontraron clientes.\nEscribe los 9 dígitos del teléfono para registrar uno nuevo.',
+                                    'Aún no has fiado a nadie.\nBusca un cliente por nombre o teléfono.',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(color: AppColors.inkMuted),
                                   ),
                                 ),
-                              ),
-
-                            for (final cliente in resultados)
-                              RecentClientCard(
-                                name: cliente.nombreCompleto,
-                                phone: cliente.telefono,
-                                onTap: () => _irAEscaner(cliente),
-                              ),
+                              )
+                            else
+                              for (final cliente in provider.recientes)
+                                RecentClientCard(
+                                  name: cliente.nombreCompleto,
+                                  phone: cliente.telefono,
+                                  onTap: () => _irAEscaner(cliente),
+                                ),
                           ],
                         );
-                      }
-
-                      // ─────────── MODO RECIENTES ───────────
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Recientes',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.ink,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-
-                          if (provider.isLoadingRecientes)
-                            const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 24),
-                              child: Center(child: CircularProgressIndicator()),
-                            )
-                          else if (provider.recientes.isEmpty)
-                            const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 24),
-                              child: Center(
-                                child: Text(
-                                  'Aún no has fiado a nadie.\nBusca un cliente por nombre o teléfono.',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(color: AppColors.inkMuted),
-                                ),
-                              ),
-                            )
-                          else
-                            for (final cliente in provider.recientes)
-                              RecentClientCard(
-                                name: cliente.nombreCompleto,
-                                phone: cliente.telefono,
-                                onTap: () => _irAEscaner(cliente),
-                              ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

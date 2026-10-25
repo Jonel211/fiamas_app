@@ -62,20 +62,41 @@ class HeaderConfig {
 
 class AppBarController extends ChangeNotifier {
   final Map<Route<dynamic>, HeaderConfig> _routeConfigs = {};
+  final Set<Route<dynamic>> _pendingResolutions = {};
   Route<dynamic>? _activeRoute;
   HeaderConfig? _activeConfig;
+  HeaderConfig? _lastConfig;
+  Route<dynamic>? _pendingRoute;
+  bool _notificationScheduled = false;
 
   HeaderConfig? get activeConfig => _activeConfig;
   Route<dynamic>? get activeRoute => _activeRoute;
 
-  void registerRoute(Route<dynamic> route, HeaderConfig config) {
+  void registerRoute(
+    Route<dynamic> route,
+    HeaderConfig config, {
+    bool notify = true,
+  }) {
     final oldConfig = _routeConfigs[route];
-    if (oldConfig == config) return;
+    if (oldConfig == config) {
+      if (_activeRoute == route && _pendingRoute == route) {
+        _pendingRoute = null;
+      }
+      return;
+    }
 
     _routeConfigs[route] = config;
-    if (_activeRoute == route && _activeConfig != config) {
-      _activeConfig = config;
+
+    if (_activeRoute != route) return;
+
+    _pendingRoute = null;
+    final changed = _setActiveConfig(config);
+    if (!changed) return;
+
+    if (notify) {
       notifyListeners();
+    } else {
+      _scheduleNotification();
     }
   }
 
@@ -83,11 +104,30 @@ class AppBarController extends ChangeNotifier {
     if (_activeRoute == route) return;
 
     _activeRoute = route;
-    final newConfig = route == null ? null : _routeConfigs[route];
-    if (_activeConfig != newConfig) {
-      _activeConfig = newConfig;
+
+    if (route == null) {
+      _pendingRoute = null;
+      _lastConfig = null;
+      if (_setActiveConfig(null)) {
+        notifyListeners();
+      }
+      return;
+    }
+
+    final registeredConfig = _routeConfigs[route];
+    if (registeredConfig != null) {
+      _pendingRoute = null;
+      if (_setActiveConfig(registeredConfig)) {
+        notifyListeners();
+      }
+      return;
+    }
+
+    _pendingRoute = route;
+    if (_setActiveConfig(_lastConfig)) {
       notifyListeners();
     }
+    _schedulePendingResolution(route);
   }
 
   void clearRoute(Route<dynamic> route) {
@@ -96,8 +136,9 @@ class AppBarController extends ChangeNotifier {
 
     if (_activeRoute == route) {
       _activeRoute = null;
-      if (_activeConfig != null) {
-        _activeConfig = null;
+      _pendingRoute = null;
+      _lastConfig = null;
+      if (_setActiveConfig(null)) {
         notifyListeners();
       }
     }
@@ -106,6 +147,43 @@ class AppBarController extends ChangeNotifier {
   void clearRouteIfMatches(Route<dynamic> route, HeaderConfig config) {
     if (_routeConfigs[route] != config) return;
     clearRoute(route);
+  }
+
+  bool _setActiveConfig(HeaderConfig? config) {
+    final changed = _activeConfig != config;
+    _activeConfig = config;
+    _lastConfig = config;
+    return changed;
+  }
+
+  void _schedulePendingResolution(Route<dynamic> route) {
+    if (!_pendingResolutions.add(route)) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _pendingResolutions.remove(route);
+      if (_pendingRoute != route || _activeRoute != route) return;
+
+      if (_routeConfigs.containsKey(route)) {
+        _pendingRoute = null;
+        return;
+      }
+
+      _pendingRoute = null;
+      _lastConfig = null;
+      if (_setActiveConfig(null)) {
+        notifyListeners();
+      }
+    });
+  }
+
+  void _scheduleNotification() {
+    if (_notificationScheduled) return;
+    _notificationScheduled = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _notificationScheduled = false;
+      notifyListeners();
+    });
   }
 
   // API legacy conservada para AppShellScaffold / AppShell.

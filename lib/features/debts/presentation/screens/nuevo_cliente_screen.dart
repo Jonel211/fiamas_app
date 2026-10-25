@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/app_header.dart';
+import '../../../../core/widgets/app_header_config.dart';
 import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
@@ -119,145 +119,192 @@ class _NuevoClienteScreenState extends State<NuevoClienteScreen> {
   Widget build(BuildContext context) {
     final isCreating = context.watch<ClienteProvider>().isCreating;
 
-    return Scaffold(
-      backgroundColor: AppColors.ivory,
-      body: Column(
-        children: [
-          const AppHeader(title: 'Nuevo Cliente', showBack: true),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    '¿Cómo quieres registrarlo?',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Elige una opción para agregar al cliente',
-                    style: TextStyle(fontSize: 13, color: AppColors.inkMuted),
-                  ),
-                  const SizedBox(height: 20),
-
-                  RegisterMethodCard(
-                    title: 'Generar código QR',
-                    subtitle: 'El cliente escanea y se registra solo. Tú no escribes nada.',
-                    icon: Icons.qr_code_rounded,
-                    isSelected: _selectedMethod == 'qr',
-                    isTealBackground: true,
-                    onTap: () => Navigator.of(context).pushNamed(AppRoutes.newClientQr),
-                  ),
-                  RegisterMethodCard(
-                    title: 'Registrar manualmente',
-                    subtitle: 'Tú escribes los datos del cliente desde tu app',
-                    icon: Icons.edit_rounded,
-                    isSelected: _selectedMethod == 'manual',
-                    isTealBackground: false,
-                    onTap: () => setState(() => _selectedMethod = 'manual'),
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  if (_selectedMethod == 'manual') ...[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Datos del fiador',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.skyBlue.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            'Registro directo',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.ink),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    _buildField(
-                      label: 'Nombres',
-                      hint: 'Ej: Martha',
-                      prefixIcon: const Icon(Icons.person_outline_rounded, size: 20, color: AppColors.inkMuted),
-                      controller: _nameController,
-                    ),
-                    _buildField(
-                      label: 'Apellidos',
-                      hint: 'Ej: Gómez',
-                      prefixIcon: const Icon(Icons.person_outline_rounded, size: 20, color: AppColors.inkMuted),
-                      controller: _lastNameController,
-                    ),
-                    _buildField(
-                      label: 'Teléfono',
-                      hint: 'Ej: 987654321',
-                      prefixIcon: const Icon(Icons.phone_outlined, size: 20, color: AppColors.inkMuted),
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                    ),
-                    _buildField(
-                      label: 'Dirección (Opcional)',
-                      hint: 'Ej: Av. Larco 123',
-                      prefixIcon: const Icon(Icons.location_on_outlined, size: 20, color: AppColors.inkMuted),
-                      controller: _addressController,
-                    ),
-                    _buildField(
-                      label: 'Límite de crédito',
-                      hint: 'Ej: 500.00',
-                      prefixIcon: const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12),
-                        child: Center(
-                          widthFactor: 1.0,
-                          child: Text(
-                            'S/',
-                            style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.inkMuted, fontSize: 14),
-                          ),
-                        ),
+    return AppHeaderConfig(
+      title: 'Nuevo Cliente',
+      showBack: true,
+      centerTitle: true,
+      child: Scaffold(
+        backgroundColor: AppColors.ivory,
+        body: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      '¿Cómo quieres registrarlo?',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink,
                       ),
-                      controller: _limitController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     ),
-                  ],
-                ],
-              ),
-            ),
-          ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Elige una opción para agregar al cliente',
+                      style: TextStyle(fontSize: 13, color: AppColors.inkMuted),
+                    ),
+                    const SizedBox(height: 20),
 
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
-            child: ElevatedButton(
-              onPressed: isCreating ? null : _registrarCliente,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.teal,
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(52),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                elevation: 0,
-              ),
-              child: isCreating
-                  ? const SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                    )
-                  : const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('Registrar cliente', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                        SizedBox(width: 8),
-                        Icon(Icons.arrow_forward_rounded, size: 20),
-                      ],
+                    RegisterMethodCard(
+                      title: 'Generar código QR',
+                      subtitle: 'El cliente escanea y se registra solo. Tú no escribes nada.',
+                      icon: Icons.qr_code_rounded,
+                      isSelected: _selectedMethod == 'qr',
+                      isTealBackground: true,
+                      onTap: () => Navigator.of(context).pushNamed(AppRoutes.newClientQr),
                     ),
+                    RegisterMethodCard(
+                      title: 'Registrar manualmente',
+                      subtitle: 'Tú escribes los datos del cliente desde tu app',
+                      icon: Icons.edit_rounded,
+                      isSelected: _selectedMethod == 'manual',
+                      isTealBackground: false,
+                      onTap: () => setState(() => _selectedMethod = 'manual'),
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    if (_selectedMethod == 'manual') ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Datos del fiador',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.skyBlue.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'Registro directo',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.ink,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      _buildField(
+                        label: 'Nombres',
+                        hint: 'Ej: Martha',
+                        prefixIcon: const Icon(
+                          Icons.person_outline_rounded,
+                          size: 20,
+                          color: AppColors.inkMuted,
+                        ),
+                        controller: _nameController,
+                      ),
+                      _buildField(
+                        label: 'Apellidos',
+                        hint: 'Ej: Gómez',
+                        prefixIcon: const Icon(
+                          Icons.person_outline_rounded,
+                          size: 20,
+                          color: AppColors.inkMuted,
+                        ),
+                        controller: _lastNameController,
+                      ),
+                      _buildField(
+                        label: 'Teléfono',
+                        hint: 'Ej: 987654321',
+                        prefixIcon: const Icon(
+                          Icons.phone_outlined,
+                          size: 20,
+                          color: AppColors.inkMuted,
+                        ),
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                      ),
+                      _buildField(
+                        label: 'Dirección (Opcional)',
+                        hint: 'Ej: Av. Larco 123',
+                        prefixIcon: const Icon(
+                          Icons.location_on_outlined,
+                          size: 20,
+                          color: AppColors.inkMuted,
+                        ),
+                        controller: _addressController,
+                      ),
+                      _buildField(
+                        label: 'Límite de crédito',
+                        hint: 'Ej: 500.00',
+                        prefixIcon: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          child: Center(
+                            widthFactor: 1.0,
+                            child: Text(
+                              'S/',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.inkMuted,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                        controller: _limitController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
+
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+              child: ElevatedButton(
+                onPressed: isCreating ? null : _registrarCliente,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.teal,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(52),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: isCreating
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Registrar cliente',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Icon(Icons.arrow_forward_rounded, size: 20),
+                        ],
+                      ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -281,7 +328,10 @@ class _NuevoClienteScreenState extends State<NuevoClienteScreen> {
             keyboardType: keyboardType,
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: const TextStyle(fontSize: 13, color: AppColors.inkMuted),
+              hintStyle: const TextStyle(
+                fontSize: 13,
+                color: AppColors.inkMuted,
+              ),
               prefixIcon: prefixIcon,
               filled: true,
               fillColor: AppColors.surface,

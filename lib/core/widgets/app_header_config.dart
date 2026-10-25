@@ -36,12 +36,29 @@ class _AppHeaderConfigState extends State<AppHeaderConfig> {
   Route<dynamic>? _route;
   HeaderConfig? _registeredConfig;
   bool _registrationScheduled = false;
+  bool _registeredSynchronously = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleRegistration();
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _controller = Provider.of<AppBarController>(context, listen: false);
     _route = ModalRoute.of(context);
+
+    if (!_registeredSynchronously) {
+      final route = _route;
+      final controller = _controller;
+      if (route != null && controller != null) {
+        _registeredSynchronously = true;
+        _registerSynchronously(route, controller);
+      }
+    }
+
     _scheduleRegistration();
   }
 
@@ -64,6 +81,33 @@ class _AppHeaderConfigState extends State<AppHeaderConfig> {
         !_listEquals(oldWidget.actions, widget.actions);
   }
 
+  void _registerSynchronously(
+    Route<dynamic> route,
+    AppBarController controller,
+  ) {
+    final config = _buildConfig();
+    _registeredConfig = config;
+    controller.registerRoute(route, config, notify: false);
+  }
+
+  void _handleBack() {
+    if (!mounted) return;
+    Navigator.of(context).maybePop();
+  }
+
+  HeaderConfig _buildConfig() {
+    return HeaderConfig(
+      visible: widget.visible,
+      title: widget.title,
+      subtitle: widget.subtitle,
+      showBack: widget.showBack,
+      onBack: widget.onBack ?? (widget.showBack ? _handleBack : null),
+      leading: widget.leading,
+      centerTitle: widget.centerTitle,
+      actions: widget.actions,
+    );
+  }
+
   void _scheduleRegistration() {
     if (_registrationScheduled) return;
     _registrationScheduled = true;
@@ -72,23 +116,12 @@ class _AppHeaderConfigState extends State<AppHeaderConfig> {
       _registrationScheduled = false;
       if (!mounted) return;
 
-      final route = _route;
+      final route = _route ?? ModalRoute.of(context);
       final controller = _controller;
       if (route == null || controller == null) return;
 
-      final config = HeaderConfig(
-        visible: widget.visible,
-        title: widget.title,
-        subtitle: widget.subtitle,
-        showBack: widget.showBack,
-        onBack:
-            widget.onBack ??
-            (widget.showBack ? () => Navigator.of(context).maybePop() : null),
-        leading: widget.leading,
-        centerTitle: widget.centerTitle,
-        actions: widget.actions,
-      );
-
+      _route = route;
+      final config = _buildConfig();
       _registeredConfig = config;
       controller.registerRoute(route, config);
     });

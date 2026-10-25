@@ -30,9 +30,6 @@ class AppHeaderObserver extends NavigatorObserver {
     super.didPush(route, previousRoute);
     if (!_isPageRoute(route)) return;
 
-    // La configuración de la nueva ruta se registra en un post-frame callback
-    // desde AppHeaderConfig, por lo que puede existir un frame sin header
-    // durante el push. Aceptado en esta tanda.
     _resolveController(route)?.setActiveRoute(route);
   }
 

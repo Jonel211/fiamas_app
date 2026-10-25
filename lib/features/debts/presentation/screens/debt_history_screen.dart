@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/app_header.dart';
+import '../../../../core/widgets/app_header_config.dart';
 import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
@@ -88,159 +88,156 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
         .where((d) => d.status == DebtStatus.pagado)
         .fold(0.0, (sum, item) => sum + item.amount);
 
-    // VERIFICAMOS SI HAY DEUDAS PENDIENTES
     final tieneDeudasPendientes = provider.fiadosCliente.any((d) => d.status == DebtStatus.pendiente);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          const AppHeader(title: 'Historial de Cliente', showBack: true),
-          GestureDetector(
-            onTap: () {
-              Navigator.pushNamed(context, AppRoutes.customerProfile, arguments: clienteCompleto);
-            },
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: AppColors.teal,
-                    child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+    return AppHeaderConfig(
+      title: 'Historial de Cliente',
+      showBack: true,
+      centerTitle: true,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: Column(
+          children: [
+            GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(context, AppRoutes.customerProfile, arguments: clienteCompleto);
+              },
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 28,
+                      backgroundColor: AppColors.teal,
+                      child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.ink)),
+                          const SizedBox(height: 4),
+                          Text(phone, style: TextStyle(fontSize: 13, color: AppColors.inkMuted)),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.ink)),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(color: AppColors.gold.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+                          child: Text('Score $score', style: const TextStyle(color: AppColors.gold, fontSize: 11, fontWeight: FontWeight.w600)),
+                        ),
                         const SizedBox(height: 4),
-                        Text(phone, style: TextStyle(fontSize: 13, color: AppColors.inkMuted)),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(8)),
+                          child: Text(badgeText, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
+                        ),
                       ],
                     ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                  ],
+                ),
+              ),
+            ),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(color: AppColors.teal, borderRadius: BorderRadius.circular(16)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('SALDO ACTUAL PENDIENTE', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
+                  const SizedBox(height: 8),
+                  Text('S/ ${debtAmount.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  const Divider(color: Colors.white24, height: 1),
+                  const SizedBox(height: 12),
+                  Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(color: AppColors.gold.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
-                        child: Text('Score $score', style: const TextStyle(color: AppColors.gold, fontSize: 11, fontWeight: FontWeight.w600)),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Total fiado', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                            const SizedBox(height: 4),
+                            Text('S/ ${totalFiado.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(8)),
-                        child: Text(badgeText, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Total pagado', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                            const SizedBox(height: 4),
+                            Text('S/ ${totalPagado.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-          ),
-
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20),
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: AppColors.teal, borderRadius: BorderRadius.circular(16)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('SALDO ACTUAL PENDIENTE', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
-                const SizedBox(height: 8),
-                Text('S/ ${debtAmount.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-                const Divider(color: Colors.white24, height: 1),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Total fiado', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                          const SizedBox(height: 4),
-                          Text('S/ ${totalFiado.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Total pagado', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                          const SizedBox(height: 4),
-                          Text('S/ ${totalPagado.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+            const SizedBox(height: 20),
+            SizedBox(
+              height: 40,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                children: [
+                  _buildFilterChip('Todos', provider.fiadosCliente.length, _selectedFilter == 'Todos'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Vigentes', provider.fiadosCliente.where((d) => d.status == DebtStatus.pendiente).length, _selectedFilter == 'Vigentes'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Pagados', provider.fiadosCliente.where((d) => d.status == DebtStatus.pagado).length, _selectedFilter == 'Pagados'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Vencidos', provider.fiadosCliente.where((d) => d.status == DebtStatus.pendiente && d.dateLabel.contains('Vencido')).length, _selectedFilter == 'Vencidos'),
+                ],
+              ),
             ),
-          ),
-
-          const SizedBox(height: 20),
-
-          SizedBox(
-            height: 40,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              children: [
-                _buildFilterChip('Todos', provider.fiadosCliente.length, _selectedFilter == 'Todos'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Vigentes', provider.fiadosCliente.where((d) => d.status == DebtStatus.pendiente).length, _selectedFilter == 'Vigentes'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Pagados', provider.fiadosCliente.where((d) => d.status == DebtStatus.pagado).length, _selectedFilter == 'Pagados'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Vencidos', provider.fiadosCliente.where((d) => d.status == DebtStatus.pendiente && d.dateLabel.contains('Vencido')).length, _selectedFilter == 'Vencidos'),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          Expanded(
-            child: provider.isLoadingFiados
-                ? const Center(child: CircularProgressIndicator())
-                : fiadosFiltrados.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'Este cliente no tiene fiados registrados.',
-                          style: TextStyle(color: AppColors.inkMuted, fontSize: 15),
+            const SizedBox(height: 16),
+            Expanded(
+              child: provider.isLoadingFiados
+                  ? const Center(child: CircularProgressIndicator())
+                  : fiadosFiltrados.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'Este cliente no tiene fiados registrados.',
+                            style: TextStyle(color: AppColors.inkMuted, fontSize: 15),
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          itemCount: fiadosFiltrados.length,
+                          itemBuilder: (context, index) => _buildDebtCard(fiadosFiltrados[index]),
                         ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        itemCount: fiadosFiltrados.length,
-                        itemBuilder: (context, index) => _buildDebtCard(fiadosFiltrados[index]),
-                      ),
-          ),
-        ],
+            ),
+          ],
+        ),
+        floatingActionButton: tieneDeudasPendientes
+            ? FloatingActionButton.extended(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => SelectDebtsScreen(customer: widget.customer)),
+                  );
+                },
+                backgroundColor: AppColors.teal,
+                icon: const Icon(Icons.checklist, color: Colors.white),
+                label: const Text('Seleccionar fiados', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              )
+            : null,
       ),
-      // BOTÓN FLOTANTE CONDICIONAL: Solo se muestra si hay deudas pendientes
-      floatingActionButton: tieneDeudasPendientes
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => SelectDebtsScreen(customer: widget.customer)),
-                );
-              },
-              backgroundColor: AppColors.teal,
-              icon: const Icon(Icons.checklist, color: Colors.white),
-              label: const Text('Seleccionar fiados', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-            )
-          : null,
     );
   }
 
