@@ -1,27 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:fiamas_app/core/constants/app_colors.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../customers/presentation/providers/cliente_provider.dart';
+import '../../../customers/data/models/cliente_model.dart';
 
 class EditCreditLimitBottomSheet extends StatefulWidget {
-  final Map<String, dynamic> customer;
+  final ClienteModel customer;
 
   const EditCreditLimitBottomSheet({super.key, required this.customer});
 
   @override
-  State<EditCreditLimitBottomSheet> createState() =>
-      _EditCreditLimitBottomSheetState();
+  State<EditCreditLimitBottomSheet> createState() => _EditCreditLimitBottomSheetState();
 }
 
 class _EditCreditLimitBottomSheetState extends State<EditCreditLimitBottomSheet> {
   late TextEditingController _controller;
   late double _currentLimit;
   late double _currentDebt;
+  bool _isSaving = false;
   final List<double> _suggestions = [200, 500, 800, 1000];
 
   @override
   void initState() {
     super.initState();
-    _currentLimit = (widget.customer['creditLimit'] as num?)?.toDouble() ?? 500.0;
-    _currentDebt = (widget.customer['debt'] as num?)?.toDouble() ?? 0.0;
+    _currentLimit = widget.customer.vinculacion.limiteCredito;
+    _currentDebt = widget.customer.vinculacion.saldoActual;
     _controller = TextEditingController(text: _currentLimit.toStringAsFixed(2));
   }
 
@@ -34,29 +38,34 @@ class _EditCreditLimitBottomSheetState extends State<EditCreditLimitBottomSheet>
   double get _newLimit => double.tryParse(_controller.text.replaceAll('S/', '').trim()) ?? _currentLimit;
   bool get _isValid => _newLimit >= _currentDebt;
 
-  void _saveChanges() {
+  Future<void> _saveChanges() async {
     if (!_isValid) return;
-    Navigator.pop(context, _newLimit);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Límite actualizado a S/ ${_newLimit.toStringAsFixed(2)}'),
-        backgroundColor: AppColors.success,
-      ),
+    
+    setState(() => _isSaving = true);
+    
+    final tiendaId = context.read<AuthProvider>().user?.tiendaId;
+    if (tiendaId == null) return;
+
+    final success = await context.read<ClienteProvider>().actualizarLimiteCredito(
+      widget.customer.id, 
+      tiendaId, 
+      _newLimit
     );
+
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+
+    if (success) {
+      Navigator.pop(context, _newLimit);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al actualizar el límite'), backgroundColor: Colors.red));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final customerName = widget.customer['name'] as String? ?? 'Cliente';
-
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-      ),
+      decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24))),
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
@@ -64,16 +73,11 @@ class _EditCreditLimitBottomSheetState extends State<EditCreditLimitBottomSheet>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Container(
-                width: 40, height: 4,
-                decoration: BoxDecoration(color: AppColors.mist, borderRadius: BorderRadius.circular(2)),
-              ),
-            ),
+            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.mist, borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 20),
             const Text('Editar límite de crédito', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.ink)),
             const SizedBox(height: 4),
-            Text(customerName, style: TextStyle(fontSize: 14, color: AppColors.inkMuted)),
+            Text(widget.customer.nombreCompleto, style: TextStyle(fontSize: 14, color: AppColors.inkMuted)),
             const SizedBox(height: 24),
             const Text('Límite actual', style: TextStyle(fontSize: 12, color: AppColors.inkMuted)),
             const SizedBox(height: 4),
@@ -125,27 +129,36 @@ class _EditCreditLimitBottomSheetState extends State<EditCreditLimitBottomSheet>
                 }).toList(),
               ),
             ),
-            const SizedBox(height: 16),
-            if (!_isValid)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: AppColors.gold.withOpacity(0.15), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.gold.withOpacity(0.3))),
-                child: Row(
-                  children: [
-                    const Icon(Icons.warning_amber_rounded, color: AppColors.gold, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text('El nuevo límite debe ser mayor o igual al saldo actual (S/ ${_currentDebt.toStringAsFixed(2)})', style: const TextStyle(fontSize: 12, color: AppColors.ink)),
-                    ),
-                  ],
-                ),
-              ),
             const SizedBox(height: 20),
+            
+            // ✅ ADVERTENCIA PERMANENTE
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.gold.withOpacity(0.15), 
+                borderRadius: BorderRadius.circular(12), 
+                border: Border.all(color: AppColors.gold.withOpacity(0.3))
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded, color: AppColors.gold, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'El nuevo límite debe ser mayor o igual al saldo actual pendiente del cliente (S/ ${_currentDebt.toStringAsFixed(2)})', 
+                      style: const TextStyle(fontSize: 12, color: AppColors.ink, height: 1.3)
+                    )
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _isValid ? _saveChanges : null,
+                onPressed: (_isValid && !_isSaving) ? _saveChanges : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.teal,
                   foregroundColor: Colors.white,
@@ -153,14 +166,16 @@ class _EditCreditLimitBottomSheetState extends State<EditCreditLimitBottomSheet>
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Guardar cambios', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                child: _isSaving 
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('Guardar cambios', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               ),
             ),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: _isSaving ? null : () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.inkMuted,
                   side: const BorderSide(color: AppColors.mist),

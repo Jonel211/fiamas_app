@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-
+import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../main.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../../domain/debt.dart';
 import 'debt_detail_screen.dart';
 import 'select_debts_screen.dart';
@@ -16,100 +19,81 @@ class DebtHistoryScreen extends StatefulWidget {
 
 class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
   String _selectedFilter = 'Todos';
+  bool _isInit = false;
 
-  final List<Debt> _debts = [
-    Debt(
-      id: '1',
-      customerName: 'Doña Martha Gómez',
-      phone: '+51 987 654 321',
-      amount: 62.00,
-      status: DebtStatus.pagado,
-      dateLabel: 'Cancelado el 10 sep 2024',
-      items: [
-        DebtItem(productName: 'Azúcar', quantity: 1, unitPrice: 20.00),
-        DebtItem(productName: 'Detergente', quantity: 1, unitPrice: 25.00),
-        DebtItem(
-          productName: 'Jabón Bolívar x3',
-          quantity: 1,
-          unitPrice: 17.00,
-        ),
-      ],
-    ),
-    Debt(
-      id: '2',
-      customerName: 'Doña Martha Gómez',
-      phone: '+51 912 345 678',
-      amount: 38.00,
-      status: DebtStatus.pendiente,
-      dateLabel: 'Vencido hace 3 días',
-      items: [
-        DebtItem(productName: 'Manteca', quantity: 1, unitPrice: 10.00),
-        DebtItem(productName: 'Fideos', quantity: 2, unitPrice: 4.00),
-        DebtItem(productName: 'Galletas Soda', quantity: 1, unitPrice: 12.00),
-        DebtItem(productName: 'Jabón de barra', quantity: 1, unitPrice: 8.00),
-      ],
-    ),
-    Debt(
-      id: '3',
-      customerName: 'Doña Martha Gómez',
-      phone: '+51 998 776 554',
-      amount: 140.00,
-      status: DebtStatus.pendiente,
-      dateLabel: '19 ago 2024',
-      items: [
-        DebtItem(
-          productName: 'Generales X, Y, Z',
-          quantity: 1,
-          unitPrice: 80.00,
-        ),
-        DebtItem(
-          productName: 'Canastos sin stock',
-          quantity: 1,
-          unitPrice: 40.00,
-        ),
-        DebtItem(productName: 'Preparación', quantity: 1, unitPrice: 20.00),
-      ],
-    ),
-  ];
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInit) {
+      _isInit = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _cargarFiados();
+      });
+    }
+  }
 
-  List<Debt> get _filteredDebts {
-    if (_selectedFilter == 'Todos') return _debts;
-    if (_selectedFilter == 'Vigentes') {
-      return _debts.where((d) => d.status == DebtStatus.pendiente).toList();
+  void _cargarFiados() {
+    final tiendaId = context.read<AuthProvider>().user?.tiendaId;
+    final clienteId = widget.customer['id'];
+    if (tiendaId != null && clienteId != null) {
+      context.read<ClienteProvider>().cargarFiadosCliente(clienteId, tiendaId);
     }
-    if (_selectedFilter == 'Pagados') {
-      return _debts.where((d) => d.status == DebtStatus.pagado).toList();
-    }
-    if (_selectedFilter == 'Vencidos') {
-      return _debts
-          .where(
-            (d) =>
-                d.status == DebtStatus.pendiente &&
-                d.dateLabel.contains('Vencido'),
-          )
-          .toList();
-    }
-    return _debts;
+  }
+
+  String _getBadgeText(int score, String categoria) {
+    if (categoria.toLowerCase() == 'nuevo') return 'Nuevo';
+    if (score >= 80) return 'Bueno';
+    if (score >= 50) return 'Regular';
+    return 'Malo';
+  }
+
+  Color _getBadgeColor(int score, String categoria) {
+    if (categoria.toLowerCase() == 'nuevo') return AppColors.skyBlue;
+    if (score >= 80) return AppColors.teal;
+    if (score >= 50) return AppColors.gold;
+    return AppColors.danger;
   }
 
   @override
   Widget build(BuildContext context) {
-    final name = widget.customer['name'] as String? ?? 'Cliente';
-    final phone = widget.customer['phone'] as String? ?? '';
-    final debtAmount = (widget.customer['debt'] as num?)?.toDouble() ?? 245.50;
-    final totalFiado = 1290.0;
-    final totalPagado = 1044.50;
-    final initial = name.isNotEmpty
-        ? name.split(' ').last[0].toUpperCase()
-        : 'C';
+    final provider = context.watch<ClienteProvider>();
+    
+    final clienteId = widget.customer['id'] as String;
+    final clienteCompleto = provider.clientes.firstWhere(
+      (c) => c.id == clienteId, 
+      orElse: () => provider.clientes.first,
+    );
+
+    final name = clienteCompleto.nombreCompleto;
+    final phone = clienteCompleto.telefono;
+    final debtAmount = clienteCompleto.vinculacion.saldoActual;
+    final score = clienteCompleto.vinculacion.scorePagador;
+    final categoria = clienteCompleto.vinculacion.categoriaPagador;
+    
+    final initial = name.isNotEmpty ? name.split(' ').last[0].toUpperCase() : 'C';
+    final badgeText = _getBadgeText(score, categoria);
+    final badgeColor = _getBadgeColor(score, categoria);
+
+    final fiadosFiltrados = provider.fiadosCliente.where((d) {
+      if (_selectedFilter == 'Todos') return true;
+      if (_selectedFilter == 'Vigentes') return d.status == DebtStatus.pendiente;
+      if (_selectedFilter == 'Pagados') return d.status == DebtStatus.pagado;
+      if (_selectedFilter == 'Vencidos') return d.status == DebtStatus.pendiente && d.dateLabel.contains('Vencido');
+      return true;
+    }).toList();
+
+    final totalFiado = provider.fiadosCliente.fold(0.0, (sum, item) => sum + item.amount);
+    final totalPagado = provider.fiadosCliente
+        .where((d) => d.status == DebtStatus.pagado)
+        .fold(0.0, (sum, item) => sum + item.amount);
+
+    // ✅ VERIFICAMOS SI HAY DEUDAS PENDIENTES
+    final tieneDeudasPendientes = provider.fiadosCliente.any((d) => d.status == DebtStatus.pendiente);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text(
-          'Historial de Cliente',
-          style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.w600),
-        ),
+        title: const Text('Historial de Cliente', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.w600)),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.ink,
         elevation: 0,
@@ -120,14 +104,9 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
       ),
       body: Column(
         children: [
-          // HEADER DEL CLIENTE (Clickeable → Perfil)
           GestureDetector(
             onTap: () {
-              Navigator.pushNamed(
-                context,
-                '/customer-profile',
-                arguments: widget.customer,
-              );
+              Navigator.pushNamed(context, AppRoutes.customerProfile, arguments: clienteCompleto);
             },
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -135,49 +114,23 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
               ),
               child: Row(
                 children: [
                   CircleAvatar(
                     radius: 28,
                     backgroundColor: AppColors.teal,
-                    child: Text(
-                      initial,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.ink,
-                          ),
-                        ),
+                        Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.ink)),
                         const SizedBox(height: 4),
-                        Text(
-                          phone,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.inkMuted,
-                          ),
-                        ),
+                        Text(phone, style: TextStyle(fontSize: 13, color: AppColors.inkMuted)),
                       ],
                     ),
                   ),
@@ -185,31 +138,15 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.gold.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'Score 92',
-                          style: TextStyle(
-                            color: AppColors.gold,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(color: AppColors.gold.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+                        child: Text('Score $score', style: const TextStyle(color: AppColors.gold, fontSize: 11, fontWeight: FontWeight.w600)),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Excelente',
-                        style: TextStyle(
-                          color: AppColors.teal,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(8)),
+                        child: Text(badgeText, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
                       ),
                     ],
                   ),
@@ -218,35 +155,16 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
             ),
           ),
 
-          // TARJETA TEAL: SALDO ACTUAL PENDIENTE
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 20),
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.teal,
-              borderRadius: BorderRadius.circular(16),
-            ),
+            decoration: BoxDecoration(color: AppColors.teal, borderRadius: BorderRadius.circular(16)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'SALDO ACTUAL PENDIENTE',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1,
-                  ),
-                ),
+                const Text('SALDO ACTUAL PENDIENTE', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
                 const SizedBox(height: 8),
-                Text(
-                  'S/ ${debtAmount.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text('S/ ${debtAmount.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
                 const Divider(color: Colors.white24, height: 1),
                 const SizedBox(height: 12),
@@ -256,22 +174,9 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Total fiado',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
+                          const Text('Total fiado', style: TextStyle(color: Colors.white70, fontSize: 12)),
                           const SizedBox(height: 4),
-                          Text(
-                            'S/ ${totalFiado.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          Text('S/ ${totalFiado.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),
@@ -279,22 +184,9 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Total pagado',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
+                          const Text('Total pagado', style: TextStyle(color: Colors.white70, fontSize: 12)),
                           const SizedBox(height: 4),
-                          Text(
-                            'S/ ${totalPagado.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          Text('S/ ${totalPagado.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),
@@ -306,83 +198,64 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
 
           const SizedBox(height: 20),
 
-          // FILTROS
           SizedBox(
             height: 40,
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 20),
               children: [
-                _buildFilterChip('Todos', _debts.length, true),
+                _buildFilterChip('Todos', provider.fiadosCliente.length, _selectedFilter == 'Todos'),
                 const SizedBox(width: 8),
-                _buildFilterChip(
-                  'Vigentes',
-                  _debts.where((d) => d.status == DebtStatus.pendiente).length,
-                  false,
-                ),
+                _buildFilterChip('Vigentes', provider.fiadosCliente.where((d) => d.status == DebtStatus.pendiente).length, _selectedFilter == 'Vigentes'),
                 const SizedBox(width: 8),
-                _buildFilterChip(
-                  'Pagados',
-                  _debts.where((d) => d.status == DebtStatus.pagado).length,
-                  false,
-                ),
+                _buildFilterChip('Pagados', provider.fiadosCliente.where((d) => d.status == DebtStatus.pagado).length, _selectedFilter == 'Pagados'),
                 const SizedBox(width: 8),
-                _buildFilterChip(
-                  'Vencidos',
-                  _debts
-                      .where(
-                        (d) =>
-                            d.status == DebtStatus.pendiente &&
-                            d.dateLabel.contains('Vencido'),
-                      )
-                      .length,
-                  false,
-                ),
+                _buildFilterChip('Vencidos', provider.fiadosCliente.where((d) => d.status == DebtStatus.pendiente && d.dateLabel.contains('Vencido')).length, _selectedFilter == 'Vencidos'),
               ],
             ),
           ),
 
           const SizedBox(height: 16),
 
-          // LISTA DE DEUDAS
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: _filteredDebts.length,
-              itemBuilder: (context, index) =>
-                  _buildDebtCard(_filteredDebts[index]),
-            ),
+            child: provider.isLoadingFiados
+                ? const Center(child: CircularProgressIndicator())
+                : fiadosFiltrados.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'Este cliente no tiene fiados registrados.',
+                          style: TextStyle(color: AppColors.inkMuted, fontSize: 15),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount: fiadosFiltrados.length,
+                        itemBuilder: (context, index) => _buildDebtCard(fiadosFiltrados[index]),
+                      ),
           ),
         ],
       ),
 
-      // BOTÓN FLOTANTE: SELECCIONAR FIADOS
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => SelectDebtsScreen(customer: widget.customer),
-            ),
-          );
-        },
-        backgroundColor: AppColors.teal,
-        icon: const Icon(Icons.checklist, color: Colors.white),
-        label: const Text(
-          'Seleccionar fiados',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-      ),
+      // ✅ BOTÓN FLOTANTE CONDICIONAL: Solo se muestra si hay deudas pendientes
+      floatingActionButton: tieneDeudasPendientes
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => SelectDebtsScreen(customer: widget.customer)),
+                );
+              },
+              backgroundColor: AppColors.teal,
+              icon: const Icon(Icons.checklist, color: Colors.white),
+              label: const Text('Seleccionar fiados', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            )
+          : null,
     );
   }
 
   Widget _buildFilterChip(String label, int count, bool isActive) {
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedFilter = label;
-        });
-      },
+      onTap: () => setState(() => _selectedFilter = label),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
@@ -392,11 +265,7 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
         ),
         child: Text(
           '$label ($count)',
-          style: TextStyle(
-            color: isActive ? Colors.white : AppColors.ink,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: isActive ? Colors.white : AppColors.ink, fontSize: 13, fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -405,10 +274,7 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
   Widget _buildDebtCard(Debt debt) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => DebtDetailScreen(debt: debt)),
-        );
+        Navigator.push(context, MaterialPageRoute(builder: (_) => DebtDetailScreen(debt: debt)));
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -416,13 +282,7 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -430,31 +290,17 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'S/ ${debt.amount.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.ink,
-                  ),
-                ),
+                Text('S/ ${debt.amount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.ink)),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: debt.status == DebtStatus.pagado
-                        ? AppColors.success.withOpacity(0.15)
-                        : AppColors.gold.withOpacity(0.15),
+                    color: debt.status == DebtStatus.pagado ? AppColors.success.withOpacity(0.15) : AppColors.gold.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     debt.status == DebtStatus.pagado ? 'PAGADO' : 'PENDIENTE',
                     style: TextStyle(
-                      color: debt.status == DebtStatus.pagado
-                          ? AppColors.success
-                          : AppColors.gold,
+                      color: debt.status == DebtStatus.pagado ? AppColors.success : AppColors.gold,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),
@@ -473,17 +319,12 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  debt.dateLabel,
-                  style: TextStyle(fontSize: 12, color: AppColors.inkMuted),
-                ),
+                Text(debt.dateLabel, style: TextStyle(fontSize: 12, color: AppColors.inkMuted)),
                 Text(
                   debt.status == DebtStatus.pagado ? 'Cancelado' : 'Pendiente',
                   style: TextStyle(
                     fontSize: 12,
-                    color: debt.status == DebtStatus.pagado
-                        ? AppColors.success
-                        : AppColors.gold,
+                    color: debt.status == DebtStatus.pagado ? AppColors.success : AppColors.gold,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

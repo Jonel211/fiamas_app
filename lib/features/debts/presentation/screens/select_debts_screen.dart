@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:fiamas_app/core/constants/app_colors.dart';
+import '../../../customers/presentation/providers/cliente_provider.dart'; // <-- Para los datos reales
 import '../../domain/debt.dart';
-import 'collect_multiple_payment_screen.dart'; //  Import correcto
 import 'debt_detail_multiple_screen.dart';
 
 class SelectDebtsScreen extends StatefulWidget {
@@ -17,110 +18,45 @@ class _SelectDebtsScreenState extends State<SelectDebtsScreen> {
   String _selectedFilter = 'Todos';
   final Set<String> _selectedDebtIds = {};
 
-  final List<Debt> _debts = [
-    Debt(
-      id: '1',
-      customerName: 'Doña Martha Gómez',
-      phone: '+51 987 654 321',
-      amount: 62.00,
-      status: DebtStatus.pagado,
-      dateLabel: '09 sep 2024',
-      items: [
-        DebtItem(productName: 'Azúcar', quantity: 1, unitPrice: 20.00),
-        DebtItem(productName: 'Detergente', quantity: 1, unitPrice: 25.00),
-        DebtItem(productName: 'Jabón Bolívar x3', quantity: 1, unitPrice: 17.00),
-      ],
-    ),
-    Debt(
-      id: '2',
-      customerName: 'Doña Martha Gómez',
-      phone: '+51 912 345 678',
-      amount: 38.00,
-      status: DebtStatus.pendiente,
-      dateLabel: '10 sep 2024',
-      items: [
-        DebtItem(productName: 'Manteca', quantity: 1, unitPrice: 10.00),
-        DebtItem(productName: 'Fideos', quantity: 2, unitPrice: 4.00),
-        DebtItem(productName: 'Galletas Soda', quantity: 1, unitPrice: 12.00),
-        DebtItem(productName: 'Jabón de barra', quantity: 1, unitPrice: 8.00),
-      ],
-    ),
-    Debt(
-      id: '3',
-      customerName: 'Doña Martha Gómez',
-      phone: '+51 998 776 554',
-      amount: 140.00,
-      status: DebtStatus.pendiente,
-      dateLabel: '19 ago 2024',
-      items: [
-        DebtItem(productName: 'Gaseosas X, Y, Z', quantity: 1, unitPrice: 80.00),
-        DebtItem(productName: 'Canastos sin stock', quantity: 1, unitPrice: 40.00),
-        DebtItem(productName: 'Preparación', quantity: 1, unitPrice: 20.00),
-      ],
-    ),
-    Debt(
-      id: '4',
-      customerName: 'Doña Martha Gómez',
-      phone: '+51 987 654 321',
-      amount: 45.50,
-      status: DebtStatus.pagado,
-      dateLabel: '24 sep 2024',
-      items: [
-        DebtItem(productName: 'Aceite 1L', quantity: 1, unitPrice: 25.00),
-        DebtItem(productName: 'Arroz 2kg', quantity: 1, unitPrice: 12.00),
-        DebtItem(productName: 'Leche 400g', quantity: 1, unitPrice: 8.50),
-      ],
-    ),
-    Debt(
-      id: '5',
-      customerName: 'Doña Martha Gómez',
-      phone: '+51 987 654 321',
-      amount: 22.50,
-      status: DebtStatus.pagado,
-      dateLabel: '05 ago 2024',
-      items: [
-        DebtItem(productName: 'Arroz 5kg', quantity: 1, unitPrice: 22.50),
-      ],
-    ),
-  ];
-
-  List<Debt> get _filteredDebts {
-    if (_selectedFilter == 'Todos') return _debts;
-    if (_selectedFilter == 'Vigentes') {
-      return _debts.where((d) => d.status == DebtStatus.pendiente).toList();
-    }
-    if (_selectedFilter == 'Pagados') {
-      return _debts.where((d) => d.status == DebtStatus.pagado).toList();
-    }
-    if (_selectedFilter == 'Vencidos') {
-      return _debts.where((d) => d.status == DebtStatus.pendiente && d.dateLabel.contains('Vencido')).toList();
-    }
-    return _debts;
-  }
-
-  double get _selectedTotal {
-    return _debts
-        .where((d) => _selectedDebtIds.contains(d.id))
-        .fold(0.0, (sum, debt) => sum + debt.amount);
-  }
-
-  void _toggleDebt(String id) {
-    setState(() {
-      if (_selectedDebtIds.contains(id)) {
-        _selectedDebtIds.remove(id);
-      } else {
-        _selectedDebtIds.add(id);
-      }
-    });
-  }
+  // ✅ Ya NO hay lista de _debts falsa aquí.
 
   @override
   Widget build(BuildContext context) {
-    final name = widget.customer['name'] as String? ?? 'Cliente';
-    final phone = widget.customer['phone'] as String? ?? '';
-    final debtAmount = (widget.customer['debt'] as num?)?.toDouble() ?? 245.50;
-    final totalFiado = 1290.0;
-    final totalPagado = 1044.50;
+    final provider = context.watch<ClienteProvider>();
+    
+    // Obtenemos las deudas reales del cliente
+    final todasLasDeudas = provider.fiadosCliente;
+
+    // Filtramos según el chip seleccionado
+    final deudasFiltradas = todasLasDeudas.where((d) {
+      if (_selectedFilter == 'Todos') return true;
+      if (_selectedFilter == 'Vigentes') return d.status == DebtStatus.pendiente;
+      if (_selectedFilter == 'Pagados') return d.status == DebtStatus.pagado;
+      if (_selectedFilter == 'Vencidos') return d.status == DebtStatus.pendiente && d.dateLabel.contains('Vencido');
+      return true;
+    }).toList();
+
+    // Calculamos el total seleccionado
+    final selectedTotal = todasLasDeudas
+        .where((d) => _selectedDebtIds.contains(d.id))
+        .fold(0.0, (sum, debt) => sum + debt.amount);
+
+    // Datos del cliente (desde el Map o el Provider)
+    final clienteCompleto = provider.clientes.firstWhere(
+      (c) => c.id == widget.customer['id'], 
+      orElse: () => provider.clientes.first,
+    );
+    final name = clienteCompleto.nombreCompleto;
+    final phone = clienteCompleto.telefono;
+    final debtAmount = clienteCompleto.vinculacion.saldoActual;
+    final score = clienteCompleto.vinculacion.scorePagador;
+    
+    // Totales reales
+    final totalFiado = todasLasDeudas.fold(0.0, (sum, item) => sum + item.amount);
+    final totalPagado = todasLasDeudas
+        .where((d) => d.status == DebtStatus.pagado)
+        .fold(0.0, (sum, item) => sum + item.amount);
+        
     final initial = name.isNotEmpty ? name.split(' ').last[0].toUpperCase() : 'C';
 
     return Scaffold(
@@ -128,9 +64,11 @@ class _SelectDebtsScreenState extends State<SelectDebtsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        // ✅ DISEÑO ARREGLADO DEL BOTÓN CANCELAR
+        leadingWidth: 100,
         leading: TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar', style: TextStyle(color: AppColors.ink)),
+          child: const Text('Cancelar', style: TextStyle(color: AppColors.inkMuted, fontSize: 15)),
         ),
         title: Text(
           '${_selectedDebtIds.length} seleccionados',
@@ -143,7 +81,7 @@ class _SelectDebtsScreenState extends State<SelectDebtsScreen> {
               Icons.check_circle,
               color: _selectedDebtIds.isNotEmpty ? AppColors.teal : AppColors.mist,
             ),
-            onPressed: _selectedDebtIds.isNotEmpty ? _goToDetail : null,
+            onPressed: _selectedDebtIds.isNotEmpty ? () => _goToDetail(todasLasDeudas) : null,
           ),
         ],
       ),
@@ -178,10 +116,8 @@ class _SelectDebtsScreenState extends State<SelectDebtsScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(color: AppColors.gold.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
-                      child: const Text('Score 92', style: TextStyle(color: AppColors.gold, fontSize: 11, fontWeight: FontWeight.w600)),
+                      child: Text('Score $score', style: const TextStyle(color: AppColors.gold, fontSize: 11, fontWeight: FontWeight.w600)),
                     ),
-                    const SizedBox(height: 4),
-                    const Text('Excelente', style: TextStyle(color: AppColors.teal, fontSize: 11, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ],
@@ -239,30 +175,34 @@ class _SelectDebtsScreenState extends State<SelectDebtsScreen> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 20),
               children: [
-                _buildFilterChip('Todos', _debts.length, true),
+                _buildFilterChip('Todos', todasLasDeudas.length, _selectedFilter == 'Todos'),
                 const SizedBox(width: 8),
-                _buildFilterChip('Vigentes', _debts.where((d) => d.status == DebtStatus.pendiente).length, false),
+                _buildFilterChip('Vigentes', todasLasDeudas.where((d) => d.status == DebtStatus.pendiente).length, _selectedFilter == 'Vigentes'),
                 const SizedBox(width: 8),
-                _buildFilterChip('Pagados', _debts.where((d) => d.status == DebtStatus.pagado).length, false),
+                _buildFilterChip('Pagados', todasLasDeudas.where((d) => d.status == DebtStatus.pagado).length, _selectedFilter == 'Pagados'),
                 const SizedBox(width: 8),
-                _buildFilterChip('Vencidos', 0, false),
+                _buildFilterChip('Vencidos', todasLasDeudas.where((d) => d.status == DebtStatus.pendiente && d.dateLabel.contains('Vencido')).length, _selectedFilter == 'Vencidos'),
               ],
             ),
           ),
 
           const SizedBox(height: 16),
 
-          // LISTA CON CHECKBOXES
+          // LISTA CON CHECKBOXES REALES
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: _filteredDebts.length,
-              itemBuilder: (context, index) {
-                final debt = _filteredDebts[index];
-                final isSelected = _selectedDebtIds.contains(debt.id);
-                return _buildDebtCard(debt, isSelected);
-              },
-            ),
+            child: deudasFiltradas.isEmpty
+                ? const Center(
+                    child: Text('No hay fiados en esta categoría.', style: TextStyle(color: AppColors.inkMuted)),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: deudasFiltradas.length,
+                    itemBuilder: (context, index) {
+                      final debt = deudasFiltradas[index];
+                      final isSelected = _selectedDebtIds.contains(debt.id);
+                      return _buildDebtCard(debt, isSelected);
+                    },
+                  ),
           ),
 
           // BOTÓN INFERIOR: COBRAR
@@ -276,10 +216,10 @@ class _SelectDebtsScreenState extends State<SelectDebtsScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: _goToDetail,
+                  onPressed: () => _goToDetail(todasLasDeudas),
                   icon: const Icon(Icons.account_balance_wallet, size: 20),
                   label: Text(
-                    'Cobrar S/ ${_selectedTotal.toStringAsFixed(2)}',
+                    'Cobrar S/ ${selectedTotal.toStringAsFixed(2)}',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -320,7 +260,15 @@ class _SelectDebtsScreenState extends State<SelectDebtsScreen> {
     final statusText = debt.status == DebtStatus.pagado ? 'PAGADO' : 'PENDIENTE';
 
     return GestureDetector(
-      onTap: () => _toggleDebt(debt.id),
+      onTap: () {
+        setState(() {
+          if (_selectedDebtIds.contains(debt.id)) {
+            _selectedDebtIds.remove(debt.id);
+          } else {
+            _selectedDebtIds.add(debt.id);
+          }
+        });
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
@@ -387,10 +335,13 @@ class _SelectDebtsScreenState extends State<SelectDebtsScreen> {
     );
   }
 
-void _goToDetail() {
-    final selectedDebts = _debts
+  void _goToDetail(List<Debt> todasLasDeudas) {
+    final selectedDebts = todasLasDeudas
         .where((d) => _selectedDebtIds.contains(d.id))
         .toList();
+        
+    if (selectedDebts.isEmpty) return;
+
     Navigator.push(
       context,
       MaterialPageRoute(

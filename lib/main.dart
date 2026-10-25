@@ -6,6 +6,8 @@ import 'core/widgets/main_shell.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/auth/presentation/providers/tienda_provider.dart';
 import 'features/auth/data/models/tienda_model.dart';
+import 'features/customers/presentation/providers/cliente_provider.dart'; 
+import 'features/customers/data/models/cliente_model.dart'; 
 import 'features/auth/presentation/screens/splash_screen.dart';
 import 'features/auth/presentation/screens/welcome_screen.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
@@ -55,6 +57,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => TiendaProvider()),
         ChangeNotifierProvider(create: (_) => InventoryProvider()),
+        ChangeNotifierProvider(create: (_) => ClienteProvider()), 
       ],
       child: const FiamasApp(),
     ),
@@ -160,8 +163,7 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.categories: (_) => const CategoriesScreen(),
         AppRoutes.newCategory: (_) => const NewCategoryScreen(),
         AppRoutes.editStore: (context) {
-          final tienda =
-              ModalRoute.of(context)!.settings.arguments as TiendaModel;
+          final tienda = ModalRoute.of(context)!.settings.arguments as TiendaModel;
           return EditStoreScreen(tienda: tienda);
         },
 
@@ -178,7 +180,11 @@ class FiamasApp extends StatelessWidget {
           return DebtHistoryScreen(customer: customer);
         },
         AppRoutes.registroFiado: (_) => const RegistroFiadoScreen(),
-        AppRoutes.newClient: (_) => const NuevoClienteScreen(),
+        // Se recibe el teléfono y lo envía a NuevoClienteScreen
+        AppRoutes.newClient: (context) {
+          final phone = ModalRoute.of(context)?.settings.arguments as String?;
+          return NuevoClienteScreen(initialPhone: phone);
+        },
         AppRoutes.newClientQr: (_) => const NuevoClienteQrScreen(),
         AppRoutes.scannerView: (_) => const ScannerViewScreen(),
         AppRoutes.finalizarFiado: (_) => const FinalizarFiadoScreen(),
@@ -192,10 +198,8 @@ class FiamasApp extends StatelessWidget {
         // Clientes
         AppRoutes.customers: (_) => const CustomerListScreen(),
         AppRoutes.customerProfile: (context) {
-          final customer =
-              ModalRoute.of(context)!.settings.arguments
-                  as Map<String, dynamic>;
-          return CustomerProfileScreen(customer: customer);
+          final cliente = ModalRoute.of(context)!.settings.arguments as ClienteModel;
+          return CustomerProfileScreen(customer: cliente);
         },
         AppRoutes.scoringHistory: (context) {
           final args = ModalRoute.of(context)?.settings.arguments;

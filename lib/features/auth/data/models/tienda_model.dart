@@ -5,6 +5,7 @@ class TiendaModel {
   final String? ruc;
   final String? telefono;
   final bool activo;
+  final String? qrToken; // <-- NUEVO CAMPO
 
   TiendaModel({
     required this.id,
@@ -13,6 +14,7 @@ class TiendaModel {
     this.ruc,
     this.telefono,
     required this.activo,
+    this.qrToken, // <-- NUEVO CAMPO
   });
 
   factory TiendaModel.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class TiendaModel {
       ruc: json['ruc'],
       telefono: json['telefono'],
       activo: json['activo'] ?? true,
+      qrToken: json['qr_token'], // <-- SE EXTRAE DEL JSON
     );
   }
 }

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../customers/presentation/providers/cliente_provider.dart';
+import '../../../customers/data/models/cliente_model.dart';
 import '../widgets/step_progress_bar.dart';
 import 'new_debt_scan_screen.dart';
 
@@ -12,13 +16,28 @@ class NewDebtCustomerScreen extends StatefulWidget {
 
 class _NewDebtCustomerScreenState extends State<NewDebtCustomerScreen> {
   final _searchController = TextEditingController();
-  String? _selectedCustomer;
+  ClienteModel? _selectedCustomer;
+  bool _isInit = false;
 
-  // TODO: reemplazar por datos reales desde CustomersRepository
-  static const _recentCustomers = [
-    ('Ricardo Mendoza', '987 123 456'),
-    ('Lucía García', '955 666 777'),
-  ];
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInit) {
+      _isInit = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _cargarClientes();
+      });
+    }
+  }
+
+  void _cargarClientes() {
+    final authProvider = context.read<AuthProvider>();
+    final tiendaId = authProvider.user?.tiendaId;
+
+    if (tiendaId != null && tiendaId.isNotEmpty) {
+      context.read<ClienteProvider>().cargarClientes(tiendaId);
+    }
+  }
 
   @override
   void dispose() {
@@ -26,7 +45,7 @@ class _NewDebtCustomerScreenState extends State<NewDebtCustomerScreen> {
     super.dispose();
   }
 
-  void _goNext() {
+  void _goNext(ClienteModel cliente) {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const NewDebtScanScreen()),
     );
@@ -81,6 +100,9 @@ class _NewDebtCustomerScreenState extends State<NewDebtCustomerScreen> {
                     Expanded(
                       child: TextField(
                         controller: _searchController,
+                        onChanged: (value) {
+                          setState(() {}); 
+                        },
                         decoration: const InputDecoration(
                           hintText: 'Busca por nombre o teléfono...',
                           filled: false,
@@ -97,9 +119,7 @@ class _NewDebtCustomerScreenState extends State<NewDebtCustomerScreen> {
               ),
               const SizedBox(height: 16),
               GestureDetector(
-                onTap: () {
-                  // TODO: abrir formulario para registrar nuevo fiadero
-                },
+                onTap: () {},
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 20),
@@ -146,21 +166,68 @@ class _NewDebtCustomerScreenState extends State<NewDebtCustomerScreen> {
                       color: AppColors.inkMuted)),
               const SizedBox(height: 8),
               Expanded(
-                child: ListView(
-                  children: [
-                    for (final customer in _recentCustomers)
-                      _RecentCustomerTile(
-                        name: customer.$1,
-                        phone: customer.$2,
-                        selected: _selectedCustomer == customer.$1,
-                        onTap: () =>
-                            setState(() => _selectedCustomer = customer.$1),
-                      ),
-                  ],
+                child: Consumer<ClienteProvider>(
+                  builder: (context, provider, child) {
+                    if (provider.isLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (provider.error != null) {
+                      return Center(
+                        child: Text(provider.error!, 
+                          style: const TextStyle(color: Colors.red)),
+                      );
+                    }
+
+                    final clientesFiltrados = provider.buscarClienteLocal(_searchController.text);
+
+                    // AQUÍ ESTÁ LA MAGIA: Un texto que nos dirá qué está pasando
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Debug: ${provider.clientes.length} en total | ${clientesFiltrados.length} filtrados',
+                          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                        const SizedBox(height: 8),
+                        Expanded(
+                          child: clientesFiltrados.isEmpty
+                            ? const Center(
+                                child: Text('No se encontraron clientes',
+                                  style: TextStyle(color: AppColors.inkMuted)),
+                              )
+                            : ListView.builder(
+                                itemCount: clientesFiltrados.length,
+                                itemBuilder: (context, index) {
+                                  final cliente = clientesFiltrados[index];
+                                  final isSelected = _selectedCustomer?.id == cliente.id;
+                                  
+                                  return _RecentCustomerTile(
+                                    cliente: cliente,
+                                    selected: isSelected,
+                                    onTap: () {
+                                      setState(() => _selectedCustomer = cliente);
+                                      _goNext(cliente);
+                                    },
+                                  );
+                                },
+                              ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
               ElevatedButton.icon(
-                onPressed: _goNext,
+                onPressed: () {
+                  if (_selectedCustomer == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Por favor, selecciona un cliente primero')),
+                    );
+                  } else {
+                    _goNext(_selectedCustomer!);
+                  }
+                },
                 icon: const Icon(Icons.arrow_forward, size: 18),
                 label: const Text('Siguiente'),
               ),
@@ -174,19 +241,17 @@ class _NewDebtCustomerScreenState extends State<NewDebtCustomerScreen> {
 
 class _RecentCustomerTile extends StatelessWidget {
   const _RecentCustomerTile({
-    required this.name,
-    required this.phone,
+    required this.cliente,
     required this.selected,
     required this.onTap,
   });
 
-  final String name;
-  final String phone;
+  final ClienteModel cliente;
   final bool selected;
   final VoidCallback onTap;
 
   String get _initials {
-    final parts = name.trim().split(RegExp(r'\s+'));
+    final parts = cliente.nombreCompleto.trim().split(RegExp(r'\s+'));
     if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
     return (parts.first.substring(0, 1) + parts.last.substring(0, 1)).toUpperCase();
   }
@@ -221,15 +286,26 @@ class _RecentCustomerTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name,
+                  Text(cliente.nombreCompleto,
                       style: const TextStyle(
                           fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.ink)),
-                  Text(phone,
+                  Text(cliente.telefono,
                       style:
                           const TextStyle(fontSize: 11, color: AppColors.inkMuted)),
                 ],
               ),
             ),
+            if (cliente.vinculacion.categoriaPagador == 'bueno' || cliente.vinculacion.scorePagador >= 80)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.teal.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text('Buen pagador', 
+                  style: TextStyle(color: Colors.teal, fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+            const SizedBox(width: 4),
             const Icon(Icons.chevron_right, size: 18, color: AppColors.inkMuted),
           ],
         ),
