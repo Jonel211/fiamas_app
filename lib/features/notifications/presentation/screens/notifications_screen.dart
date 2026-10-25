@@ -50,7 +50,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   int get _unread => _items.where((n) => !n.isRead).length;
 
-  // Actualiza al instante y revierte si la API falla
   Future<void> _markAsRead(String id) async {
     final previous = _items;
     setState(
@@ -73,6 +72,63 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  Future<void> _clearAll() async {
+    if (_items.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Eliminar notificaciones?', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
+        content: const Text(
+          'Se vaciará tu bandeja de notificaciones. Esta acción no se puede deshacer.',
+          style: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar', style: TextStyle(color: AppColors.inkMuted)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              elevation: 0,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Eliminar todas'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final previous = _items;
+    setState(() => _items = const []);
+    try {
+      await _repo.clearAll();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Notificaciones eliminadas correctamente'),
+          backgroundColor: AppColors.teal,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (_) {
+      if (mounted) {
+        setState(() => _items = previous);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error al eliminar las notificaciones'),
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,7 +136,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            _Header(unread: _unread),
+            _Header(
+              unread: _unread,
+              onClearTap: _items.isEmpty ? null : _clearAll,
+            ),
             Expanded(
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
@@ -162,11 +221,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
 /// Barra superior: flecha, título con contador de "sin leer" y botón de opciones.
 class _Header extends StatelessWidget {
-  const _Header({required this.unread});
+  const _Header({required this.unread, this.onClearTap});
 
   final int unread;
+  final VoidCallback? onClearTap;
 
-  Widget _roundButton(IconData icon, VoidCallback onTap) => Material(
+  Widget _roundButton(IconData icon, VoidCallback? onTap) => Material(
         color: AppColors.surface,
         shape: const CircleBorder(side: BorderSide(color: AppColors.mist)),
         child: InkWell(
@@ -175,7 +235,11 @@ class _Header extends StatelessWidget {
           child: SizedBox(
             width: 40,
             height: 40,
-            child: Icon(icon, size: 20, color: AppColors.ink),
+            child: Icon(
+              icon,
+              size: 20,
+              color: onTap != null ? AppColors.ink : AppColors.mist,
+            ),
           ),
         ),
       );
@@ -210,8 +274,7 @@ class _Header extends StatelessWidget {
               ],
             ),
           ),
-          // TODO: opciones de notificaciones (el ícono exacto está en Figma).
-          _roundButton(Icons.delete_sweep_outlined, () {}),
+          _roundButton(Icons.delete_sweep_outlined, onClearTap),
         ],
       ),
     );

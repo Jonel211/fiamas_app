@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../main.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../auth/data/models/tienda_model.dart';
 import '../widgets/store_form.dart';
@@ -57,6 +58,19 @@ class _EditStoreScreenState extends State<EditStoreScreen> {
           style: TextStyle(fontWeight: FontWeight.w700),
         ),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_outline_rounded, color: Colors.white),
+            tooltip: 'Eliminar Tienda',
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                AppRoutes.deleteStore,
+                arguments: widget.tienda,
+              );
+            },
+          ),
+        ],
       ),
       body: Consumer<TiendaProvider>(
         builder: (context, provider, _) {

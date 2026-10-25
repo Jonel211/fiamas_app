@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import '../../../../core/constants/app_colors.dart';
+import '../../../../main.dart';
+import '../../../auth/data/models/tienda_model.dart';
+import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../widgets/delete_store_list_item.dart';
 
 class DeleteStoreScreen extends StatefulWidget {
-  const DeleteStoreScreen({super.key});
+  final TiendaModel? tienda;
+
+  const DeleteStoreScreen({super.key, this.tienda});
 
   @override
   State<DeleteStoreScreen> createState() => _DeleteStoreScreenState();
@@ -12,6 +19,7 @@ class DeleteStoreScreen extends StatefulWidget {
 class _DeleteStoreScreenState extends State<DeleteStoreScreen> {
   final _confirmController = TextEditingController();
   bool _isUnderstood = false;
+  bool _isDeleting = false;
   String? _reason;
 
   bool get _canDelete =>
@@ -24,8 +32,47 @@ class _DeleteStoreScreenState extends State<DeleteStoreScreen> {
     super.dispose();
   }
 
+  Future<void> _handleDelete(String tiendaId) async {
+    setState(() => _isDeleting = true);
+
+    final success = await context.read<TiendaProvider>().eliminarTienda(tiendaId);
+
+    if (!mounted) return;
+    setState(() => _isDeleting = false);
+
+    if (success) {
+      await context.read<TiendaProvider>().cargarMisTiendas();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tienda eliminada exitosamente'),
+          backgroundColor: AppColors.teal,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.stores, (route) => false);
+    } else {
+      final err = context.read<TiendaProvider>().error ?? 'Error al eliminar la tienda';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(err),
+          backgroundColor: AppColors.danger,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final routeArg = ModalRoute.of(context)?.settings.arguments;
+    final tiendas = context.watch<TiendaProvider>().tiendas;
+    final TiendaModel? tienda = widget.tienda ??
+        (routeArg is TiendaModel ? routeArg : null) ??
+        (tiendas.isNotEmpty ? tiendas.first : null);
+
+    final nombreTienda = tienda?.nombre ?? 'tu tienda';
+
     return Scaffold(
       backgroundColor: AppColors.ivory,
       appBar: AppBar(
@@ -46,10 +93,10 @@ class _DeleteStoreScreenState extends State<DeleteStoreScreen> {
         children: [
           const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 60),
           const SizedBox(height: 16),
-          const Text(
-            '¿Eliminar tu tienda?',
+          Text(
+            '¿Eliminar $nombreTienda?',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.ink),
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.ink),
           ),
           const SizedBox(height: 8),
           const Text(
@@ -59,16 +106,16 @@ class _DeleteStoreScreenState extends State<DeleteStoreScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Alerta de saldo
+          // Información sobre impacto
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.05),
+              color: Colors.red.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.red.withOpacity(0.3)),
+              border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
             ),
             child: const Text(
-              'Tienes 8 clientes con saldo pendiente por S/ 23456',
+              'Todos los clientes, deudas, inventario y registros asociados a esta tienda serán eliminados permanentemente.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.red),
             ),
@@ -79,36 +126,11 @@ class _DeleteStoreScreenState extends State<DeleteStoreScreen> {
           const SizedBox(height: 12),
           const Column(
             children: [
-              DeleteStoreListItem(text: 'Clientes y límites'),
-              DeleteStoreListItem(text: 'Historial de fiados'),
+              DeleteStoreListItem(text: 'Clientes y límites de crédito'),
+              DeleteStoreListItem(text: 'Historial de fiados y pagos'),
               DeleteStoreListItem(text: 'Inventario y categorías'),
-              DeleteStoreListItem(text: 'Reportes'),
+              DeleteStoreListItem(text: 'Reportes y estadísticas'),
             ],
-          ),
-          const SizedBox(height: 16),
-
-          // BOTÓN EXPORTAR CORREGIDO
-          OutlinedButton(
-            onPressed: () {},
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.teal,
-              side: const BorderSide(color: AppColors.teal),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), // Margen horizontal
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.download_rounded, size: 20),
-                const SizedBox(width: 12), // Separación entre ícono y texto
-                const Expanded(
-                  child: Text(
-                    'Exportar mis datos', 
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                  ),
-                ),
-                const Icon(Icons.chevron_right_rounded, size: 20),
-              ],
-            ),
           ),
           const SizedBox(height: 24),
 
@@ -125,7 +147,7 @@ class _DeleteStoreScreenState extends State<DeleteStoreScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
-                  value: _reason,
+                  initialValue: _reason,
                   hint: const Text('Motivo (opcional)', style: TextStyle(fontSize: 13)),
                   decoration: InputDecoration(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -168,18 +190,27 @@ class _DeleteStoreScreenState extends State<DeleteStoreScreen> {
           const SizedBox(height: 24),
 
           OutlinedButton.icon(
-            onPressed: _canDelete ? () {
-              Navigator.of(context).pushNamedAndRemoveUntil('/stores', (route) => false);
-            } : null,
+            onPressed: (_canDelete && !_isDeleting && tienda != null)
+                ? () => _handleDelete(tienda.id)
+                : null,
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.teal,
+              foregroundColor: Colors.red,
               disabledForegroundColor: AppColors.mist,
-              side: BorderSide(color: _canDelete ? AppColors.teal : AppColors.mist),
+              side: BorderSide(color: _canDelete ? Colors.red : AppColors.mist),
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            icon: const Icon(Icons.delete_outline_rounded, size: 20),
-            label: const Text('Eliminar tienda definitivamente', style: TextStyle(fontWeight: FontWeight.w600)),
+            icon: _isDeleting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red),
+                  )
+                : const Icon(Icons.delete_outline_rounded, size: 20),
+            label: Text(
+              _isDeleting ? 'Eliminando tienda...' : 'Eliminar tienda definitivamente',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
           ),
           const SizedBox(height: 12),
 
