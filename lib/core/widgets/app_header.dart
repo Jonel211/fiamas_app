@@ -9,7 +9,7 @@ class AppHeader extends StatelessWidget {
     this.showBack = false,
     this.onBack,
     this.leading,
-    this.centerTitle = false,
+    this.centerTitle = true,
     this.actions = const [],
   });
 
@@ -17,40 +17,36 @@ class AppHeader extends StatelessWidget {
   final String? subtitle;
   final bool showBack;
   final VoidCallback? onBack;
-
-  /// Si se pasa, reemplaza el icono izquierdo por defecto (tienda / volver).
   final Widget? leading;
-
-  /// Centra el título en el header.
   final bool centerTitle;
   final List<Widget> actions;
 
   @override
   Widget build(BuildContext context) {
     final leftWidget = leading ??
-        AppHeaderIconBox(
-          icon: showBack
-              ? Icons.arrow_back_ios_new_rounded
-              : Icons.storefront_outlined,
-          onTap: showBack
-              ? (onBack ?? () => Navigator.of(context).maybePop())
-              : null,
-        );
+        (showBack
+            ? AppHeaderIconBox(
+                icon: Icons.arrow_back_ios_new_rounded,
+                onTap: onBack ?? () => Navigator.of(context).maybePop(),
+              )
+            : const AppHeaderIconBox(icon: Icons.storefront_outlined));
 
     final titleColumn = Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment:
           centerTitle ? CrossAxisAlignment.center : CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          title,
-          maxLines: 1,
-          textAlign: centerTitle ? TextAlign.center : TextAlign.start,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            title,
+            maxLines: 1,
+            textAlign: centerTitle ? TextAlign.center : TextAlign.start,
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
           ),
         ),
         if (subtitle != null)
@@ -67,30 +63,35 @@ class AppHeader extends StatelessWidget {
       color: AppColors.teal,
       padding: EdgeInsets.fromLTRB(
           16, MediaQuery.of(context).padding.top + 12, 16, 12),
-      child: Row(
-        children: [
-          if (centerTitle)
-            ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 48),
-              child: Align(alignment: Alignment.centerLeft, child: leftWidget),
-            )
-          else ...[
-            leftWidget,
-            const SizedBox(width: 12),
-          ],
-          Expanded(child: titleColumn),
-          if (centerTitle)
-            ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 48),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: actions,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 40),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Row(
+              children: [
+                leftWidget,
+                const Spacer(),
+                ...actions,
+              ],
+            ),
+            if (centerTitle)
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 88),
+                  child: Center(child: titleColumn),
+                ),
+              )
+            else
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 52, right: 88),
+                  child: Align(
+                      alignment: Alignment.centerLeft, child: titleColumn),
+                ),
               ),
-            )
-          else
-            ...actions,
-        ],
+          ],
+        ),
       ),
     );
   }

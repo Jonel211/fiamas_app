@@ -537,6 +537,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
     ),
   ],
 ),
+    );
   }
 }
 

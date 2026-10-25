@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import 'app_bottom_nav.dart';
 import 'app_header.dart';
+import 'app_header_config.dart';
 import '../../main.dart';
 import '../../features/dashboard/presentation/screens/store_summary_screen.dart';
 import '../../features/inventory/presentation/screens/products_screen.dart';
@@ -84,38 +85,28 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.ivory,
-      body: Column(
-        children: [
-          if (_currentIndex != 0)
-            AppHeader(
-              title: 'Bodega Gian Carlos',
-              actions: _buildHeaderActions(),
-              centerTitle: true,
-            ),
-          Expanded(
-            child: MediaQuery.removePadding(
-              context: context,
-              removeTop: _currentIndex != 0,
-              child: IndexedStack(index: _currentIndex, children: _pages),
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: _buildFab(),
-      bottomNavigationBar: AppBottomNav(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          if (index >= 0 && index < _pages.length) {
-            setState(() {
-              _currentIndex = index;
-            });
-          }
-        },
-        onFiadoTap: () {
-          Navigator.of(context).pushNamed(AppRoutes.registroFiado);
-        },
+    return AppHeaderConfig(
+      visible: _currentIndex != 0,
+      title: 'Bodega Gian Carlos',
+      centerTitle: true,
+      actions: _buildHeaderActions(),
+      child: Scaffold(
+        backgroundColor: AppColors.ivory,
+        body: IndexedStack(index: _currentIndex, children: _pages),
+        floatingActionButton: _buildFab(),
+        bottomNavigationBar: AppBottomNav(
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            if (index >= 0 && index < _pages.length) {
+              setState(() {
+                _currentIndex = index;
+              });
+            }
+          },
+          onFiadoTap: () {
+            Navigator.of(context).pushNamed(AppRoutes.registroFiado);
+          },
+        ),
       ),
     );
   }

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import 'core/constants/app_colors.dart';
+import 'core/navigation/app_header_observer.dart';
 import 'core/providers/app_bar_controller.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/app_header.dart';
 import 'core/widgets/main_shell.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/auth/presentation/providers/tienda_provider.dart';
@@ -122,6 +126,8 @@ class AppRoutes {
 class FiamasApp extends StatelessWidget {
   const FiamasApp({super.key});
 
+  static final AppHeaderObserver _headerObserver = AppHeaderObserver();
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -129,6 +135,34 @@ class FiamasApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       initialRoute: AppRoutes.splash,
+      navigatorObservers: [_headerObserver],
+      builder: (context, child) {
+        final content = child ?? const SizedBox.shrink();
+
+        return Consumer<AppBarController>(
+          builder: (context, controller, _) {
+            final config = controller.activeConfig;
+            final showHeader = config != null && config.visible;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (showHeader)
+                  _buildHeader(config)
+                else
+                  const SizedBox.shrink(),
+                Expanded(
+                  child: MediaQuery.removePadding(
+                    context: context,
+                    removeTop: showHeader,
+                    child: content,
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
       routes: {
         AppRoutes.splash: (_) => const SplashScreen(),
         AppRoutes.welcome: (_) => const WelcomeScreen(),
@@ -152,7 +186,8 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.categories: (_) => const CategoriesScreen(),
         AppRoutes.newCategory: (_) => const NewCategoryScreen(),
         AppRoutes.editStore: (context) {
-          final tienda = ModalRoute.of(context)!.settings.arguments as TiendaModel;
+          final tienda =
+              ModalRoute.of(context)!.settings.arguments as TiendaModel;
           return EditStoreScreen(tienda: tienda);
         },
         // Fiados
@@ -185,7 +220,8 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.privacy: (_) => const PrivacyScreen(),
         AppRoutes.customers: (_) => const MainShellScreen(initialIndex: 3),
         AppRoutes.customerProfile: (context) {
-          final cliente = ModalRoute.of(context)!.settings.arguments as ClienteModel;
+          final cliente =
+              ModalRoute.of(context)!.settings.arguments as ClienteModel;
           return CustomerProfileScreen(customer: cliente);
         },
         AppRoutes.scoringHistory: (context) {
@@ -200,5 +236,26 @@ class FiamasApp extends StatelessWidget {
       },
     );
   }
-}
 
+  Widget _buildHeader(HeaderConfig config) {
+    return Material(
+      color: AppColors.teal,
+      child: DefaultTextStyle(
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          decoration: TextDecoration.none,
+        ),
+        child: AppHeader(
+          title: config.title,
+          subtitle: config.subtitle,
+          showBack: config.showBack,
+          onBack: config.onBack,
+          leading: config.leading,
+          centerTitle: config.centerTitle,
+          actions: config.actions,
+        ),
+      ),
+    );
+  }
+}

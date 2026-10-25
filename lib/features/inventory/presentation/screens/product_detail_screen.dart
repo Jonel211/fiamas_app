@@ -93,6 +93,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                 ],
               ),
+            ),
+          ),
           Padding(
             padding: EdgeInsets.fromLTRB(
               24,
