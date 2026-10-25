@@ -68,6 +68,27 @@ class AuthService {
     }
   }
 
+  // Actualizar perfil del tendero
+  Future<TenderoModel> updatePerfil({
+    required String nombres,
+    required String apellidos,
+    required String telefono,
+  }) async {
+    try {
+      final response = await _dio.put(
+        '/tenderos/perfil',
+        data: {
+          'nombres': nombres.trim(),
+          'apellidos': apellidos.trim(),
+          'telefono': telefono.trim(),
+        },
+      );
+      return TenderoModel.fromJson(response.data['tendero']);
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['error'] ?? 'Error al actualizar perfil');
+    }
+  }
+
   Future<void> logout() async {
     await _storage.delete(key: 'auth_token');
   }

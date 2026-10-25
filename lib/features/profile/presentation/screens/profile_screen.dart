@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../main.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/user_profile.dart';
 import '../widgets/profile_app_bar.dart';
 import '../widgets/profile_badge.dart';
@@ -10,7 +12,6 @@ import '../widgets/profile_header_card.dart';
 import '../widgets/profile_section.dart';
 
 /// Pantalla "Mi Perfil" del tendero.
-/// Se abre al tocar la tarjeta de usuario en el Menú.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -19,35 +20,42 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // TODO: reemplazar por los datos reales del usuario (API / sesión).
-  UserProfile _profile = const UserProfile(
-    names: 'Jonel',
-    lastNames: 'Villanueva',
-    dni: '45872631',
-    email: 'jonel@email.com',
-    phone: '999999999',
-    address: 'Av. Universitaria 789, Lima',
-  );
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AuthProvider>().cargarPerfil();
+    });
+  }
 
   void _snack(String message) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 
   /// Abre "Editar perfil" y, si se guardó, actualiza los datos en pantalla.
-  Future<void> _openEdit() async {
+  Future<void> _openEdit(UserProfile current) async {
     final result = await Navigator.of(context)
-        .pushNamed(AppRoutes.editProfile, arguments: _profile);
+        .pushNamed(AppRoutes.editProfile, arguments: current);
 
     if (result == null || !mounted) return;
 
-    if (result is UserProfile) {
-      setState(() => _profile = result);
-      _snack('Perfil actualizado');
-    }
+    await context.read<AuthProvider>().cargarPerfil();
+    _snack('Perfil actualizado con éxito');
   }
 
   @override
   Widget build(BuildContext context) {
-    final p = _profile;
+    final authProvider = context.watch<AuthProvider>();
+    final perfil = authProvider.perfil;
+    final user = authProvider.user;
+
+    final p = UserProfile(
+      names: perfil?.nombres.isNotEmpty == true ? perfil!.nombres : (user?.nombre ?? 'Tendero'),
+      lastNames: perfil?.apellidos ?? '',
+      dni: perfil?.dni.isNotEmpty == true ? perfil!.dni : 'Sin DNI',
+      email: '',
+      phone: perfil?.telefono ?? '',
+      address: perfil?.tiendas.isNotEmpty == true ? (perfil!.tiendas.first.direccion ?? '') : '',
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -56,7 +64,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ProfileAppBar(
             title: 'Mi Perfil',
             actionIcon: Icons.edit_outlined,
-            onAction: _openEdit,
+            onAction: () => _openEdit(p),
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -70,18 +78,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ProfileHeaderCard(
-                    name: p.fullName,
-                    email: p.email,
-                    onChangePhoto: _openEdit,
+                    name: p.fullName.isNotEmpty ? p.fullName : 'Tendero Fiamas',
+                    email: p.phoneDisplay.isNotEmpty ? p.phoneDisplay : 'Sin teléfono',
+                    onChangePhoto: () => _openEdit(p),
                   ),
                   const SizedBox(height: 24),
 
                   ProfileSection(
                     title: 'Información personal',
                     children: [
-                      ProfileFieldTile(label: 'Nombres', value: p.names, onTap: _openEdit),
-                      ProfileFieldTile(label: 'Apellidos', value: p.lastNames, onTap: _openEdit),
-                      // El DNI no se edita: sin flecha ni toque.
+                      ProfileFieldTile(label: 'Nombres', value: p.names, onTap: () => _openEdit(p)),
+                      ProfileFieldTile(label: 'Apellidos', value: p.lastNames.isNotEmpty ? p.lastNames : 'No registrado', onTap: () => _openEdit(p)),
                       ProfileFieldTile(label: 'DNI', value: p.dni),
                     ],
                   ),
@@ -92,14 +99,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       ProfileFieldTile(
                         label: 'Teléfono móvil',
-                        value: p.phoneDisplay,
-                        onTap: _openEdit,
-                        trailing: const ProfileBadge(label: 'Verificado'),
+                        value: p.phoneDisplay.isNotEmpty ? p.phoneDisplay : 'Sin registrar',
+                        onTap: () => _openEdit(p),
+                        trailing: p.phone.isNotEmpty ? const ProfileBadge(label: 'Verificado') : null,
                       ),
                       ProfileFieldTile(
                         label: 'Dirección particular',
                         value: p.address.isEmpty ? 'Sin registrar' : p.address,
-                        onTap: _openEdit,
+                        onTap: () => _openEdit(p),
                       ),
                     ],
                   ),

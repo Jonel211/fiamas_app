@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import '../../../../core/constants/app_colors.dart';
-import '../../../../main.dart'; // <-- Aseguramos que esté importado para AppRoutes
+import '../../../../main.dart';
+import '../../../auth/data/models/tienda_model.dart';
+import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../widgets/store_profile_header.dart';
 import '../widgets/store_profile_tiles.dart';
 import '../widgets/store_profile_stats.dart';
 
 class StoreProfileScreen extends StatefulWidget {
-  const StoreProfileScreen({super.key});
+  final TiendaModel? tienda;
+
+  const StoreProfileScreen({super.key, this.tienda});
 
   @override
   State<StoreProfileScreen> createState() => _StoreProfileScreenState();
@@ -18,7 +24,21 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
   bool _whatsapp = true;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TiendaProvider>().cargarMisTiendas();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final routeArg = ModalRoute.of(context)?.settings.arguments;
+    final tiendas = context.watch<TiendaProvider>().tiendas;
+    final TiendaModel? tienda = widget.tienda ??
+        (routeArg is TiendaModel ? routeArg : null) ??
+        (tiendas.isNotEmpty ? tiendas.first : null);
+
     return Scaffold(
       backgroundColor: AppColors.ivory,
       appBar: AppBar(
@@ -28,30 +48,61 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.ink, size: 20),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Mi Tienda', style: TextStyle(color: AppColors.ink, fontSize: 18, fontWeight: FontWeight.w700)),
+        title: Text(
+          tienda?.nombre ?? 'Mi Tienda',
+          style: const TextStyle(color: AppColors.ink, fontSize: 18, fontWeight: FontWeight.w700),
+        ),
         centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined, color: AppColors.ink, size: 20),
-            // AQUÍ ESTÁ LA CONEXIÓN AL LÁPIZ
-            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.editStore),
+            onPressed: tienda != null
+                ? () async {
+                    await Navigator.of(context).pushNamed(AppRoutes.editStore, arguments: tienda);
+                    if (context.mounted) {
+                      context.read<TiendaProvider>().cargarMisTiendas();
+                    }
+                  }
+                : null,
           ),
         ],
       ),
       body: ListView(
         children: [
-          const StoreProfileHeader(),
+          StoreProfileHeader(
+            storeName: tienda?.nombre ?? 'Mi Tienda',
+            status: 'Activa',
+            subtitle: (tienda?.direccion != null && tienda!.direccion!.isNotEmpty)
+                ? tienda.direccion!
+                : 'Tienda registrada en Fiamas',
+          ),
           
           // 1. INFORMACIÓN DEL NEGOCIO
           _buildSectionTitle('INFORMACIÓN DEL NEGOCIO'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
-              children: const [
-                ProfileInfoTile(icon: Icons.storefront_outlined, label: 'Nombre', value: 'Bodega San Antonio'),
-                ProfileInfoTile(icon: Icons.badge_outlined, label: 'RUC', value: '10456789123'),
-                ProfileInfoTile(icon: Icons.phone_outlined, label: 'Teléfono', value: '+51 987 654 321'),
-                ProfileInfoTile(icon: Icons.location_on_outlined, label: 'Dirección', value: 'Av. Los Álamos 456, Lima'),
+              children: [
+                ProfileInfoTile(
+                  icon: Icons.storefront_outlined,
+                  label: 'Nombre',
+                  value: tienda?.nombre ?? 'Sin nombre',
+                ),
+                ProfileInfoTile(
+                  icon: Icons.badge_outlined,
+                  label: 'RUC',
+                  value: (tienda?.ruc != null && tienda!.ruc!.isNotEmpty) ? tienda.ruc! : 'No registrado',
+                ),
+                ProfileInfoTile(
+                  icon: Icons.phone_outlined,
+                  label: 'Teléfono',
+                  value: (tienda?.telefono != null && tienda!.telefono!.isNotEmpty) ? tienda.telefono! : 'No registrado',
+                ),
+                ProfileInfoTile(
+                  icon: Icons.location_on_outlined,
+                  label: 'Dirección',
+                  value: (tienda?.direccion != null && tienda!.direccion!.isNotEmpty) ? tienda.direccion! : 'Sin dirección',
+                ),
               ],
             ),
           ),
@@ -86,35 +137,15 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
           ),
           const SizedBox(height: 16),
 
-          // 3. ESTADÍSTICAS
-          _buildSectionTitle('ESTADÍSTICAS'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1.6,
-              children: const [
-                ProfileStatCard(icon: Icons.people_outline_rounded, value: '48', label: 'Clientes'),
-                ProfileStatCard(icon: Icons.inventory_2_outlined, value: '156', label: 'Productos'),
-                ProfileStatCard(icon: Icons.receipt_long_outlined, value: '412', label: 'Fiados totales'),
-                ProfileStatCard(icon: Icons.attach_money_rounded, value: 'S/ 945.50', label: 'Por cobrar'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // 4. ZONA DE PELIGRO
+          // 3. ZONA DE PELIGRO
           _buildSectionTitle('ZONA DE PELIGRO', color: Colors.red),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: DeleteStoreTile(
-              onTap: () => Navigator.of(context).pushNamed(AppRoutes.deleteStore),
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.deleteStore, arguments: tienda),
             ),
           ),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -129,4 +160,4 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
       ),
     );
   }
-} 
+}

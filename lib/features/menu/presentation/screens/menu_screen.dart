@@ -21,6 +21,14 @@ class _MenuScreenState extends State<MenuScreen> {
   bool _autoBackup = true;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AuthProvider>().cargarPerfil();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.ivory,
@@ -34,8 +42,13 @@ class _MenuScreenState extends State<MenuScreen> {
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
               child: Consumer<AuthProvider>(
                 builder: (context, authProvider, _) {
-                  final userName = authProvider.user?.nombre ?? 'Usuario';
-                  final userPhone = '999999999'; 
+                  final perfil = authProvider.perfil;
+                  final userName = perfil?.fullName.isNotEmpty == true
+                      ? perfil!.fullName
+                      : (authProvider.user?.nombre ?? 'Usuario');
+                  final userPhone = (perfil?.telefono != null && perfil!.telefono.isNotEmpty)
+                      ? '+51 ${perfil.telefono}'
+                      : 'Sin teléfono';
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
