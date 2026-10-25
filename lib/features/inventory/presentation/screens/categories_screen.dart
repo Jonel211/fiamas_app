@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/app_header.dart';
+import '../../../../core/widgets/app_header_config.dart';
 import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
@@ -59,7 +59,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Eliminar categoría'),
-        content: Text('¿Eliminar "${category.nombre}"?'),
+        content: Text(
+          '¿Eliminar "${category.nombre}"? Esta acción no se puede deshacer.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -81,68 +83,89 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.ivory,
-      body: Column(
-        children: [
-          const AppHeader(title: 'Categorías', showBack: true),
-          Expanded(
-            child: Consumer<InventoryProvider>(
-              builder: (context, provider, child) {
-                if (provider.isLoading)
-                  return const Center(child: CircularProgressIndicator());
-                if (provider.error != null) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('Error: ${provider.error}'),
-                        ElevatedButton(
-                          onPressed: () {
-                            provider.clearError();
-                            _loadDataForCurrentStore();
-                          },
-                          child: const Text('Reintentar'),
-                        ),
-                      ],
+    return AppHeaderConfig(
+      title: 'Categorías',
+      showBack: true,
+      centerTitle: true,
+      child: Scaffold(
+        backgroundColor: AppColors.ivory,
+        body: Consumer<InventoryProvider>(
+          builder: (context, provider, child) {
+            if (provider.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (provider.error != null) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Error: ${provider.error}'),
+                    ElevatedButton(
+                      onPressed: () {
+                        provider.clearError();
+                        _loadDataForCurrentStore();
+                      },
+                      child: const Text('Reintentar'),
                     ),
-                  );
-                }
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                  ],
+                ),
+              );
+            }
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ElevatedButton(
+                    onPressed: _addCategory,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.gold,
+                      foregroundColor: AppColors.ink,
+                      elevation: 0,
+                      minimumSize: const Size.fromHeight(44),
+                      textStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text('Nueva categoría'),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Lista de categorías',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  GridView.count(
+                    crossAxisCount: 3,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 0.9,
                     children: [
-                      ElevatedButton(
-                        onPressed: _addCategory,
-                        child: const Text('Nueva categoría'),
-                      ),
-                      const SizedBox(height: 24),
-                      GridView.count(
-                        crossAxisCount: 3,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: 0.9,
-                        children: [
-                          for (final c in provider.categories)
-                            GestureDetector(
-                              onLongPress: () => _deleteCategory(c),
-                              child: CategoryTile(
-                                category: c,
-                                onTap: () => _editCategory(c),
-                              ),
-                            ),
-                        ],
-                      ),
+                      for (final c in provider.categories)
+                        GestureDetector(
+                          onLongPress: () => _deleteCategory(c),
+                          child: CategoryTile(
+                            category: c,
+                            onTap: () => _editCategory(c),
+                          ),
+                        ),
                     ],
                   ),
-                );
-              },
-            ),
-          ),
-        ],
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

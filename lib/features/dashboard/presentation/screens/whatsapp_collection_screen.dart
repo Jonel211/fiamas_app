@@ -2,7 +2,7 @@
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/app_header.dart';
+import '../../../../core/widgets/app_header_config.dart';
 
 /// Cliente con saldo pendiente para la cobranza por WhatsApp.
 class _Deudor {
@@ -50,54 +50,46 @@ class WhatsappCollectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          const AppHeader(
-            title: 'Bodega Gian Carlos',
-            showBack: true,
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-              children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(4, 0, 4, 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Cobranza WhatsApp',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.ink,
-                          ),
-                        ),
+    return AppHeaderConfig(
+      title: 'Bodega Gian Carlos',
+      showBack: true,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(4, 0, 4, 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Cobranza WhatsApp',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink,
                       ),
-                      _TonoChip(tono: _tono),
-                    ],
-                  ),
-                ),
-                for (final d in _deudores)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: _DeudorCard(
-                      deudor: d,
-                      onRecordar: () => _recordar(context, d),
                     ),
                   ),
-              ],
+                  _TonoChip(tono: _tono),
+                ],
+              ),
             ),
-          ),
-        ],
+            for (final d in _deudores)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: _DeudorCard(
+                  deudor: d,
+                  onRecordar: () => _recordar(context, d),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 }
-
-
 
 /// Chip informativo con el tono del mensaje de recordatorio.
 class _TonoChip extends StatelessWidget {

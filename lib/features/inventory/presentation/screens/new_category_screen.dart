@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/app_header.dart';
+import '../../../../core/widgets/app_header_config.dart';
 import '../../domain/category.dart';
 import '../../domain/inventory_provider.dart';
 import '../widgets/category_color_picker.dart';
@@ -73,7 +73,7 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
       return;
     }
 
-    final hexColor = '#${_color.value.toRadixString(16).substring(2).toUpperCase()}';
+    final hexColor = '#${_color.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
     
     final newCategory = Category(
       id: widget.category?.id ?? '',
@@ -109,43 +109,85 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Column(children: [
-        AppHeader(
-          title: widget.isEditing ? 'Editar Categoría' : 'Nueva Categoría',
-          showBack: true,
-        ),
-        Expanded(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(24, 16, 24, 32 + MediaQuery.of(context).padding.bottom),
-            child: Form(
-              key: _formKey,
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                _FilledField(label: 'Nombre', controller: _name, hint: 'Ej: Bebidas', icon: Icons.label_outline, validator: (v) => (v == null || v.trim().isEmpty) ? 'Ingresa un nombre' : null),
+    return AppHeaderConfig(
+      title: widget.isEditing ? 'Editar Categoría' : 'Nueva Categoría',
+      showBack: true,
+      centerTitle: true,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            24,
+            16,
+            24,
+            32 + MediaQuery.of(context).padding.bottom,
+          ),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _FilledField(
+                  label: 'Nombre de la categoría',
+                  controller: _name,
+                  hint: 'Ej: Bebidas Energéticas',
+                  icon: Icons.label_outline,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Ingresa un nombre'
+                      : null,
+                ),
                 const SizedBox(height: 24),
-                _FilledField(label: 'Descripción', controller: _description, hint: 'Describe la categoría', icon: Icons.edit_outlined, maxLines: 3),
+                _FilledField(
+                  label: 'Descripción',
+                  controller: _description,
+                  hint: 'Describe la categoría',
+                  icon: Icons.edit_outlined,
+                  maxLines: 3,
+                ),
                 const SizedBox(height: 24),
-                _StatusRow(active: _active, onChanged: (v) => setState(() => _active = v)),
+                _StatusRow(
+                  active: _active,
+                  onChanged: (v) => setState(() => _active = v),
+                ),
                 const SizedBox(height: 24),
                 const _SectionLabel('Color'),
                 const SizedBox(height: 12),
-                CategoryColorPicker(selected: _color, onChanged: (c) => setState(() => _color = c)),
+                CategoryColorPicker(
+                  selected: _color,
+                  onChanged: (c) => setState(() => _color = c),
+                ),
                 const SizedBox(height: 24),
                 const _SectionLabel('Ícono'),
                 const SizedBox(height: 12),
-                CategoryIconPicker(selectedKey: _iconKey, onChanged: (k) => setState(() => _iconKey = k)),
+                CategoryIconPicker(
+                  selectedKey: _iconKey,
+                  onChanged: (k) => setState(() => _iconKey = k),
+                ),
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: _save,
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.teal, foregroundColor: Colors.white, minimumSize: const Size.fromHeight(52), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                  child: Text(widget.isEditing ? 'Guardar Cambios' : 'Guardar Categoría'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.teal,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    minimumSize: const Size.fromHeight(52),
+                    textStyle: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: Text(
+                    widget.isEditing ? 'Guardar Cambios' : 'Guardar Categoría',
+                  ),
                 ),
-              ]),
+              ],
             ),
           ),
         ),
-      ]),
+      ),
     );
   }
 }
@@ -154,36 +196,127 @@ class _SectionLabel extends StatelessWidget {
   const _SectionLabel(this.text);
   final String text;
   @override
-  Widget build(BuildContext context) => Text(text, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black));
+  Widget build(BuildContext context) => Text(
+    text,
+    style: const TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w700,
+      color: AppColors.ink,
+    ),
+  );
 }
 
 class _FilledField extends StatelessWidget {
-  const _FilledField({required this.label, required this.controller, required this.hint, required this.icon, this.validator, this.maxLines = 1});
+  const _FilledField({
+    required this.label,
+    required this.controller,
+    required this.hint,
+    required this.icon,
+    this.validator,
+    this.maxLines = 1,
+  });
+
   final String label;
   final TextEditingController controller;
   final String hint;
   final IconData icon;
   final String? Function(String?)? validator;
   final int maxLines;
+
   @override
   Widget build(BuildContext context) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _SectionLabel(label),
-      const SizedBox(height: 8),
-      TextFormField(controller: controller, validator: validator, minLines: maxLines, maxLines: maxLines, decoration: InputDecoration(hintText: hint, filled: true, fillColor: Colors.grey.shade200, prefixIcon: Icon(icon, color: Colors.grey), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
-    ]);
+    OutlineInputBorder border([Color color = Colors.transparent]) =>
+        OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: color),
+        );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionLabel(label),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          validator: validator,
+          minLines: maxLines,
+          maxLines: maxLines,
+          textCapitalization: TextCapitalization.sentences,
+          style: const TextStyle(fontSize: 14, color: AppColors.ink),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: const TextStyle(fontSize: 14, color: AppColors.inkMuted),
+            filled: true,
+            fillColor: AppColors.surfaceMuted,
+            prefixIcon: Align(
+              alignment: Alignment.topCenter,
+              widthFactor: 1,
+              heightFactor: 1,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 14),
+                child: Icon(icon, size: 20, color: AppColors.inkMuted),
+              ),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 14,
+            ),
+            border: border(),
+            enabledBorder: border(),
+            focusedBorder: border(AppColors.teal),
+            errorBorder: border(AppColors.danger),
+            focusedErrorBorder: border(AppColors.danger),
+          ),
+        ),
+      ],
+    );
   }
 }
 
 class _StatusRow extends StatelessWidget {
   const _StatusRow({required this.active, required this.onChanged});
+
   final bool active;
   final ValueChanged<bool> onChanged;
+
   @override
   Widget build(BuildContext context) {
-    return Row(children: [
-      const Expanded(child: Text('Activa', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700))),
-      Switch(value: active, onChanged: onChanged),
-    ]);
+    return Row(
+      children: [
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SectionLabel('Estado'),
+              SizedBox(height: 2),
+              Text(
+                'Habilitar disponibilidad',
+                style: TextStyle(fontSize: 12, color: AppColors.inkMuted),
+              ),
+            ],
+          ),
+        ),
+        Text(
+          active ? 'Activa' : 'Inactiva',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: active ? AppColors.teal : AppColors.inkMuted,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Switch(
+          value: active,
+          onChanged: onChanged,
+          thumbColor: const WidgetStatePropertyAll(Colors.white),
+          trackColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? AppColors.teal
+                : AppColors.mist,
+          ),
+          trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+        ),
+      ],
+    );
   }
 }

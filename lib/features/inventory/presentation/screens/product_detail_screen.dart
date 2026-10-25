@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/app_header.dart';
+import '../../../../core/widgets/app_header_config.dart';
 import '../../domain/product.dart';
 import '../../domain/sale_unit.dart';
 import '../../domain/inventory_provider.dart';
@@ -55,72 +54,75 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         _currentProduct.tipoVenta.toString().toLowerCase().contains('kg') ||
         _currentProduct.tipoVenta.toString().toLowerCase().contains('kilo');
 
-    return Scaffold(
-      backgroundColor: AppColors.ivory,
-      body: Column(
-        children: [
-          const AppHeader(title: 'Detalle del producto', showBack: true),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(child: _ProductImage(url: _currentProduct.imagenUrl)),
-                  const SizedBox(height: 28),
-                  ProductDetailField(
-                    label: 'Nombre',
-                    value: _currentProduct.nombre,
-                  ),
-                  ProductDetailField(
-                    label: 'Categoría',
-                    value: _currentProduct.categoria?.nombre ?? 'Sin categoría',
-                  ),
-                  if (_hasText(_currentProduct.descripcion))
+    return AppHeaderConfig(
+      title: 'Detalle del producto',
+      showBack: true,
+      child: Scaffold(
+        backgroundColor: AppColors.ivory,
+        body: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(child: _ProductImage(url: _currentProduct.imagenUrl)),
+                    const SizedBox(height: 28),
                     ProductDetailField(
-                      label: 'Descripción',
-                      value: _currentProduct.descripcion!,
+                      label: 'Nombre',
+                      value: _currentProduct.nombre,
                     ),
-                  if (!esPorKilo && _hasText(_currentProduct.codigoBarras))
                     ProductDetailField(
-                      label: 'Código de barras',
-                      value: _currentProduct.codigoBarras!,
+                      label: 'Categoría',
+                      value: _currentProduct.categoria?.nombre ?? 'Sin categoría',
                     ),
-                  ProductDetailField(label: 'Precio', value: priceText),
-                  ProductDetailField(
-                    label: 'Estado',
-                    value: _currentProduct.activo ? 'Activo' : 'Inactivo',
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              24,
-              8,
-              24,
-              24 + MediaQuery.of(context).padding.bottom,
-            ),
-            child: ElevatedButton(
-              onPressed: _editProduct,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _gold,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                minimumSize: const Size.fromHeight(48),
-                textStyle: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                    if (_hasText(_currentProduct.descripcion))
+                      ProductDetailField(
+                        label: 'Descripción',
+                        value: _currentProduct.descripcion!,
+                      ),
+                    if (!esPorKilo && _hasText(_currentProduct.codigoBarras))
+                      ProductDetailField(
+                        label: 'Código de barras',
+                        value: _currentProduct.codigoBarras!,
+                      ),
+                    ProductDetailField(label: 'Precio', value: priceText),
+                    ProductDetailField(
+                      label: 'Estado',
+                      value: _currentProduct.activo ? 'Activo' : 'Inactivo',
+                    ),
+                  ],
                 ),
               ),
-              child: const Text('Editar producto'),
             ),
-          ),
-        ],
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                24,
+                8,
+                24,
+                24 + MediaQuery.of(context).padding.bottom,
+              ),
+              child: ElevatedButton(
+                onPressed: _editProduct,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _gold,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  minimumSize: const Size.fromHeight(48),
+                  textStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Editar producto'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
