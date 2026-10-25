@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/main_shell.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
-import 'features/auth/data/models/tienda_model.dart';
 import 'features/auth/presentation/providers/tienda_provider.dart';
+import 'features/auth/data/models/tienda_model.dart';
 import 'features/auth/presentation/screens/splash_screen.dart';
 import 'features/auth/presentation/screens/welcome_screen.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
@@ -16,6 +16,7 @@ import 'features/auth/presentation/screens/change_password_screen.dart';
 import 'features/auth/presentation/screens/forgot_password_screen.dart';
 import 'features/auth/presentation/screens/reset_code_screen.dart';
 import 'features/auth/presentation/screens/new_password_screen.dart';
+import 'features/inventory/domain/inventory_provider.dart'; 
 import 'features/menu/presentation/screens/menu_screen.dart';
 import 'features/profile/presentation/screens/profile_screen.dart';
 import 'features/profile/presentation/screens/edit_profile_screen.dart';
@@ -24,7 +25,7 @@ import 'features/stores/presentation/screens/my_stores_screen.dart';
 import 'features/stores/presentation/screens/new_store_screen.dart';
 import 'features/stores/presentation/screens/edit_store_screen.dart';
 import 'features/stores/presentation/screens/store_profile_screen.dart';
-import 'features/stores/presentation/screens/delete_store_screen.dart'; // <-- NUEVO IMPORT
+import 'features/stores/presentation/screens/delete_store_screen.dart';
 import 'features/inventory/presentation/screens/new_product_screen.dart';
 import 'features/inventory/presentation/screens/categories_screen.dart';
 import 'features/inventory/presentation/screens/new_category_screen.dart';
@@ -44,15 +45,16 @@ import 'features/debts/presentation/screens/nuevo_cliente_qr_screen.dart';
 import 'features/debts/presentation/screens/scanner_view_screen.dart';
 import 'features/debts/presentation/screens/finalizar_fiado_screen.dart';
 import 'features/menu/presentation/screens/more_options_screen.dart';
-import 'features/reports/presentation/screens/reports_screen.dart'; 
+import 'features/reports/presentation/screens/reports_screen.dart';
 import 'features/dashboard/presentation/screens/whatsapp_collection_screen.dart';
 
 void main() {
   runApp(
     MultiProvider(
       providers: [
-      ChangeNotifierProvider(create: (_) => AuthProvider()),
-      ChangeNotifierProvider(create: (_) => TiendaProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => TiendaProvider()),
+        ChangeNotifierProvider(create: (_) => InventoryProvider()),
       ],
       child: const FiamasApp(),
     ),
@@ -113,7 +115,7 @@ class AppRoutes {
   static const moreOptions = '/more-options';
   static const reports = '/reports';
   static const storeProfile = '/store-profile';
-  static const deleteStore = '/delete-store'; // <-- NUEVA RUTA
+  static const deleteStore = '/delete-store';
 
   static void goHome(BuildContext context) {
     Navigator.of(context).popUntil((route) => route.settings.name == summary);
@@ -158,10 +160,10 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.categories: (_) => const CategoriesScreen(),
         AppRoutes.newCategory: (_) => const NewCategoryScreen(),
         AppRoutes.editStore: (context) {
-                  final tienda =
-                      ModalRoute.of(context)!.settings.arguments as TiendaModel;
-                  return EditStoreScreen(tienda: tienda);
-                },
+          final tienda =
+              ModalRoute.of(context)!.settings.arguments as TiendaModel;
+          return EditStoreScreen(tienda: tienda);
+        },
 
         // Fiados
         AppRoutes.debts: (_) => const MainShellScreen(initialIndex: 2),
@@ -170,7 +172,9 @@ class FiamasApp extends StatelessWidget {
           return DebtDetailScreen(debt: debt);
         },
         AppRoutes.debtHistory: (context) {
-          final customer = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          final customer =
+              ModalRoute.of(context)!.settings.arguments
+                  as Map<String, dynamic>;
           return DebtHistoryScreen(customer: customer);
         },
         AppRoutes.registroFiado: (_) => const RegistroFiadoScreen(),
@@ -188,7 +192,9 @@ class FiamasApp extends StatelessWidget {
         // Clientes
         AppRoutes.customers: (_) => const CustomerListScreen(),
         AppRoutes.customerProfile: (context) {
-          final customer = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          final customer =
+              ModalRoute.of(context)!.settings.arguments
+                  as Map<String, dynamic>;
           return CustomerProfileScreen(customer: customer);
         },
         AppRoutes.scoringHistory: (context) {
@@ -196,11 +202,11 @@ class FiamasApp extends StatelessWidget {
           final customer = args is Map<String, dynamic> ? args : null;
           return ScoringHistoryScreen(customer: customer);
         },
-        
+
         AppRoutes.moreOptions: (_) => const MoreOptionsScreen(),
         AppRoutes.reports: (_) => const ReportsScreen(),
         AppRoutes.storeProfile: (_) => const StoreProfileScreen(),
-        AppRoutes.deleteStore: (_) => const DeleteStoreScreen(), // <-- NUEVA PANTALLA
+        AppRoutes.deleteStore: (_) => const DeleteStoreScreen(),
       },
     );
   }

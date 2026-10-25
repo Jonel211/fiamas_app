@@ -33,6 +33,7 @@ dependencies:
 
   cupertino_icons: ^1.0.8
   url_launcher: ^6.3.3
+  shared_preferences: ^2.2.2  
 
   # HTTP Client
   dio: ^5.7.0
@@ -51,6 +52,8 @@ dependencies:
 
   http: ^1.6.0
   image_picker: ^1.2.4
+  permission_handler: ^11.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

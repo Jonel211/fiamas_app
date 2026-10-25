@@ -10,10 +10,14 @@ class AuthProvider with ChangeNotifier {
   late final AuthRepository _repository;
 
   UserModel? _user;
+  String? _token; 
   bool _isLoading = false;
   String? _errorMessage;
 
   UserModel? get user => _user;
+  String? get token => _token; 
+  String? get tiendaId =>
+      _user?.tiendaId; 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _user != null;
@@ -34,10 +38,17 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      // Asumimos que tu repository.login devuelve el UserModel y guarda el token internamente.
       _user = await _repository.login(
         identificador: identificador,
         password: password,
       );
+
+      const storage = FlutterSecureStorage();
+      _token =
+          await storage.read(key: 'token') ??
+          await storage.read(key: 'auth_token');
+
       _isLoading = false;
       notifyListeners();
       return true;
@@ -49,7 +60,6 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // ✅ MÉTODO registerTendero (sin "o" final) - coincide con register_screen.dart
   Future<bool> registerTendero({
     required String dni,
     required String nombres,
@@ -115,6 +125,7 @@ class AuthProvider with ChangeNotifier {
   Future<void> logout() async {
     await _repository.logout();
     _user = null;
+    _token = null;
     notifyListeners();
   }
 

@@ -1,88 +1,57 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/simple_app_bar.dart';
 import '../../../../main.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../domain/category.dart';
+import '../../domain/inventory_provider.dart';
 import 'new_category_screen.dart';
 import '../widgets/category_tile.dart';
 
-/// Lista de categorías de productos de la tienda.
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key});
-
   @override
   State<CategoriesScreen> createState() => _CategoriesScreenState();
 }
 
 class _CategoriesScreenState extends State<CategoriesScreen> {
-  // TODO: reemplazar por las categorías reales (API).
-  final List<Category> _categories = [
-    const Category(
-      id: '1',
-      name: 'Bebidas',
-      iconKey: 'coffee',
-      color: Color(0xFF3B82F6),
-    ),
-    const Category(
-      id: '2',
-      name: 'Abarrotes',
-      iconKey: 'bag',
-      color: Color(0xFFF59E0B),
-    ),
-    const Category(
-      id: '3',
-      name: 'Comidas',
-      iconKey: 'food',
-      color: Color(0xFFEF4444),
-    ),
-    const Category(
-      id: '4',
-      name: 'Limpieza',
-      iconKey: 'home',
-      color: Color(0xFF10B981),
-    ),
-    const Category(
-      id: '5',
-      name: 'Ferretería',
-      iconKey: 'tool',
-      color: Color(0xFFA855F7),
-    ),
-    const Category(
-      id: '6',
-      name: 'Salud',
-      iconKey: 'health',
-      color: Color(0xFFEF4444),
-    ),
-    const Category(
-      id: '7',
-      name: 'Electro',
-      iconKey: 'laptop',
-      color: AppColors.ink,
-    ),
-  ];
+  void _loadDataForCurrentStore() {
+    final authProvider = context.read<AuthProvider>();
+    final tiendaProvider = context.read<TiendaProvider>();
+    final inventoryProvider = context.read<InventoryProvider>();
 
-  String? _selectedId;
+    final currentTiendaId =
+        tiendaProvider.tiendaSeleccionadaId ?? authProvider.tiendaId;
+    final token = authProvider.token;
+
+    if (currentTiendaId != null && token != null) {
+      inventoryProvider.updateTiendaContext(token, currentTiendaId);
+      inventoryProvider.loadCategories();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _loadDataForCurrentStore(),
+    );
+  }
 
   Future<void> _addCategory() async {
-    final created = await Navigator.of(context).pushNamed(AppRoutes.newCategory);
-    if (created is! Category || !mounted) return;
-    setState(() => _categories.add(created));
+    final created = await Navigator.of(context)
+        .pushNamed(AppRoutes.newCategory);
+    if (created is Category && mounted) _loadDataForCurrentStore();
   }
 
   Future<void> _editCategory(Category category) async {
     final updated = await Navigator.of(context).push<Category>(
-      MaterialPageRoute(
-        builder: (_) => NewCategoryScreen(category: category),
-      ),
+      MaterialPageRoute(builder: (_) => NewCategoryScreen(category: category)),
     );
-    if (updated == null || !mounted) return;
-    setState(() {
-      final index = _categories.indexWhere((c) => c.id == updated.id);
-      if (index != -1) {
-        _categories[index] = updated;
-      }
-    });
+    if (updated != null && mounted) _loadDataForCurrentStore();
   }
 
   Future<void> _deleteCategory(Category category) async {
@@ -90,7 +59,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Eliminar categoría'),
-        content: Text('¿Eliminar "${category.name}"? Esta acción no se puede deshacer.'),
+        content: Text('¿Eliminar "${category.nombre}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -104,11 +73,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         ],
       ),
     );
-    if (confirmed != true || !mounted) return;
-    setState(() {
-      _categories.removeWhere((c) => c.id == category.id);
-      if (_selectedId == category.id) _selectedId = null;
-    });
+    if (confirmed == true && mounted) {
+      await context.read<InventoryProvider>().deleteCategory(category.id);
+      _loadDataForCurrentStore();
+    }
   }
 
   @override
@@ -119,62 +87,59 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         children: [
           const SimpleAppBar(title: 'Categorías'),
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ElevatedButton(
-                    onPressed: _addCategory,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.gold,
-                      foregroundColor: AppColors.ink,
-                      elevation: 0,
-                      minimumSize: const Size.fromHeight(44),
-                      textStyle: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Text('Nueva categoría'),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Lista de categorías',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.ink,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  GridView.count(
-                    crossAxisCount: 3,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 0.9,
-                    children: [
-                      for (final c in _categories)
-                        GestureDetector(
-                          onLongPress: () => _deleteCategory(c),
-                          child: CategoryTile(
-                            category: c,
-                            selected: c.id == _selectedId,
-                            onTap: () {
-                              setState(() => _selectedId = c.id);
-                              _editCategory(c);
-                            },
-                          ),
+            child: Consumer<InventoryProvider>(
+              builder: (context, provider, child) {
+                if (provider.isLoading)
+                  return const Center(child: CircularProgressIndicator());
+                if (provider.error != null) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('Error: ${provider.error}'),
+                        ElevatedButton(
+                          onPressed: () {
+                            provider.clearError();
+                            _loadDataForCurrentStore();
+                          },
+                          child: const Text('Reintentar'),
                         ),
+                      ],
+                    ),
+                  );
+                }
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ElevatedButton(
+                        onPressed: _addCategory,
+                        child: const Text('Nueva categoría'),
+                      ),
+                      const SizedBox(height: 24),
+                      GridView.count(
+                        crossAxisCount: 3,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 0.9,
+                        children: [
+                          for (final c in provider.categories)
+                            GestureDetector(
+                              onLongPress: () => _deleteCategory(c),
+                              child: CategoryTile(
+                                category: c,
+                                onTap: () => _editCategory(c),
+                              ),
+                            ),
+                        ],
+                      ),
                     ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ],

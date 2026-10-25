@@ -1,25 +1,43 @@
-import 'package:flutter/material.dart';
-
-/// Categoría de productos de la tienda.
 class Category {
-  const Category({
+  final String id;
+  final String tiendaId;
+  final String nombre;
+  final String? descripcion;
+  final String? icono; 
+  final String? color; 
+  final bool activo;
+
+  Category({
     required this.id,
-    required this.name,
-    required this.color,
-    required this.iconKey,
-    this.description = '',
-    this.active = true,
+    required this.tiendaId,
+    required this.nombre,
+    this.descripcion,
+    this.icono,
+    this.color,
+    this.activo = true,
   });
 
-  final String id;
-  final String name;
-  final String description;
+  factory Category.fromJson(Map<String, dynamic> json) {
+    return Category(
+      id: json['id'] ?? '',
+      tiendaId: json['tienda_id'] ?? '',
+      nombre: json['nombre'] ?? '',
+      descripcion: json['descripcion'],
+      icono: json['icono'], 
+      color: json['color'], 
+      activo: json['activo'] ?? true,
+    );
+  }
 
-  /// Color de identificación (uno de CategoryStyle.colors).
-  final Color color;
-
-  /// Clave del ícono (una de las de CategoryStyle.icons), ej: 'coffee'.
-  /// Se guarda la clave y no el IconData para poder enviarla a la API.
-  final String iconKey;
-  final bool active;
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'tienda_id': tiendaId,
+      'nombre': nombre,
+      'descripcion': descripcion,
+      'icono': icono, 
+      'color': color, 
+      'activo': activo,
+    };
+  }
 }
