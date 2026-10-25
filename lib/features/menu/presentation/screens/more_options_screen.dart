@@ -10,27 +10,7 @@ class MoreOptionsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // 1. BARRA SUPERIOR (HEADER)
-        Container(
-          width: double.infinity,
-          color: AppColors.teal,
-          padding: EdgeInsets.only(
-            top: MediaQuery.of(context).padding.top + 16,
-            bottom: 16,
-            left: 20,
-            right: 20,
-          ),
-          child: const Text(
-            'Más opciones',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-
-        // 2. CONTENIDO (Grilla y botón)
+        // CONTENIDO (Grilla y botón)
         Expanded(
           child: Padding(
             padding: const EdgeInsets.all(20.0),

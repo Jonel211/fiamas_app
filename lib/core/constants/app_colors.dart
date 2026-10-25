@@ -40,6 +40,7 @@ class AppColors {
 
   /// Morado para avatares y acentos.
   static const Color purple = Color(0xFF8B5CF6);
+
   // Estados (avisos, notificaciones y formularios)
   /// Fondo suave para elementos en rojo (errores, urgencias).
   static const Color dangerSoft = Color(0xFFFDECEC);
@@ -56,4 +57,11 @@ class AppColors {
   // Extras
   /// Verde del ícono de WhatsApp.
   static const Color whatsapp = Color(0xFF25D366);
+
+  // ── Texto y detalles sobre fondos de marca (teal) ────────────
+  /// Texto principal sobre teal.
+  static const Color onBrand = Colors.white;
+
+  /// Texto secundario sobre teal.
+  static const Color onBrandMuted = Colors.white70;
 }

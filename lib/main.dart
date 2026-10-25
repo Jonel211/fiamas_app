@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'core/constants/app_colors.dart';
+import 'core/navigation/app_header_observer.dart';
+import 'core/providers/app_bar_controller.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/app_header.dart';
 import 'core/widgets/main_shell.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/auth/presentation/providers/tienda_provider.dart';
@@ -10,9 +14,6 @@ import 'features/customers/presentation/providers/cliente_provider.dart';
 import 'features/customers/data/models/cliente_model.dart'; 
 import 'features/auth/presentation/screens/splash_screen.dart';
 import 'features/auth/presentation/screens/welcome_screen.dart';
-import 'features/auth/presentation/screens/login_screen.dart';
-import 'features/auth/presentation/screens/register_screen.dart';
-import 'features/auth/presentation/screens/register_client_screen.dart';
 import 'features/auth/presentation/screens/verification_screen.dart';
 import 'features/auth/presentation/screens/change_password_screen.dart';
 import 'features/auth/presentation/screens/forgot_password_screen.dart';
@@ -35,18 +36,17 @@ import 'features/help/presentation/screens/help_screen.dart';
 import 'features/help/presentation/screens/about_screen.dart';
 import 'features/help/presentation/screens/terms_screen.dart';
 import 'features/help/presentation/screens/privacy_screen.dart';
-import 'features/customers/presentation/screens/customer_list_screen.dart';
 import 'features/customers/presentation/screens/customer_profile_screen.dart';
 import 'features/customers/presentation/screens/scoring_history_screen.dart';
 import 'features/debts/domain/debt.dart';
-import 'features/debts/presentation/screens/debt_detail_screen.dart';
+import 'features/debts/presentation/screens/debt_detail_multiple_screen.dart';
 import 'features/debts/presentation/screens/debt_history_screen.dart';
 import 'features/debts/presentation/screens/registro_fiado_screen.dart';
 import 'features/debts/presentation/screens/nuevo_cliente_screen.dart';
 import 'features/debts/presentation/screens/nuevo_cliente_qr_screen.dart';
 import 'features/debts/presentation/screens/scanner_view_screen.dart';
 import 'features/debts/presentation/screens/finalizar_fiado_screen.dart';
-import 'features/menu/presentation/screens/more_options_screen.dart';
+
 import 'features/reports/presentation/screens/reports_screen.dart';
 import 'features/dashboard/presentation/screens/whatsapp_collection_screen.dart';
 
@@ -58,6 +58,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => TiendaProvider()),
         ChangeNotifierProvider(create: (_) => InventoryProvider()),
         ChangeNotifierProvider(create: (_) => ClienteProvider()), 
+        ChangeNotifierProvider(create: (_) => AppBarController()),
       ],
       child: const FiamasApp(),
     ),
@@ -67,19 +68,14 @@ void main() {
 class AppRoutes {
   AppRoutes._();
 
-  // Autenticación
   static const splash = '/';
   static const welcome = '/welcome';
-  static const login = '/login';
-  static const register = '/register';
-  static const registerClient = '/register-client';
   static const verification = '/verification';
   static const changePassword = '/change-password';
   static const forgotPassword = '/forgot-password';
   static const resetCode = '/reset-code';
   static const newPassword = '/new-password';
 
-  // Navegación principal
   static const menu = '/menu';
   static const profile = '/profile';
   static const editProfile = '/edit-profile';
@@ -89,13 +85,11 @@ class AppRoutes {
   static const summary = '/summary';
   static const whatsappCollection = '/whatsapp-collection';
 
-  // Inventario
   static const newProduct = '/new-product';
   static const categories = '/categories';
   static const newCategory = '/new-category';
   static const editStore = '/edit-store';
 
-  // Fiados
   static const debts = '/debts';
   static const debtDetail = '/debt-detail';
   static const debtHistory = '/debt-history';
@@ -105,12 +99,10 @@ class AppRoutes {
   static const scannerView = '/scanner-view';
   static const finalizarFiado = '/finalizar-fiado';
 
-  // Clientes
   static const customers = '/customers';
   static const customerProfile = '/customer-profile';
   static const scoringHistory = '/scoring-history';
 
-  // Configuración y legales
   static const help = '/help';
   static const about = '/about';
   static const terms = '/terms';
@@ -123,10 +115,18 @@ class AppRoutes {
   static void goHome(BuildContext context) {
     Navigator.of(context).popUntil((route) => route.settings.name == summary);
   }
+
+  /// Lleva a la bienvenida con el panel de login ya abierto.
+  static void goToLogin(BuildContext context) {
+    Navigator.of(context)
+        .pushNamedAndRemoveUntil(welcome, (route) => false, arguments: 'login');
+  }
 }
 
 class FiamasApp extends StatelessWidget {
   const FiamasApp({super.key});
+
+  static final AppHeaderObserver _headerObserver = AppHeaderObserver();
 
   @override
   Widget build(BuildContext context) {
@@ -135,20 +135,42 @@ class FiamasApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       initialRoute: AppRoutes.splash,
+      navigatorObservers: [_headerObserver],
+      builder: (context, child) {
+        final content = child ?? const SizedBox.shrink();
+
+        return Consumer<AppBarController>(
+          builder: (context, controller, _) {
+            final config = controller.activeConfig;
+            final showHeader = config != null && config.visible;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (showHeader)
+                  _buildHeader(config)
+                else
+                  const SizedBox.shrink(),
+                Expanded(
+                  child: MediaQuery.removePadding(
+                    context: context,
+                    removeTop: showHeader,
+                    child: content,
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
       routes: {
-        // Autenticación
         AppRoutes.splash: (_) => const SplashScreen(),
         AppRoutes.welcome: (_) => const WelcomeScreen(),
-        AppRoutes.login: (_) => const LoginScreen(),
-        AppRoutes.register: (_) => const RegisterScreen(),
-        AppRoutes.registerClient: (_) => const RegisterClientScreen(),
         AppRoutes.verification: (_) => const VerificationScreen(),
         AppRoutes.changePassword: (_) => const ChangePasswordScreen(),
         AppRoutes.forgotPassword: (_) => const ForgotPasswordScreen(),
         AppRoutes.resetCode: (_) => const ResetCodeScreen(),
         AppRoutes.newPassword: (_) => const NewPasswordScreen(),
-
-        // Navegación principal
         AppRoutes.menu: (_) => const MenuScreen(),
         AppRoutes.profile: (_) => const ProfileScreen(),
         AppRoutes.editProfile: (_) => const EditProfileScreen(),
@@ -157,21 +179,22 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.newStore: (_) => const NewStoreScreen(),
         AppRoutes.summary: (_) => const MainShellScreen(),
         AppRoutes.whatsappCollection: (_) => const WhatsappCollectionScreen(),
-
-        // Inventario
         AppRoutes.newProduct: (_) => const NewProductScreen(),
         AppRoutes.categories: (_) => const CategoriesScreen(),
         AppRoutes.newCategory: (_) => const NewCategoryScreen(),
         AppRoutes.editStore: (context) {
-          final tienda = ModalRoute.of(context)!.settings.arguments as TiendaModel;
+          final tienda =
+              ModalRoute.of(context)!.settings.arguments as TiendaModel;
           return EditStoreScreen(tienda: tienda);
         },
-
         // Fiados
         AppRoutes.debts: (_) => const MainShellScreen(initialIndex: 2),
         AppRoutes.debtDetail: (context) {
           final debt = ModalRoute.of(context)!.settings.arguments as Debt;
-          return DebtDetailScreen(debt: debt);
+          return DebtDetailMultipleScreen(
+            customer: {'name': debt.customerName, 'phone': debt.phone},
+            debts: [debt],
+          );
         },
         AppRoutes.debtHistory: (context) {
           final customer =
@@ -188,17 +211,14 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.newClientQr: (_) => const NuevoClienteQrScreen(),
         AppRoutes.scannerView: (_) => const ScannerViewScreen(),
         AppRoutes.finalizarFiado: (_) => const FinalizarFiadoScreen(),
-
-        // Configuración y legales
         AppRoutes.help: (_) => const HelpScreen(),
         AppRoutes.about: (_) => const AboutScreen(),
         AppRoutes.terms: (_) => const TermsScreen(),
         AppRoutes.privacy: (_) => const PrivacyScreen(),
-
-        // Clientes
-        AppRoutes.customers: (_) => const CustomerListScreen(),
+        AppRoutes.customers: (_) => const MainShellScreen(initialIndex: 3),
         AppRoutes.customerProfile: (context) {
-          final cliente = ModalRoute.of(context)!.settings.arguments as ClienteModel;
+          final cliente =
+              ModalRoute.of(context)!.settings.arguments as ClienteModel;
           return CustomerProfileScreen(customer: cliente);
         },
         AppRoutes.scoringHistory: (context) {
@@ -206,12 +226,33 @@ class FiamasApp extends StatelessWidget {
           final customer = args is Map<String, dynamic> ? args : null;
           return ScoringHistoryScreen(customer: customer);
         },
-
-        AppRoutes.moreOptions: (_) => const MoreOptionsScreen(),
+        AppRoutes.moreOptions: (_) => const MainShellScreen(initialIndex: 4),
         AppRoutes.reports: (_) => const ReportsScreen(),
         AppRoutes.storeProfile: (_) => const StoreProfileScreen(),
         AppRoutes.deleteStore: (_) => const DeleteStoreScreen(),
       },
+    );
+  }
+
+  Widget _buildHeader(HeaderConfig config) {
+    return Material(
+      color: AppColors.teal,
+      child: DefaultTextStyle(
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          decoration: TextDecoration.none,
+        ),
+        child: AppHeader(
+          title: config.title,
+          subtitle: config.subtitle,
+          showBack: config.showBack,
+          onBack: config.onBack,
+          leading: config.leading,
+          centerTitle: config.centerTitle,
+          actions: config.actions,
+        ),
+      ),
     );
   }
 }

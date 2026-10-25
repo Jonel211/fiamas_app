@@ -1,98 +1,103 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/simple_app_bar.dart';
+import '../../../../core/widgets/app_header_config.dart';
 import '../../data/terms_text.dart';
 
-/// Pantalla "Términos y Condiciones".
-/// Muestra el texto legal dentro de una tarjeta scrollable con
-/// dos botones al final: Rechazar (dorado) y Aceptar y Continúa (teal).
-class TermsScreen extends StatelessWidget {
+
+class TermsScreen extends StatefulWidget {
   const TermsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.ivory,
-      body: Column(
-        children: [
-          const SimpleAppBar(title: 'Términos y condiciones'),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: AppColors.teal.withOpacity(0.45),
-                  ),
-                ),
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    // ── Texto scrollable ───────────────────
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: _buildContent(context),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
+  State<TermsScreen> createState() => _TermsScreenState();
+}
 
-                    // ── Botones ───────────────────────────
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            style: OutlinedButton.styleFrom(
-                              backgroundColor: AppColors.gold,
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size.fromHeight(48),
-                              side: BorderSide.none,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              textStyle: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            child: const Text('Rechazar'),
-                          ),
+class _TermsScreenState extends State<TermsScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return AppHeaderConfig(
+      title: 'Términos y condiciones',
+      showBack: true,
+      child: Scaffold(
+        backgroundColor: AppColors.ivory,
+        body: Column(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.teal.withOpacity(0.45)),
+                  ),
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      // ── Texto scrollable ───────────────────
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: _buildContent(context),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.teal,
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size.fromHeight(48),
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // ── Botones ───────────────────────────
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: AppColors.gold,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size.fromHeight(48),
+                                side: BorderSide.none,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                textStyle: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
-                              textStyle: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                              ),
+                              child: const Text('Rechazar'),
                             ),
-                            child: const Text('Aceptar y Continúa'),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.teal,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size.fromHeight(48),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                textStyle: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              child: const Text('Aceptar y Continúa'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  /// Construye el contenido del texto legal con estilo uniforme.
+  
   Widget _buildContent(BuildContext context) {
     const baseStyle = TextStyle(
       fontSize: 13,

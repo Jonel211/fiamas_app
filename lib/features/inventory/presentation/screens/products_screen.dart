@@ -8,7 +8,6 @@ import '../../domain/inventory_provider.dart';
 import '../../domain/product.dart';
 import '../widgets/product_card.dart';
 import '../widgets/products_search_bar.dart';
-import '../widgets/products_top_bar.dart';
 import '../widgets/filter_bottom_sheet.dart';
 import 'product_detail_screen.dart';
 
@@ -202,10 +201,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ProductsTopBar(
-              storeName: 'Mi Tienda',
-              onBellTap: () => Navigator.of(context).pushNamed(AppRoutes.notifications),
-            ),
             Expanded(
               child: CustomScrollView(
                 slivers: [
@@ -218,20 +213,46 @@ class _ProductsScreenState extends State<ProductsScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const SizedBox(width: double.infinity, child: Text('Mis productos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.ink))),
+                              const SizedBox(
+                                width: double.infinity,
+                                child: Text(
+                                  'Mis productos',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.ink,
+                                  ),
+                                ),
+                              ),
                               const SizedBox(height: 14),
                               ProductsSearchBar(
                                 controller: _search,
                                 onChanged: (v) => setState(() => _query = v),
-                                onFilter: _openFilterSheet, // ✅ Cambiado para abrir el bottom sheet
+                                onFilter: _openFilterSheet,
                               ),
                               const SizedBox(height: 16),
                               Row(
                                 children: [
-                                  const Expanded(child: Text('Categorías', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink))),
+                                  const Expanded(
+                                    child: Text(
+                                      'Categorías',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.ink,
+                                      ),
+                                    ),
+                                  ),
                                   GestureDetector(
                                     onTap: () => Navigator.of(context).pushNamed(AppRoutes.categories),
-                                    child: const Text('Ver todo', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF2B6CB0))),
+                                    child: const Text(
+                                      'Ver todo',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF2B6CB0),
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),

@@ -31,7 +31,7 @@ class _ScoringHistoryScreenState extends State<ScoringHistoryScreen> {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          // ✅ HEADER MÁS COMPACTO (Ya no tiene tanto espacio en blanco)
+          // HEADER
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(20, 40, 20, 30),
@@ -96,7 +96,7 @@ class _ScoringHistoryScreenState extends State<ScoringHistoryScreen> {
 
           const SizedBox(height: 20),
 
-          // FILTROS
+          // FILTROS DE PERÍODO
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
@@ -112,7 +112,7 @@ class _ScoringHistoryScreenState extends State<ScoringHistoryScreen> {
 
           const SizedBox(height: 24),
 
-          // LISTA VACÍA (Porque no hay historial real aún)
+          // LISTA DE EVENTOS
           Expanded(
             child: Center(
               child: Column(

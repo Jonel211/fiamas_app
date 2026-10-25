@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_header_config.dart';
 import '../../../../core/widgets/auth_field.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/user_profile.dart';
-import '../widgets/profile_app_bar.dart';
 import '../widgets/profile_avatar.dart';
 
 /// Edita los datos del tendero. Recibe el [UserProfile] como argumento de
@@ -15,16 +15,17 @@ class EditProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final profile = ModalRoute.of(context)?.settings.arguments as UserProfile? ??
+    final profile =
+        ModalRoute.of(context)?.settings.arguments as UserProfile? ??
         const UserProfile.empty();
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          const ProfileAppBar(title: 'Editar perfil'),
-          Expanded(child: _EditProfileForm(profile: profile)),
-        ],
+    return AppHeaderConfig(
+      title: 'Editar perfil',
+      showBack: true,
+      centerTitle: true,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: _EditProfileForm(profile: profile),
       ),
     );
   }
@@ -103,7 +104,12 @@ class _EditProfileFormState extends State<_EditProfileForm> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(24, 16, 24, 32 + MediaQuery.of(context).padding.bottom),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        16,
+        24,
+        32 + MediaQuery.of(context).padding.bottom,
+      ),
       child: Form(
         key: _formKey,
         child: Column(
@@ -155,18 +161,23 @@ class _EditProfileFormState extends State<_EditProfileForm> {
                 backgroundColor: AppColors.teal,
                 foregroundColor: Colors.white,
                 minimumSize: const Size.fromHeight(52),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 elevation: 0,
-                textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                textStyle: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               onPressed: _saving ? null : _save,
               child: _saving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Text('Guardar cambios'),
+                ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                )
+              : const Text('Guardar cambios'),
             ),
           ],
         ),

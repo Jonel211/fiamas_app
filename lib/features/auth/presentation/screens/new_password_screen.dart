@@ -35,10 +35,8 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
       const SnackBar(content: Text('Contraseña actualizada')),
     );
     // Vuelve al login dejando solo la pantalla de bienvenida debajo.
-    Navigator.of(context).pushNamedAndRemoveUntil(
-      AppRoutes.login,
-      (route) => route.isFirst,
-    );
+    AppRoutes.goToLogin(context);
+    
   }
 
   Widget _toggle(bool obscured, VoidCallback onPressed) {

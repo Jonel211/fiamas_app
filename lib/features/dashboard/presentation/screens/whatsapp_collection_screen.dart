@@ -2,6 +2,7 @@
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_header_config.dart';
 
 /// Cliente con saldo pendiente para la cobranza por WhatsApp.
 class _Deudor {
@@ -49,109 +50,40 @@ class WhatsappCollectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          const _TopBar(title: 'Bodega Gian Carlos'),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-              children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(4, 0, 4, 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Cobranza WhatsApp',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.ink,
-                          ),
-                        ),
-                      ),
-                      _TonoChip(tono: _tono),
-                    ],
-                  ),
-                ),
-                for (final d in _deudores)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: _DeudorCard(
-                      deudor: d,
-                      onRecordar: () => _recordar(context, d),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-//// Cabecera teal: flecha con recuadro a la izquierda y tienda + título centrados.
-class _TopBar extends StatelessWidget {
-  const _TopBar({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final topInset = MediaQuery.of(context).padding.top;
-
-    return Container(
-      color: AppColors.teal,
-      padding: EdgeInsets.fromLTRB(16, topInset + 12, 16, 16),
-      child: SizedBox(
-        height: 44,
-        child: Stack(
-          alignment: Alignment.center,
+    return AppHeaderConfig(
+      title: 'Bodega Gian Carlos',
+      showBack: true,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
           children: [
-            // Flecha de regreso con recuadro sombreado (izquierda).
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Material(
-                color: Colors.white.withValues(alpha: 0.18),
-                borderRadius: BorderRadius.circular(12),
-                child: InkWell(
-                  onTap: () => Navigator.of(context).maybePop(),
-                  borderRadius: BorderRadius.circular(12),
-                  child: const SizedBox(
-                    width: 44,
-                    height: 44,
-                    child: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: Colors.white,
-                      size: 20,
+            const Padding(
+              padding: EdgeInsets.fromLTRB(4, 0, 4, 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Cobranza WhatsApp',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink,
+                      ),
                     ),
                   ),
-                ),
+                  _TonoChip(tono: _tono),
+                ],
               ),
             ),
-            // Icono de tienda + título (centro).
-            const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.storefront_outlined,
-                  color: Colors.white,
-                  size: 22,
+            for (final d in _deudores)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: _DeudorCard(
+                  deudor: d,
+                  onRecordar: () => _recordar(context, d),
                 ),
-                SizedBox(width: 12),
-                Text(
-                  'Bodega Gian Carlos',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
+              ),
           ],
         ),
       ),
