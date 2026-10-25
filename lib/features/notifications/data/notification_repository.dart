@@ -19,6 +19,7 @@ class NotificationRepository {
 
   Future<void> markAsRead(String id) => _dio.patch('/notificaciones/$id/leer');
   Future<void> markAllAsRead() => _dio.patch('/notificaciones/leer-todas');
+  Future<void> clearAll() => _dio.delete('/notificaciones/limpiar');
 
   AppNotification _fromJson(Map<String, dynamic> j) {
     final date = DateTime.parse(j['fecha'] as String).toLocal();

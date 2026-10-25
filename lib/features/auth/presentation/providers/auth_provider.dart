@@ -3,7 +3,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../data/datasources/auth_remote_datasource.dart';
 import '../../data/models/user_model.dart';
+import '../../data/models/tendero_model.dart';
 import '../../data/repositories/auth_repository.dart';
+import '../../data/services/auth_service.dart';
 import '../../../../core/network/dio_client.dart';
 
 class AuthProvider with ChangeNotifier {
@@ -11,6 +13,7 @@ class AuthProvider with ChangeNotifier {
 
   UserModel? _user;
   String? _token; 
+  TenderoModel? _perfil;
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -18,6 +21,7 @@ class AuthProvider with ChangeNotifier {
   String? get token => _token; 
   String? get tiendaId =>
       _user?.tiendaId; 
+  TenderoModel? get perfil => _perfil;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _user != null;
@@ -122,10 +126,70 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // función de gestión de estados de carga y errores
+  Future<bool> cambiarPassword({
+    required String passwordActual,
+    required String passwordNuevo,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _repository.cambiarPassword(
+        passwordActual: passwordActual,
+        passwordNuevo: passwordNuevo,
+      );
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<void> cargarPerfil() async {
+    try {
+      _perfil = await authService.getPerfil();
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  // Actualizar perfil del tendero
+  Future<bool> updatePerfil({
+    required String nombres,
+    required String apellidos,
+    required String telefono,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _perfil = await authService.updatePerfil(
+        nombres: nombres,
+        apellidos: apellidos,
+        telefono: telefono,
+      );
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     await _repository.logout();
     _user = null;
     _token = null;
+    _perfil = null;
     notifyListeners();
   }
 

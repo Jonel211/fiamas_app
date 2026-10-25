@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/auth_field.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/user_profile.dart';
 import '../widgets/profile_app_bar.dart';
 import '../widgets/profile_avatar.dart';
 
 /// Edita los datos del tendero. Recibe el [UserProfile] como argumento de
-/// la ruta y, al guardar, devuelve el perfil actualizado a la pantalla anterior.
+/// la ruta y, al guardar, envía los cambios a la API y devuelve el perfil actualizado.
 class EditProfileScreen extends StatelessWidget {
   const EditProfileScreen({super.key});
 
@@ -44,6 +47,7 @@ class _EditProfileFormState extends State<_EditProfileForm> {
   late final TextEditingController _dni;
   late final TextEditingController _phone;
   late final TextEditingController _address;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -68,16 +72,32 @@ class _EditProfileFormState extends State<_EditProfileForm> {
   String? _required(String? v, String message) =>
       (v == null || v.trim().isEmpty) ? message : null;
 
-  void _save() {
+  Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    // TODO: enviar los cambios a la API.
-    Navigator.of(context).pop(widget.profile.copyWith(
-      names: _names.text.trim(),
-      lastNames: _lastNames.text.trim(),
-      phone: _phone.text.trim(),
-      address: _address.text.trim(),
-    ));
+    setState(() => _saving = true);
+    final success = await context.read<AuthProvider>().updatePerfil(
+      nombres: _names.text.trim(),
+      apellidos: _lastNames.text.trim(),
+      telefono: _phone.text.trim(),
+    );
+
+    if (!mounted) return;
+    setState(() => _saving = false);
+
+    if (success) {
+      Navigator.of(context).pop(widget.profile.copyWith(
+        names: _names.text.trim(),
+        lastNames: _lastNames.text.trim(),
+        phone: _phone.text.trim(),
+        address: _address.text.trim(),
+      ));
+    } else {
+      final err = context.read<AuthProvider>().errorMessage ?? 'Error al actualizar perfil';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(err), backgroundColor: AppColors.danger),
+      );
+    }
   }
 
   @override
@@ -92,9 +112,7 @@ class _EditProfileFormState extends State<_EditProfileForm> {
             Center(
               child: ProfileAvatar(
                 name: widget.profile.names,
-                onChangePhoto: () {
-                  // TODO: abrir selector de imagen / cámara
-                },
+                onChangePhoto: () {},
               ),
             ),
             const SizedBox(height: 32),
@@ -141,8 +159,14 @@ class _EditProfileFormState extends State<_EditProfileForm> {
                 elevation: 0,
                 textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               ),
-              onPressed: _save,
-              child: const Text('Guardar cambios'),
+              onPressed: _saving ? null : _save,
+              child: _saving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Guardar cambios'),
             ),
           ],
         ),

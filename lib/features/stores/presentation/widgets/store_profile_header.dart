@@ -2,7 +2,16 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 
 class StoreProfileHeader extends StatelessWidget {
-  const StoreProfileHeader({super.key});
+  final String storeName;
+  final String status;
+  final String? subtitle;
+
+  const StoreProfileHeader({
+    super.key,
+    this.storeName = 'Mi Tienda',
+    this.status = 'Activa',
+    this.subtitle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,31 +31,35 @@ class StoreProfileHeader extends StatelessWidget {
             child: const Icon(Icons.storefront_rounded, size: 40, color: AppColors.teal),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Bodega San Antonio',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white),
+          Text(
+            storeName,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white),
           ),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.circle, size: 8, color: Colors.white),
-                SizedBox(width: 6),
-                Text('Activa', style: TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.w600)),
+                const Icon(Icons.circle, size: 8, color: Colors.white),
+                const SizedBox(width: 6),
+                Text(status, style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.w600)),
               ],
             ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            'En la app desde marzo 2024',
-            style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.8)),
-          ),
+          if (subtitle != null && subtitle!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              subtitle!,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.8)),
+            ),
+          ],
         ],
       ),
     );
