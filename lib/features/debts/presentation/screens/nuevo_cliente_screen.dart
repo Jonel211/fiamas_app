@@ -122,7 +122,6 @@ class _NuevoClienteScreenState extends State<NuevoClienteScreen> {
     return AppHeaderConfig(
       title: 'Nuevo Cliente',
       showBack: true,
-      centerTitle: true,
       child: Scaffold(
         backgroundColor: AppColors.ivory,
         body: Column(

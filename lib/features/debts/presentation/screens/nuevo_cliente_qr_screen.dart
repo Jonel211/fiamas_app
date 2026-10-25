@@ -20,7 +20,6 @@ class NuevoClienteQrScreen extends StatelessWidget {
     return AppHeaderConfig(
       title: 'Código QR de la tienda',
       showBack: true,
-      centerTitle: true,
       child: Scaffold(
         backgroundColor: AppColors.ivory,
         body: SingleChildScrollView(

@@ -59,7 +59,6 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
     return AppHeaderConfig(
       title: 'Nuevo Fiado',
       showBack: true,
-      centerTitle: true,
       child: Scaffold(
         backgroundColor: AppColors.ivory,
         body: Column(

@@ -8,7 +8,7 @@ class HeaderConfig {
     this.showBack = false,
     this.onBack,
     this.leading,
-    this.centerTitle = false,
+    this.centerTitle = true,
     this.actions = const [],
   });
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/app_header.dart';
+import '../../../../core/widgets/app_header_config.dart';
 import '../../data/privacy_text.dart';
 
 /// Pantalla "Política de Privacidad".
@@ -17,61 +17,58 @@ class PrivacyScreen extends StatefulWidget {
 class _PrivacyScreenState extends State<PrivacyScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.ivory,
-      body: Column(
-        children: [
-          const AppHeader(title: 'Política de Privacidad', 
-          showBack: true,
-          centerTitle: true,),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: AppColors.teal.withOpacity(0.45),
+    return AppHeaderConfig(
+      title: 'Política de Privacidad',
+      showBack: true,
+      child: Scaffold(
+        backgroundColor: AppColors.ivory,
+        body: Column(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.teal.withOpacity(0.45)),
                   ),
-                ),
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: _buildContent(),
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: SingleChildScrollView(child: _buildContent()),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.gold,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size.fromHeight(48),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.gold,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size.fromHeight(48),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            textStyle: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                          textStyle: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          child: const Text('Entendido'),
                         ),
-                        child: const Text('Entendido'),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+                    ],
+                  ), // Column interna
+                ), // Container
+              ), // Padding
+            ), // Expanded
+          ], // children Column externa
+        ), // Column externa
+      ), // Scaffold
+    ); // AppHeaderConfig
   }
 
   /// Construye el texto completo con párrafos y listas.

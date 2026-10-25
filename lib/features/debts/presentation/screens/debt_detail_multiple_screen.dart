@@ -67,7 +67,6 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     return AppHeaderConfig(
       title: 'Detalle de fiados',
       showBack: true,
-      centerTitle: true,
       child: Scaffold(
         backgroundColor: AppColors.background,
         body: SingleChildScrollView(

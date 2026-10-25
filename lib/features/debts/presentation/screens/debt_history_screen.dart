@@ -93,7 +93,6 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
     return AppHeaderConfig(
       title: 'Historial de Cliente',
       showBack: true,
-      centerTitle: true,
       child: Scaffold(
         backgroundColor: AppColors.background,
         body: Column(

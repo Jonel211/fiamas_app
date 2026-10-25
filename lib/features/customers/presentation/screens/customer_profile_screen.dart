@@ -118,7 +118,6 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     return AppHeaderConfig(
       title: 'Perfil Del Cliente',
       showBack: true,
-      centerTitle: true,
       child: Scaffold(
         backgroundColor: AppColors.background,
         body: provider.isLoadingResumen

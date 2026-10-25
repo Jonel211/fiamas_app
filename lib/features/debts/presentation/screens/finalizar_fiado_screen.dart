@@ -113,7 +113,6 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
     return AppHeaderConfig(
       title: 'Finalizar fiado',
       showBack: true,
-      centerTitle: true,
       child: Scaffold(
         backgroundColor: AppColors.ivory,
         body: SingleChildScrollView(

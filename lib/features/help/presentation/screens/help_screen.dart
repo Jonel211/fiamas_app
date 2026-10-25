@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/app_header.dart';
+import '../../../../core/widgets/app_header_config.dart';
 import '../../data/help_repository.dart';
 
 class HelpScreen extends StatelessWidget {
@@ -45,91 +45,85 @@ class HelpScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          const AppHeader(
-            title: 'Ayuda',
-            showBack: true,
-            centerTitle: true,
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-              children: [
-                const SizedBox(height: 4),
-                const Text(
-                  '¿Cómo podemos ayudarte hoy?',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 15, color: AppColors.ink),
-                ),
-                const SizedBox(height: 24),
-
-                // Tarjeta de contacto
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.teal,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        '¿Tienes alguna duda o inconveniente?',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Envía un mensaje directo al administrador de Fiamas',
-                        style: TextStyle(fontSize: 13, color: Colors.white),
-                      ),
-                      const SizedBox(height: 12),
-                      ElevatedButton.icon(
-                        onPressed: () => _openHelpForm(context),
-                        icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                        label: const Text('Escríbenos'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: AppColors.ink,
-                          elevation: 0,
-                          minimumSize: const Size(0, 38),
-                          textStyle: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 28),
-
-                const Text(
-                  'Preguntas Frecuentes',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.ink,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                for (final faq in _faqs) ...[
-                  _FaqTile(question: faq.q, answer: faq.a),
-                  const SizedBox(height: 14),
-                ],
-              ],
+    return AppHeaderConfig(
+      title: 'Ayuda',
+      showBack: true,
+      centerTitle: true,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          children: [
+            const SizedBox(height: 4),
+            const Text(
+              '¿Cómo podemos ayudarte hoy?',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 15, color: AppColors.ink),
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+
+            // Tarjeta de contacto
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.teal,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '¿Tienes alguna duda o inconveniente?',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Envía un mensaje directo al administrador de Fiamas',
+                    style: TextStyle(fontSize: 13, color: Colors.white),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    onPressed: () => _openHelpForm(context),
+                    icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                    label: const Text('Escríbenos'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: AppColors.ink,
+                      elevation: 0,
+                      minimumSize: const Size(0, 38),
+                      textStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            const Text(
+              'Preguntas Frecuentes',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: AppColors.ink,
+              ),
+            ),
+            const SizedBox(height: 14),
+            for (final faq in _faqs) ...[
+              _FaqTile(question: faq.q, answer: faq.a),
+              const SizedBox(height: 14),
+            ],
+          ],
+        ),
       ),
     );
   }

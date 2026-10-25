@@ -12,7 +12,7 @@ class AppHeaderConfig extends StatefulWidget {
     this.showBack = false,
     this.onBack,
     this.leading,
-    this.centerTitle = false,
+    this.centerTitle = true,
     this.actions = const [],
     required this.child,
   });
