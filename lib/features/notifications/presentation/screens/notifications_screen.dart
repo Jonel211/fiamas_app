@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_header.dart';
+import '../../../../core/widgets/app_header_config.dart';
 import '../../data/notification_repository.dart';
 import '../../domain/app_notification.dart';
 import '../widgets/notification_card.dart';
@@ -155,85 +156,74 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            AppHeader(
-              title: 'Notificaciones',
-              subtitle: _unread == 0 ? 'Todo al día' : '$_unread sin leer',
-              showBack: true,
-              centerTitle: true,
-              actions: [
-                AppHeaderIconAction(
-                  icon: Icons.delete_sweep_outlined,
-                  onTap: _items.isEmpty ? () {} : _clearAll,
-                ),
-              ],
-            ),
-            Expanded(child: _buildBody()),
-          ],
+    return AppHeaderConfig(
+      title: 'Notificaciones',
+      subtitle: _unread == 0 ? 'Todo al día' : '$_unread sin leer',
+      showBack: true,
+      centerTitle: true,
+      actions: [
+        AppHeaderIconAction(
+          icon: Icons.delete_sweep_outlined,
+          onTap: _items.isEmpty ? () {} : _clearAll,
         ),
-      ),
-    );
-  }
-
-  Widget _buildBody() {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_error!),
-            TextButton(
-              onPressed: _load,
-              child: const Text('Reintentar'),
-            ),
-          ],
+      ],
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          top: false,
+          child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : _error != null
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_error!),
+                          TextButton(
+                            onPressed: _load,
+                            child: const Text('Reintentar'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: _unread == 0 ? null : _markAllAsRead,
+                            icon: const Icon(Icons.done_all_rounded, size: 20),
+                            label: const Text('Marcar todas como leídas'),
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: AppColors.teal,
+                              side: const BorderSide(color: AppColors.mist),
+                              minimumSize: const Size.fromHeight(46),
+                              textStyle: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          if (_items.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 40),
+                              child: Center(
+                                child: Text('No tienes notificaciones'),
+                              ),
+                            ),
+                          for (final group in NotificationGroup.values)
+                            ..._buildGroup(group),
+                        ],
+                      ),
+                    ),
         ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        children: [
-          OutlinedButton.icon(
-            onPressed: _unread == 0 ? null : _markAllAsRead,
-            icon: const Icon(Icons.done_all_rounded, size: 20),
-            label: const Text('Marcar todas como leídas'),
-            style: OutlinedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: AppColors.teal,
-              side: const BorderSide(color: AppColors.mist),
-              minimumSize: const Size.fromHeight(46),
-              textStyle: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          if (_items.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: 40),
-              child: Center(
-                child: Text('No tienes notificaciones'),
-              ),
-            ),
-          for (final group in NotificationGroup.values) ..._buildGroup(group),
-        ],
       ),
     );
   }

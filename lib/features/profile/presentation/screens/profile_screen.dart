@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_header.dart';
+import '../../../../core/widgets/app_header_config.dart';
 import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/user_profile.dart';
@@ -29,7 +30,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _snack(String message) =>
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
 
   /// Abre "Editar perfil" y, si se guardó, actualiza los datos en pantalla.
   Future<void> _openEdit(UserProfile current) async {
@@ -38,8 +40,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (result == null || !mounted) return;
 
-    await context.read<AuthProvider>().cargarPerfil();
-    _snack('Perfil actualizado con éxito');
+    if (result is UserProfile) {
+      _snack('Perfil actualizado');
+    }
   }
 
   @override
@@ -57,65 +60,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
       address: perfil?.tiendas.isNotEmpty == true ? (perfil!.tiendas.first.direccion ?? '') : '',
     );
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          AppHeader(
-            title: 'Mi Perfil',
-            showBack: true,
-            centerTitle: true,
-            actions: [
-              AppHeaderIconAction(icon: Icons.edit_outlined, onTap: () => _openEdit(p)),
-            ],
+    return AppHeaderConfig(
+      title: 'Mi Perfil',
+      showBack: true,
+      centerTitle: true,
+      actions: [
+        AppHeaderIconAction(icon: Icons.edit_outlined, onTap: () => _openEdit(p)),
+      ],
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            24 + MediaQuery.of(context).padding.bottom,
           ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                24 + MediaQuery.of(context).padding.bottom,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ProfileHeaderCard(
+                name: p.fullName.isNotEmpty ? p.fullName : 'Tendero Fiamas',
+                email: p.phoneDisplay.isNotEmpty ? p.phoneDisplay : 'Sin teléfono',
+                onChangePhoto: () => _openEdit(p),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              const SizedBox(height: 24),
+              ProfileSection(
+                title: 'Información personal',
                 children: [
-                  ProfileHeaderCard(
-                    name: p.fullName.isNotEmpty ? p.fullName : 'Tendero Fiamas',
-                    email: p.phoneDisplay.isNotEmpty ? p.phoneDisplay : 'Sin teléfono',
-                    onChangePhoto: () => _openEdit(p),
+                  ProfileFieldTile(label: 'Nombres', value: p.names, onTap: () => _openEdit(p)),
+                  ProfileFieldTile(label: 'Apellidos', value: p.lastNames.isNotEmpty ? p.lastNames : 'No registrado', onTap: () => _openEdit(p)),
+                  ProfileFieldTile(label: 'DNI', value: p.dni),
+                ],
+              ),
+              const SizedBox(height: 24),
+              ProfileSection(
+                title: 'Contacto',
+                children: [
+                  ProfileFieldTile(
+                    label: 'Teléfono móvil',
+                    value: p.phoneDisplay.isNotEmpty ? p.phoneDisplay : 'Sin registrar',
+                    onTap: () => _openEdit(p),
+                    trailing: p.phone.isNotEmpty ? const ProfileBadge(label: 'Verificado') : null,
                   ),
-                  const SizedBox(height: 24),
-                  ProfileSection(
-                    title: 'Información personal',
-                    children: [
-                      ProfileFieldTile(label: 'Nombres', value: p.names, onTap: () => _openEdit(p)),
-                      ProfileFieldTile(label: 'Apellidos', value: p.lastNames.isNotEmpty ? p.lastNames : 'No registrado', onTap: () => _openEdit(p)),
-                      ProfileFieldTile(label: 'DNI', value: p.dni),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  ProfileSection(
-                    title: 'Contacto',
-                    children: [
-                      ProfileFieldTile(
-                        label: 'Teléfono móvil',
-                        value: p.phoneDisplay.isNotEmpty ? p.phoneDisplay : 'Sin registrar',
-                        onTap: () => _openEdit(p),
-                        trailing: p.phone.isNotEmpty ? const ProfileBadge(label: 'Verificado') : null,
-                      ),
-                      ProfileFieldTile(
-                        label: 'Dirección particular',
-                        value: p.address.isEmpty ? 'Sin registrar' : p.address,
-                        onTap: () => _openEdit(p),
-                      ),
-                    ],
+                  ProfileFieldTile(
+                    label: 'Dirección particular',
+                    value: p.address.isEmpty ? 'Sin registrar' : p.address,
+                    onTap: () => _openEdit(p),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
