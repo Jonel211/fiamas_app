@@ -453,7 +453,7 @@ class _FaqTileState extends State<_FaqTile> {
                     ),
                   ),
                   AnimatedRotation(
-                    turns: _open ? 0.25 : 0, // la flecha gira hacia abajo
+                    turns: _open ? 0.25 : 0,
                     duration: const Duration(milliseconds: 200),
                     child: const Icon(
                       Icons.chevron_right,
@@ -465,7 +465,7 @@ class _FaqTileState extends State<_FaqTile> {
               ),
             ),
           ),
-          // La respuesta aparece con una animación de altura.
+         
           AnimatedSize(
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeInOut,

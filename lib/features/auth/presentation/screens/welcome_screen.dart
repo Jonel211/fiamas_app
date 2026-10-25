@@ -17,7 +17,7 @@ class WelcomeScreen extends StatefulWidget {
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
   static const String _bgImage = 'assets/images/tendero.jpg';
-  static const String _logo = 'assets/images/logo.png';
+  static const String _logo = 'assets/images/logoo.png';
   static const String _tenderoIcon = 'assets/icons/tendero.png';
   static const String _clienteIcon = 'assets/icons/cliente1.png';
 
@@ -30,6 +30,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     if (_argsRead) return;
     _argsRead = true;
 
+    // Si llegamos con el argumento 'login', el panel sube solo.
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args == 'login') {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -45,8 +46,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   Widget _buildPanel(BoxConstraints c) {
     final loginHeight = c.maxHeight * 0.55;
-    final clientHeight = c.maxHeight * 0.60;
-    final tenderoHeight = c.maxHeight * 0.78; // formulario largo
+    final clientHeight = c.maxHeight * 0.55;
+    final tenderoHeight = c.maxHeight * 0.78;
 
     void toWelcome() => _setMode(_PanelMode.welcome);
 
@@ -65,8 +66,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         return _SheetPanel(
           key: const ValueKey('login'),
           minHeight: loginHeight,
+          color: AppColors.teal,
           onClose: toWelcome,
-          child: LoginForm(onRegister: toWelcome),
+          child: LoginForm(onRegister: toWelcome, onDark: true),
         );
 
       case _PanelMode.registerTendero:
@@ -74,7 +76,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           key: const ValueKey('tendero'),
           minHeight: tenderoHeight,
           onClose: toWelcome,
-          child: RegisterTenderoForm(onLogin: () => _setMode(_PanelMode.login)),
+          child: RegisterTenderoForm(
+            onLogin: () => _setMode(_PanelMode.login),
+          ),
         );
 
       case _PanelMode.registerCliente:
@@ -93,7 +97,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final isWelcome = _mode == _PanelMode.welcome;
 
     return PopScope(
-      // Con un panel abierto, "atrás" vuelve a la bienvenida.
       canPop: isWelcome,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _setMode(_PanelMode.welcome);
@@ -286,7 +289,7 @@ class _TopBar extends StatelessWidget {
   }
 }
 
-/// Panel teal: saludo, botón de inicio de sesión y registro.
+/// Panel teal, botón de inicio de sesión y registro.
 class _BottomPanel extends StatelessWidget {
   const _BottomPanel({
     super.key,
@@ -432,7 +435,9 @@ class _RoleOption extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               label,
-              style: Theme.of(context).textTheme.bodyLarge
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyLarge
                   ?.copyWith(color: Colors.white),
             ),
           ],
@@ -442,14 +447,17 @@ class _RoleOption extends StatelessWidget {
   }
 }
 
+
 class _SheetPanel extends StatefulWidget {
   const _SheetPanel({
     super.key,
     required this.onClose,
     required this.minHeight,
     required this.child,
+    this.color = AppColors.surface,
   });
 
+  final Color color;
   final VoidCallback onClose;
   final double minHeight;
   final Widget child;
@@ -468,14 +476,13 @@ class _SheetPanelState extends State<_SheetPanel>
   @override
   void initState() {
     super.initState();
-    _ctrl =
-        AnimationController(
-          vsync: this,
-          duration: const Duration(milliseconds: 250),
-        )..addListener(() {
-          final t = Curves.easeOutCubic.transform(_ctrl.value);
-          setState(() => _dragY = _from + (_to - _from) * t);
-        });
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    )..addListener(() {
+        final t = Curves.easeOutCubic.transform(_ctrl.value);
+        setState(() => _dragY = _from + (_to - _from) * t);
+      });
   }
 
   @override
@@ -503,20 +510,21 @@ class _SheetPanelState extends State<_SheetPanel>
 
   @override
   Widget build(BuildContext context) {
+    final isTeal = widget.color == AppColors.teal;
+
     return Transform.translate(
       offset: Offset(0, _dragY),
       child: Container(
         width: double.infinity,
         height: widget.minHeight,
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
+        decoration: BoxDecoration(
+          color: widget.color,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(36)),
         ),
         child: SafeArea(
           top: false,
           child: Column(
             children: [
-              // Barra de arrastre
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onVerticalDragUpdate: _onDragUpdate,
@@ -529,14 +537,13 @@ class _SheetPanelState extends State<_SheetPanel>
                       width: 44,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: AppColors.mist,
+                        color: isTeal ? Colors.white54 : AppColors.mist,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                   ),
                 ),
               ),
-              // Contenido con scroll
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),

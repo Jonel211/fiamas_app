@@ -10,12 +10,12 @@ import '../providers/auth_provider.dart';
 class FadeSlideIn extends StatelessWidget {
   const FadeSlideIn({super.key, required this.index, required this.child});
 
-  final int index; // 0, 1, 2...
+  final int index;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    const total = 900; // ms
+    const total = 900;
     final start = (index * 90) / total;
 
     return TweenAnimationBuilder<double>(
@@ -34,12 +34,16 @@ class FadeSlideIn extends StatelessWidget {
   }
 }
 
-/// Formulario de login reutilizable (panel y pantalla).
+/// Formulario de login. Con `onDark: true` usa colores para fondo teal.
 class LoginForm extends StatefulWidget {
-  const LoginForm({super.key, required this.onRegister});
+  const LoginForm({
+    super.key,
+    required this.onRegister,
+    this.onDark = false,
+  });
 
-  /// Acción al tocar "Regístrate".
   final VoidCallback onRegister;
+  final bool onDark;
 
   @override
   State<LoginForm> createState() => _LoginFormState();
@@ -84,7 +88,7 @@ class _LoginFormState extends State<LoginForm> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(auth.errorMessage ?? 'Error al iniciar sesión'),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppColors.danger,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -94,6 +98,11 @@ class _LoginFormState extends State<LoginForm> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final dark = widget.onDark;
+
+    final textColor = dark ? AppColors.onBrand : AppColors.ink;
+    final mutedColor = dark ? AppColors.onBrandMuted : AppColors.inkMuted;
+    final accentColor = dark ? AppColors.gold : AppColors.teal;
 
     return Form(
       key: _formKey,
@@ -101,25 +110,18 @@ class _LoginFormState extends State<LoginForm> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Título con ícono
-          const FadeSlideIn(
+          FadeSlideIn(
             index: 0,
-            child: Row(
-              children: [
-                Text(
-                  '¡Ingresa ya!',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.ink,
-                  ),
-                ),
-              ],
+            child: Text(
+              '¡Ingresa ya!',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: textColor,
+              ),
             ),
           ),
           const SizedBox(height: 20),
-
-          // Teléfono
           FadeSlideIn(
             index: 1,
             child: AuthField(
@@ -127,6 +129,7 @@ class _LoginFormState extends State<LoginForm> {
               controller: _identifierController,
               keyboardType: TextInputType.phone,
               digitsOnly: true,
+              onDark: dark,
               prefixIcon: const Icon(
                 Icons.phone_outlined,
                 size: 20,
@@ -136,8 +139,6 @@ class _LoginFormState extends State<LoginForm> {
                   (v == null || v.isEmpty) ? 'Ingresa tu teléfono' : null,
             ),
           ),
-
-          // Contraseña
           FadeSlideIn(
             index: 2,
             child: AuthField(
@@ -145,6 +146,7 @@ class _LoginFormState extends State<LoginForm> {
               controller: _passwordController,
               obscureText: _obscurePassword,
               bottomSpacing: 4,
+              onDark: dark,
               prefixIcon: const Icon(
                 Icons.lock_outline_rounded,
                 size: 20,
@@ -165,8 +167,6 @@ class _LoginFormState extends State<LoginForm> {
                   (v == null || v.isEmpty) ? 'Ingresa tu contraseña' : null,
             ),
           ),
-
-          // ¿Olvidaste tu contraseña?
           FadeSlideIn(
             index: 3,
             child: Align(
@@ -175,7 +175,7 @@ class _LoginFormState extends State<LoginForm> {
                 onPressed: () =>
                     Navigator.of(context).pushNamed(AppRoutes.forgotPassword),
                 style: TextButton.styleFrom(
-                  foregroundColor: AppColors.ink,
+                  foregroundColor: textColor,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                 ),
@@ -188,14 +188,12 @@ class _LoginFormState extends State<LoginForm> {
             ),
           ),
           const SizedBox(height: 12),
-
-          // Botón Ingresar
           FadeSlideIn(
             index: 4,
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.teal,
-                foregroundColor: Colors.white,
+                backgroundColor: dark ? AppColors.gold : AppColors.teal,
+                foregroundColor: dark ? AppColors.ink : AppColors.onBrand,
                 minimumSize: const Size.fromHeight(48),
                 textStyle:
                     const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -205,38 +203,36 @@ class _LoginFormState extends State<LoginForm> {
                   ? const SizedBox.shrink()
                   : const Icon(Icons.login_rounded, size: 20),
               label: auth.isLoading
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: 22,
                       width: 22,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.5,
-                        color: Colors.white,
+                        color: dark ? AppColors.ink : AppColors.onBrand,
                       ),
                     )
                   : const Text('Ingresar'),
             ),
           ),
           const SizedBox(height: 24),
-
-          // ¿No tienes cuenta?
           FadeSlideIn(
             index: 5,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
+                Text(
                   '¿No tienes cuenta? ',
-                  style: TextStyle(fontSize: 13, color: AppColors.inkMuted),
+                  style: TextStyle(fontSize: 13, color: mutedColor),
                 ),
                 GestureDetector(
                   onTap: widget.onRegister,
                   behavior: HitTestBehavior.opaque,
-                  child: const Text(
+                  child: Text(
                     'Regístrate',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.teal,
+                      color: accentColor,
                     ),
                   ),
                 ),

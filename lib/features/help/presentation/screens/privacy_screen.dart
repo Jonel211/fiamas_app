@@ -4,9 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_header_config.dart';
 import '../../data/privacy_text.dart';
 
-/// Pantalla "Política de Privacidad".
-/// Muestra el texto legal dentro de una tarjeta scrollable con un
-/// único botón "Entendido" al final (dorado).
+
 class PrivacyScreen extends StatefulWidget {
   const PrivacyScreen({super.key});
 

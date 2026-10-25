@@ -53,8 +53,9 @@ class DebtDetailMultipleScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = customer['name'] as String? ?? 'Cliente';
     final initials = _getInitials(name);
+    final allPaid = debts.every((d) => d.status == DebtStatus.pagado);
     final totalOriginal = debts.fold(0.0, (sum, d) => sum + d.amount);
-    final totalPagado = 15.0;
+    final totalPagado = allPaid ? totalOriginal : 15.0;
     final totalRestante = totalOriginal - totalPagado;
 
     // Agrupar productos por fecha
@@ -74,9 +75,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ═══════════════════════════════════════════════════════════════
-              // HEADER CLIENTE
-              // ═══════════════════════════════════════════════════════════════
+              
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -129,13 +128,14 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.gold.withOpacity(0.15),
+                        color: (allPaid ? AppColors.success : AppColors.gold)
+                            .withOpacity(0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Text(
-                        'Pendiente',
+                      child: Text(
+                        allPaid ? 'Pagado' : 'Pendiente',
                         style: TextStyle(
-                          color: AppColors.gold,
+                          color: allPaid ? AppColors.success : AppColors.gold,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
@@ -147,9 +147,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // ═══════════════════════════════════════════════════════════════
-              // FIADOS INCLUIDOS
-              // ═════════════════════════════════════════════════════════════
+            
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -227,9 +225,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // ═════════════════════════════════════════════════════════════
-              // PRODUCTOS AGRUPADOS POR FECHA
-              // ═══════════════════════════════════════════════════════════════
+              
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -306,9 +302,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // ═══════════════════════════════════════════════════════════════
-              // RESUMEN DE CUENTA
-              // ═══════════════════════════════════════════════════════════════
+          
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -350,9 +344,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
 
               const SizedBox(height: 24),
 
-              // ═══════════════════════════════════════════════════════════════
-              // TOTAL DEUDA
-              // ══════════════════════════════════════════════════════════════
+            
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -366,10 +358,10 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                   ),
                   Text(
                     'S/${totalRestante.toStringAsFixed(2)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.gold,
+                      color: allPaid ? AppColors.success : AppColors.gold,
                     ),
                   ),
                 ],
@@ -377,65 +369,66 @@ class DebtDetailMultipleScreen extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              // ══════════════════════════════════════════════════════════════
-              // BOTÓN COBRAR
-              // ═══════════════════════════════════════════════════════════════
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => CollectMultiplePaymentScreen(
-                          customer: customer,
-                          selectedDebts: debts,
+              // Botones solo si hay deuda pendiente
+              if (!allPaid) ...[
+               
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CollectMultiplePaymentScreen(
+                            customer: customer,
+                            selectedDebts: debts,
+                          ),
                         ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.teal,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.teal,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'Cobrar esta deuda',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
                   ),
-                  child: const Text(
-                    'Cobrar esta deuda',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
                 ),
-              ),
 
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-              // ═══════════════════════════════════════════════════════════════
-              // BOTÓN RECORDATORIO
-              // ═══════════════════════════════════════════════════════════════
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Recordatorio enviado')),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.teal,
-                    side: const BorderSide(color: AppColors.teal),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Recordatorio enviado')),
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.teal,
+                      side: const BorderSide(color: AppColors.teal),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'Enviar recordatorio',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
                   ),
-                  child: const Text(
-                    'Enviar recordatorio',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
                 ),
-              ),
+              ],
 
               const SizedBox(height: 20),
             ],

@@ -130,20 +130,20 @@ class _AboutScreenState extends State<AboutScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // ── Copyright ─────────────────────────
+                    
                     // ── Copyright ─────────────────────────
                     const Text(
                       '© 2026 Fiamas',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 12, color: AppColors.inkMuted),
                     ),
-                  ], // children de la Column interna
-                ), // Column interna
-              ), // SingleChildScrollView
-            ), // Expanded
+                  ], 
+                ), 
+              ), 
+            ), 
           ],
-        ), // Column
-      ), // Scaffold
-    ); // AppHeaderConfig
+        ), 
+      ), 
+    ); 
   }
 }

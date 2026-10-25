@@ -70,9 +70,7 @@ class _CollectMultiplePaymentScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ═══════════════════════════════════════════════════════════════
-              // MONTO QUE DEBE
-              // ═════════════════════════════════════════════════════════════
+            
               Center(
                 child: Column(
                   children: [
@@ -100,9 +98,7 @@ class _CollectMultiplePaymentScreenState
 
               const SizedBox(height: 32),
 
-              // ═══════════════════════════════════════════════════════════════
-              // OPCIONES: Pagó todo / Pagó una parte
-              // ═══════════════════════════════════════════════════════════════
+             
               _buildPaymentOption(
                 iconPath: 'assets/icons/bill_icon.png',
                 title: 'Pagó todo',
@@ -133,9 +129,7 @@ class _CollectMultiplePaymentScreenState
 
               const SizedBox(height: 24),
 
-              // ═══════════════════════════════════════════════════════════════
-              // MONTO ABONADO (SOLO APARECE SI "Pagó una parte" ESTÁ SELECCIONADO)
-              // ══════════════════════════════════════════════════════════════
+              
               if (_paidPartial) ...[
                 const Text(
                   'Monto abonado',
@@ -196,9 +190,7 @@ class _CollectMultiplePaymentScreenState
                 const SizedBox(height: 24),
               ],
 
-              // ══════════════════════════════════════════════════════════════
-              // MEDIO DE PAGO
-              // ══════════════════════════════════════════════════════════════
+             
               const Text(
                 'Medio de pago',
                 style: TextStyle(
@@ -246,9 +238,7 @@ class _CollectMultiplePaymentScreenState
 
               const SizedBox(height: 24),
 
-              // ═══════════════════════════════════════════════════════════════
-              // REFERENCIA (OPCIONAL)
-              // ═══════════════════════════════════════════════════════════════
+              
               const Text(
                 'Referencia (Opcional)',
                 style: TextStyle(
@@ -287,9 +277,7 @@ class _CollectMultiplePaymentScreenState
 
               const SizedBox(height: 20),
 
-              // ═══════════════════════════════════════════════════════════════
-              // RESUMEN DE DEUDA
-              // ═══════════════════════════════════════════════════════════════
+             
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -345,9 +333,7 @@ class _CollectMultiplePaymentScreenState
 
               const SizedBox(height: 24),
 
-              // ═══════════════════════════════════════════════════════════════
-              // BOTÓN: Confirmar abono
-              // ═══════════════════════════════════════════════════════════════
+              
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -381,9 +367,7 @@ class _CollectMultiplePaymentScreenState
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // WIDGETS CON IMÁGENES
-  // ══════════════════════════════════════════════════════════════════════════
+  
 
   Widget _buildPaymentOption({
     required String iconPath,

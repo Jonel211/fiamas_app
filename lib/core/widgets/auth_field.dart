@@ -3,9 +3,8 @@ import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
 
 /// Campo de texto con la etiqueta arriba y borde redondeado.
-/// Es el estilo de los formularios de autenticación y de perfil.
-/// Admite un ícono opcional al inicio (`prefixIcon`).
-/// Con `enabled: false` se muestra de solo lectura (fondo gris).
+/// Con `onDark: true` se adapta a paneles de color (etiqueta blanca,
+/// campo blanco).
 class AuthField extends StatelessWidget {
   const AuthField({
     super.key,
@@ -19,6 +18,7 @@ class AuthField extends StatelessWidget {
     this.maxLength,
     this.digitsOnly = false,
     this.enabled = true,
+    this.onDark = false,
     this.textCapitalization = TextCapitalization.none,
     this.bottomSpacing = 16,
   });
@@ -33,10 +33,10 @@ class AuthField extends StatelessWidget {
   final int? maxLength;
   final bool digitsOnly;
   final bool enabled;
+  final bool onDark;
   final TextCapitalization textCapitalization;
   final double bottomSpacing;
 
-  /// Método auxiliar para reutilizar la configuración del borde
   OutlineInputBorder _border(Color color, [double width = 1]) =>
       OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
@@ -45,6 +45,9 @@ class AuthField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = onDark ? Colors.transparent : AppColors.mist;
+    final focusColor = onDark ? AppColors.gold : AppColors.teal;
+
     return Padding(
       padding: EdgeInsets.only(bottom: bottomSpacing),
       child: Column(
@@ -52,10 +55,10 @@ class AuthField extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: AppColors.ink,
+              color: onDark ? Colors.white : AppColors.ink,
             ),
           ),
           const SizedBox(height: 8),
@@ -76,15 +79,23 @@ class AuthField extends StatelessWidget {
             decoration: InputDecoration(
               counterText: '',
               isDense: true,
-              filled: !enabled,
+              filled: !enabled || onDark,
+              fillColor: onDark ? Colors.white : null,
+              errorStyle: TextStyle(
+                color: onDark ? AppColors.gold : AppColors.danger,
+                fontWeight: FontWeight.w600,
+              ),
               prefixIcon: prefixIcon,
               suffixIcon: suffixIcon,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              border: _border(AppColors.mist),
-              enabledBorder: _border(AppColors.mist),
-              disabledBorder: _border(AppColors.mist),
-              focusedBorder: _border(AppColors.teal, 1.5),
+              border: _border(borderColor),
+              enabledBorder: _border(borderColor),
+              disabledBorder: _border(borderColor),
+              focusedBorder: _border(focusColor, 1.5),
+              errorBorder: _border(onDark ? AppColors.gold : AppColors.danger),
+              focusedErrorBorder:
+                  _border(onDark ? AppColors.gold : AppColors.danger, 1.5),
             ),
           ),
         ],

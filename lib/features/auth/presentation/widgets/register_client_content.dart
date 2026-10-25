@@ -25,23 +25,23 @@ class RegisterClientContent extends StatelessWidget {
         const Text(
           'Crear tu cuenta',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 23,
             fontWeight: FontWeight.w700,
             color: AppColors.ink,
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         const Text(
           'Empieza a ver tus notas de crédito',
-          style: TextStyle(fontSize: 18, color: AppColors.ink, height: 1.3),
+          style: TextStyle(fontSize: 16, color: AppColors.ink, height: 1.3),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 30),
         const Center(
           child: Text(
             'Descargue la app para su\ndispositivo aquí',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 22,
+              fontSize: 18,
               fontWeight: FontWeight.w700,
               color: AppColors.teal,
               height: 1.35,
@@ -99,7 +99,7 @@ class StoreButton extends StatelessWidget {
                 label,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.3,
                 ),

@@ -126,7 +126,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    // TARJETA SUPERIOR
+                    // TARJETA SUPERIOR: Avatar + Nombre + Score + Badge "Bueno"
                     Stack(
                       clipBehavior: Clip.none,
                       children: [
@@ -192,7 +192,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // BOTONES DE ACCIÓN
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -232,7 +232,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                     ),
 
                     const SizedBox(height: 20),
-                    
+
                     // TARJETA TEAL: SALDO ACTUAL PENDIENTE
                     Container(
                       width: double.infinity,
@@ -275,7 +275,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // TARJETA BLANCA: LÍMITE DE CRÉDITO
                     Container(
                       width: double.infinity,
@@ -345,6 +345,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
   }
 }
 
+// WIDGET: Botón circular de acción (Llamar, WhatsApp, etc.)
 class _ActionCircleButton extends StatelessWidget {
   final IconData icon;
   final String label;

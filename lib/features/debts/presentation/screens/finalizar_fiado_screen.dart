@@ -235,8 +235,7 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
               ),
               const SizedBox(height: 32),
 
-              // 4. BOTONES DE ACCIÓN
-              // Volver a elegir (solo cierra esta pantalla y vuelve atrás)
+              
               ElevatedButton(
                 onPressed: () => Navigator.of(context).pop(),
                 style: ElevatedButton.styleFrom(

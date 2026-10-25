@@ -4,9 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_header_config.dart';
 import '../../data/terms_text.dart';
 
-/// Pantalla "Términos y Condiciones".
-/// Muestra el texto legal dentro de una tarjeta scrollable con
-/// dos botones al final: Rechazar (dorado) y Aceptar y Continúa (teal).
+
 class TermsScreen extends StatefulWidget {
   const TermsScreen({super.key});
 
@@ -99,7 +97,7 @@ class _TermsScreenState extends State<TermsScreen> {
     );
   }
 
-  /// Construye el contenido del texto legal con estilo uniforme.
+  
   Widget _buildContent(BuildContext context) {
     const baseStyle = TextStyle(
       fontSize: 13,
