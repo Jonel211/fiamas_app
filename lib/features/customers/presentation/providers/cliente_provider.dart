@@ -3,18 +3,18 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/network/dio_client.dart';
 import '../../data/models/cliente_model.dart';
-import '../../../debts/domain/debt.dart'; // ✅ IMPORTANTE: Importamos el modelo Debt
+import '../../../debts/domain/debt.dart'; 
 
 class ClienteProvider extends ChangeNotifier {
   final Dio _dio = DioClient.create();
 
   List<ClienteModel> _clientes = [];
   List<ClienteModel> _recientes = [];
-  List<Debt> _fiadosCliente = []; // ✅ NUEVO: Lista de fiados reales
+  List<Debt> _fiadosCliente = []; 
   bool _isLoading = false;
   bool _isLoadingRecientes = false;
   bool _isCreating = false;
-  bool _isLoadingFiados = false; // ✅ NUEVO
+  bool _isLoadingFiados = false; 
   String? _error;
 
   Map<String, dynamic>? _resumenCliente;
@@ -22,11 +22,11 @@ class ClienteProvider extends ChangeNotifier {
 
   List<ClienteModel> get clientes => _clientes;
   List<ClienteModel> get recientes => _recientes;
-  List<Debt> get fiadosCliente => _fiadosCliente; // ✅ NUEVO
+  List<Debt> get fiadosCliente => _fiadosCliente; 
   bool get isLoading => _isLoading;
   bool get isLoadingRecientes => _isLoadingRecientes;
   bool get isCreating => _isCreating;
-  bool get isLoadingFiados => _isLoadingFiados; // ✅ NUEVO
+  bool get isLoadingFiados => _isLoadingFiados; 
   String? get error => _error;
   Map<String, dynamic>? get resumenCliente => _resumenCliente;
   bool get isLoadingResumen => _isLoadingResumen;
@@ -125,7 +125,7 @@ class ClienteProvider extends ChangeNotifier {
     }
   }
 
-  // ✅ NUEVO: Cargar fiados reales desde el backend
+  // ✅ Cargar fiados reales desde el backend
   Future<void> cargarFiadosCliente(String clienteId, String tiendaId) async {
     _isLoadingFiados = true;
     _fiadosCliente = [];
@@ -136,11 +136,17 @@ class ClienteProvider extends ChangeNotifier {
       final List<dynamic> data = response.data['fiados'] ?? [];
       
       _fiadosCliente = data.map((json) {
-        // Mapeo exacto de tu JSON a tu modelo Debt
+        // ✅ SOLUCIÓN: Extraemos los datos del cliente que vienen en el JSON
+        final clienteData = json['cliente'];
+        final nombreCompleto = clienteData != null 
+            ? '${clienteData['nombres']} ${clienteData['apellidos']}'.trim()
+            : 'Cliente';
+        final telefono = clienteData != null ? clienteData['telefono'] ?? '' : '';
+
         return Debt(
           id: json['id'] ?? '',
-          customerName: '', 
-          phone: '',
+          customerName: nombreCompleto, // ✅ Ya no está vacío
+          phone: telefono, // ✅ Ya no está vacío
           amount: double.tryParse(json['monto_total']?.toString() ?? '') ?? 0.0,
           status: json['estado'] == 'pagado' ? DebtStatus.pagado : DebtStatus.pendiente,
           dateLabel: json['fecha_creacion'] != null 
@@ -157,6 +163,7 @@ class ClienteProvider extends ChangeNotifier {
       }).toList();
 
     } catch (e) {
+      debugPrint('🔥 ERROR AL CARGAR FIADOS: $e'); 
       _fiadosCliente = [];
     } finally {
       _isLoadingFiados = false;

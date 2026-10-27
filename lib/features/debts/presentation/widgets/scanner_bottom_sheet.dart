@@ -1,24 +1,37 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../main.dart';
+import '../../../customers/data/models/cliente_model.dart';
 import 'cart_item_tile.dart';
 
 class ScannerBottomSheet extends StatelessWidget {
   final List<Map<String, dynamic>> cartItems;
   final Function(int index, int delta) onUpdateQuantity;
   final Function(double)? onDrag;
+  final ClienteModel cliente; 
 
   const ScannerBottomSheet({
     super.key,
     required this.cartItems,
     required this.onUpdateQuantity,
     this.onDrag,
+    required this.cliente, 
   });
 
   @override
   Widget build(BuildContext context) {
     double total = cartItems.fold(0, (sum, item) => sum + (item['price'] * item['qty']));
-    int totalItems = cartItems.fold(0, (sum, item) => sum + (item['qty'] as int));
+    
+    // ✅ LÓGICA CORREGIDA: Los productos por peso cuentan como 1 solo ítem.
+    int totalItems = cartItems.fold(0, (sum, item) {
+      final isWeight = item['isWeight'] == true;
+      if (isWeight) {
+        return sum + 1; // Si es por kilo, suma 1 al contador (no importa si son 1.5kg)
+      } else {
+        // Si es por unidad, suma la cantidad real
+        return sum + (item['qty'] as num).toInt(); 
+      }
+    });
 
     return Container(
       decoration: const BoxDecoration(
@@ -28,7 +41,6 @@ class ScannerBottomSheet extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // 1. CABECERA (ÚNICA ZONA ARRASTRABLE)
           GestureDetector(
             onVerticalDragUpdate: onDrag != null ? (details) => onDrag!(details.delta.dy) : null,
             behavior: HitTestBehavior.opaque,
@@ -59,7 +71,7 @@ class ScannerBottomSheet extends StatelessWidget {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
-                            '$totalItems ítems',
+                            '$totalItems ítems', 
                             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.teal),
                           ),
                         ),
@@ -70,8 +82,6 @@ class ScannerBottomSheet extends StatelessWidget {
               ),
             ),
           ),
-
-          // 2. LISTA (SCROLL NORMAL, SIN ARRASTRAR EL PANEL)
           Expanded(
             child: cartItems.isEmpty
                 ? const Center(child: Text('No hay productos', style: TextStyle(color: AppColors.inkMuted)))
@@ -83,15 +93,16 @@ class ScannerBottomSheet extends StatelessWidget {
                       return CartItemTile(
                         name: item['name'],
                         price: item['price'],
-                        quantity: item['qty'],
+                        // ✅ Casteo seguro para double
+                        quantity: (item['qty'] as num).toDouble(),
+                        // ✅ Ocultamos botones +/- si es por peso
+                        isWeight: item['isWeight'] ?? false, 
                         onIncrement: () => onUpdateQuantity(index, 1),
                         onDecrement: () => onUpdateQuantity(index, -1),
                       );
                     },
                   ),
           ),
-
-          // 3. BOTÓN FIJO
           Container(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
             decoration: BoxDecoration(
@@ -101,7 +112,15 @@ class ScannerBottomSheet extends StatelessWidget {
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pushNamed(AppRoutes.finalizarFiado),
+                onPressed: cartItems.isEmpty 
+                  ? null 
+                  : () => Navigator.of(context).pushNamed(
+                      AppRoutes.finalizarFiado, 
+                      arguments: {
+                        'cliente': cliente,
+                        'cartItems': cartItems,
+                      },
+                    ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.teal,
                   foregroundColor: Colors.white,

@@ -1,13 +1,28 @@
+// lib/features/debts/presentation/widgets/scanner_tab.dart
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:dio/dio.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/network/dio_client.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../customers/data/models/cliente_model.dart';
+import '../../../inventory/domain/product.dart';
 import 'scanner_bottom_sheet.dart';
+import 'package:provider/provider.dart';
 
 class ScannerTab extends StatefulWidget {
   final List<Map<String, dynamic>> cartItems;
   final Function(int, int) onUpdateQuantity;
+  final Function(Product) onProductScanned;
+  final ClienteModel cliente; 
 
-  const ScannerTab({super.key, required this.cartItems, required this.onUpdateQuantity});
+  const ScannerTab({
+    super.key, 
+    required this.cartItems, 
+    required this.onUpdateQuantity,
+    required this.onProductScanned,
+    required this.cliente, 
+  });
 
   @override
   State<ScannerTab> createState() => _ScannerTabState();
@@ -15,14 +30,44 @@ class ScannerTab extends StatefulWidget {
 
 class _ScannerTabState extends State<ScannerTab> {
   double _panelHeight = 320;
-  final double _minHeight = 200;
-  final double _maxHeight = 500;
+  bool _isProcessing = false;
+
+  Future<void> _handleBarcode(String code) async {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
+
+    final tiendaId = context.read<AuthProvider>().user?.tiendaId;
+    if (tiendaId == null) return;
+
+    try {
+      final dio = DioClient.create();
+      final response = await dio.get('/productos/barcode/$code?tienda_id=$tiendaId');
+      
+      if (response.statusCode == 200) {
+        final product = Product.fromJson(response.data);
+        widget.onProductScanned(product);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${product.nombre} agregado'), backgroundColor: Colors.green, duration: const Duration(seconds: 1)),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Producto no encontrado en esta tienda'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      await Future.delayed(const Duration(seconds: 2));
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // CÁMARA (Se adapta al espacio restante)
         Expanded(
           child: Stack(
             alignment: Alignment.center,
@@ -30,37 +75,49 @@ class _ScannerTabState extends State<ScannerTab> {
               MobileScanner(
                 onDetect: (capture) {
                   for (final barcode in capture.barcodes) {
-                    if (barcode.rawValue != null) debugPrint('Escaneado: ${barcode.rawValue}');
+                    if (barcode.rawValue != null) {
+                      _handleBarcode(barcode.rawValue!);
+                      break; 
+                    }
                   }
                 },
               ),
+              // ✅ CUADRO RECTANGULAR SIN LÍNEA EN MEDIO
               Container(
-                width: 260,
-                height: 260,
+                width: 280, 
+                height: 180,
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.teal.withOpacity(0.6), width: 2),
+                  border: Border.all(color: AppColors.teal.withOpacity(0.7), width: 3),
                   borderRadius: BorderRadius.circular(16),
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [Container(height: 2, color: AppColors.teal)],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                    )
+                  ]
                 ),
               ),
+              if (_isProcessing)
+                Container(
+                  color: Colors.black54,
+                  child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+                )
             ],
           ),
         ),
-        // PANEL DESLIZABLE
         AnimatedContainer(
           duration: const Duration(milliseconds: 50),
           height: _panelHeight,
           child: ScannerBottomSheet(
             cartItems: widget.cartItems,
             onUpdateQuantity: widget.onUpdateQuantity,
+            cliente: widget.cliente,
             onDrag: (deltaY) {
               setState(() {
                 _panelHeight -= deltaY;
-                if (_panelHeight < _minHeight) _panelHeight = _minHeight;
-                if (_panelHeight > _maxHeight) _panelHeight = _maxHeight;
+                if (_panelHeight < 200) _panelHeight = 200;
+                if (_panelHeight > 500) _panelHeight = 500;
               });
             },
           ),

@@ -203,13 +203,15 @@ class FiamasApp extends StatelessWidget {
           return DebtHistoryScreen(customer: customer);
         },
         AppRoutes.registroFiado: (_) => const RegistroFiadoScreen(),
-        // Se recibe el teléfono y lo envía a NuevoClienteScreen
         AppRoutes.newClient: (context) {
           final phone = ModalRoute.of(context)?.settings.arguments as String?;
           return NuevoClienteScreen(initialPhone: phone);
         },
         AppRoutes.newClientQr: (_) => const NuevoClienteQrScreen(),
-        AppRoutes.scannerView: (_) => const ScannerViewScreen(),
+        AppRoutes.scannerView: (context) {
+          final cliente = ModalRoute.of(context)!.settings.arguments as ClienteModel;
+          return ScannerViewScreen(cliente: cliente);
+        },
         AppRoutes.finalizarFiado: (_) => const FinalizarFiadoScreen(),
         AppRoutes.help: (_) => const HelpScreen(),
         AppRoutes.about: (_) => const AboutScreen(),
