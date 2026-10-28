@@ -155,7 +155,8 @@ class _NewProductScreenState extends State<NewProductScreen> {
       categoriaId: _categoriaId ?? widget.product?.categoriaId ?? '',
       nombre: _name.text.trim(),
       descripcion: _description.text.trim().isEmpty ? null : _description.text.trim(),
-      codigoBarras: _barcode.text.trim().isEmpty ? null : _barcode.text.trim(),
+      // ✅ Si es por kilo, el código de barras va como nulo
+      codigoBarras: (_unit == SaleUnit.kilo || _barcode.text.trim().isEmpty) ? null : _barcode.text.trim(),
       tipoVenta: _unit,
       unidadMedida: _unit == SaleUnit.unit ? 'unidad' : 'kg',
       precioVenta: precioFinal,
@@ -343,7 +344,12 @@ class _NewProductScreenState extends State<NewProductScreen> {
                       child: _SaleUnitChip(
                         label: 'Kilo (kg)',
                         selected: _unit == SaleUnit.kilo,
-                        onTap: () => setState(() => _unit = SaleUnit.kilo),
+                        onTap: () {
+                          setState(() {
+                            _unit = SaleUnit.kilo;
+                            _barcode.clear(); // ✅ Limpiamos el código de barras
+                          });
+                        },
                       ),
                     ),
                   ],
@@ -375,56 +381,58 @@ class _NewProductScreenState extends State<NewProductScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // CÓDIGO DE BARRAS CON ESCÁNER FUNCIONAL
-                const Text(
-                  'Código de barras',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _barcode,
-                  decoration: InputDecoration(
-                    hintText: 'Escanea o ingresa el código',
-                    hintStyle: const TextStyle(fontSize: 14, color: Colors.grey),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.qr_code_scanner, color: AppColors.teal, size: 24),
-                      onPressed: () async {
-                        final scannedCode = await Navigator.of(context).push<String>(
-                          MaterialPageRoute(
-                            builder: (_) => const BarcodeScannerScreen(),
-                          ),
-                        );
-                        
-                        if (scannedCode != null && mounted) {
-                          setState(() {
-                            _barcode.text = scannedCode;
-                          });
-                          
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Código escaneado exitosamente'),
-                              backgroundColor: Colors.green,
-                              duration: Duration(seconds: 2),
+                // ✅ CÓDIGO DE BARRAS CONDICIONAL (Solo si es por unidad)
+                if (_unit == SaleUnit.unit) ...[
+                  const Text(
+                    'Código de barras',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _barcode,
+                    decoration: InputDecoration(
+                      hintText: 'Escanea o ingresa el código',
+                      hintStyle: const TextStyle(fontSize: 14, color: Colors.grey),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.qr_code_scanner, color: AppColors.teal, size: 24),
+                        onPressed: () async {
+                          final scannedCode = await Navigator.of(context).push<String>(
+                            MaterialPageRoute(
+                              builder: (_) => const BarcodeScannerScreen(),
                             ),
                           );
-                        }
-                      },
+                          
+                          if (scannedCode != null && mounted) {
+                            setState(() {
+                              _barcode.text = scannedCode;
+                            });
+                            
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Código escaneado exitosamente'),
+                                backgroundColor: Colors.green,
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        },
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
+                ],
 
-                // PRECIO VENTA
-                const Text(
-                  'Precio venta',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
+                // PRECIO VENTA (Cambia dinámicamente el texto)
+                Text(
+                  _unit == SaleUnit.unit ? 'Precio venta' : 'Precio por kilo (kg)',
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
                 ),
                 const SizedBox(height: 8),
                 TextFormField(

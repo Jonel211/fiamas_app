@@ -15,11 +15,21 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     required this.debts,
   });
 
+  // ✅ FUNCIÓN BLINDADA: Evita el error de "RangeError" si el nombre está vacío
   String _getInitials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
-        .toUpperCase();
+    final cleanName = name.trim();
+    if (cleanName.isEmpty) return 'C'; // Si está vacío, devuelve "C" de Cliente
+    
+    final parts = cleanName.split(RegExp(r'\s+'));
+    
+    if (parts.length == 1) {
+      if (parts.first.isEmpty) return 'C';
+      return parts.first.substring(0, 1).toUpperCase();
+    }
+    
+    final first = parts.first.isNotEmpty ? parts.first.substring(0, 1) : '';
+    final last = parts.last.isNotEmpty ? parts.last.substring(0, 1) : '';
+    return (first + last).toUpperCase();
   }
 
   String _getStatusText(DebtStatus status) {
@@ -51,7 +61,10 @@ class DebtDetailMultipleScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = customer['name'] as String? ?? 'Cliente';
+    // ✅ VALIDACIÓN: Si el nombre viene vacío, mostramos un texto por defecto
+    final rawName = customer['name'] as String? ?? '';
+    final name = rawName.trim().isEmpty ? 'Cliente' : rawName;
+    
     final initials = _getInitials(name);
     final allPaid = debts.every((d) => d.status == DebtStatus.pagado);
     final totalOriginal = debts.fold(0.0, (sum, d) => sum + d.amount);
@@ -75,7 +88,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              
+              // TARJETA DEL CLIENTE
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -147,7 +160,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-            
+              // FIADOS INCLUIDOS
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -225,7 +238,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              
+              // PRODUCTOS
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -302,7 +315,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-          
+              // RESUMEN DE CUENTA
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -344,7 +357,6 @@ class DebtDetailMultipleScreen extends StatelessWidget {
 
               const SizedBox(height: 24),
 
-            
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -371,7 +383,6 @@ class DebtDetailMultipleScreen extends StatelessWidget {
 
               // Botones solo si hay deuda pendiente
               if (!allPaid) ...[
-               
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -404,7 +415,6 @@ class DebtDetailMultipleScreen extends StatelessWidget {
 
                 const SizedBox(height: 12),
 
-                
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(

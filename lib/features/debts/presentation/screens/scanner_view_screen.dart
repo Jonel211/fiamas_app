@@ -1,10 +1,17 @@
+// lib/features/debts/presentation/screens/scanner_view_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../customers/data/models/cliente_model.dart';
+import '../../../inventory/domain/inventory_provider.dart';
+import '../../../inventory/domain/product.dart';
 import '../widgets/scanner_tab.dart';
 import '../widgets/product_catalog_tab.dart';
 
 class ScannerViewScreen extends StatefulWidget {
-  const ScannerViewScreen({super.key});
+  final ClienteModel cliente;
+  const ScannerViewScreen({super.key, required this.cliente});
 
   @override
   State<ScannerViewScreen> createState() => _ScannerViewScreenState();
@@ -13,40 +20,53 @@ class ScannerViewScreen extends StatefulWidget {
 class _ScannerViewScreenState extends State<ScannerViewScreen> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
-
-  // 🛒 Estado global del carrito
-  final List<Map<String, dynamic>> _cartItems = [
-    {'id': '1', 'name': 'Agua San Mateo 1L', 'price': 2.50, 'qty': 1},
-    {'id': '2', 'name': 'Galletas Oreo', 'price': 1.80, 'qty': 2},
-  ];
+  final List<Map<String, dynamic>> _cartItems = [];
 
   @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final tiendaId = context.read<AuthProvider>().user?.tiendaId;
+      if (tiendaId != null) {
+        context.read<InventoryProvider>().loadProducts(); 
+      }
+    });
   }
 
   void _changeTab(int index) {
     setState(() => _currentIndex = index);
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+    _pageController.animateToPage(index, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
   }
 
-  // Funciones para modificar el carrito
-  void _addToCart(Map<String, dynamic> product) {
+  void _addToCart(Product product) {
     setState(() {
-      int index = _cartItems.indexWhere((item) => item['name'] == product['name']);
+      int index = _cartItems.indexWhere((item) => item['producto_id'] == product.id);
       if (index >= 0) {
         _cartItems[index]['qty'] += 1;
       } else {
         _cartItems.add({
-          'id': DateTime.now().toString(),
-          'name': product['name'],
-          'price': double.parse(product['price']),
+          'producto_id': product.id,
+          'name': product.nombre,
+          'price': product.precioVenta,
           'qty': 1,
+          'isWeight': false, // ✅ Es por unidad
+        });
+      }
+    });
+  }
+
+  // ✅ NUEVA FUNCIÓN: Recibe el producto pesado con su cantidad
+  void _addToCartWithQuantity(Map<String, dynamic> cartItem) {
+    setState(() {
+      int index = _cartItems.indexWhere((item) => item['producto_id'] == cartItem['producto_id']);
+      if (index >= 0) {
+        // Si ya existe, sumamos los kilos
+        _cartItems[index]['qty'] += cartItem['qty'];
+      } else {
+        // Si no existe, lo agregamos con la bandera de que es por peso
+        _cartItems.add({
+          ...cartItem,
+          'isWeight': true, // ✅ Es por kilo
         });
       }
     });
@@ -55,9 +75,7 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
   void _updateQuantity(int index, int delta) {
     setState(() {
       _cartItems[index]['qty'] += delta;
-      if (_cartItems[index]['qty'] <= 0) {
-        _cartItems.removeAt(index);
-      }
+      if (_cartItems[index]['qty'] <= 0) _cartItems.removeAt(index);
     });
   }
 
@@ -70,17 +88,13 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // BARRA SUPERIOR COMPARTIDA
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: isDark ? Colors.white : AppColors.ink,
-                    ),
+                    icon: Icon(Icons.arrow_back_ios_new_rounded, color: isDark ? Colors.white : AppColors.ink),
                   ),
                   Expanded(
                     child: Container(
@@ -98,37 +112,25 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  if (isDark)
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.flashlight_on_rounded, color: Colors.white, size: 20),
-                    )
-                  else
-                    const SizedBox(width: 40),
                 ],
               ),
             ),
-
-            // CONTENIDO DESLIZABLE
             Expanded(
               child: PageView(
                 controller: _pageController,
                 onPageChanged: (index) => setState(() => _currentIndex = index),
                 children: [
-                  // Pasamos los datos a la pestaña del escáner
                   ScannerTab(
+                    cliente: widget.cliente,
                     cartItems: _cartItems,
                     onUpdateQuantity: _updateQuantity,
+                    onProductScanned: _addToCart,
                   ),
-                  // Pasamos los datos y la función de agregar al catálogo
                   ProductCatalogTab(
+                    cliente: widget.cliente,
                     cartItems: _cartItems,
                     onAdd: _addToCart,
+                    onAddWithQuantity: _addToCartWithQuantity, // ✅ Le pasamos la nueva función
                     onUpdateQuantity: _updateQuantity,
                   ),
                 ],
@@ -158,9 +160,7 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
-                color: isActive
-                    ? (isDark ? AppColors.ink : Colors.white)
-                    : (isDark ? Colors.white70 : AppColors.inkMuted),
+                color: isActive ? (isDark ? AppColors.ink : Colors.white) : (isDark ? Colors.white70 : AppColors.inkMuted),
               ),
             ),
           ),

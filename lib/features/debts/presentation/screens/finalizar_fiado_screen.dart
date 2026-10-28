@@ -1,8 +1,14 @@
+// lib/features/debts/presentation/screens/finalizar_fiado_screen.dart
 import 'package:flutter/material.dart';
-
+import 'package:provider/provider.dart';
+import 'package:dio/dio.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_header_config.dart';
-import '../../../../main.dart'; // <-- Para usar AppRoutes.summary
+import '../../../../core/network/dio_client.dart';
+import '../../../../main.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../customers/data/models/cliente_model.dart';
+import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../widgets/fiado_product_item.dart';
 
 class FinalizarFiadoScreen extends StatefulWidget {
@@ -14,16 +20,23 @@ class FinalizarFiadoScreen extends StatefulWidget {
 
 class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
   final _dateController = TextEditingController();
+  bool _isSaving = false;
+  late ClienteModel _cliente;
+  late List<Map<String, dynamic>> _cartItems;
+  bool _isInit = false;
 
-  final List<Map<String, dynamic>> _productos = [
-    {'name': 'Aceite 1L', 'price': 4.50},
-    {'name': 'Arroz 2kg', 'price': 8.00},
-    {'name': 'Leche 400g', 'price': 4.50},
-    {'name': 'Gaseosas 3L', 'price': 12.00},
-    {'name': 'Paquete botanas', 'price': 6.50},
-    {'name': 'Detergente 1kg', 'price': 8.00},
-    {'name': 'Jabón Bolívar x3', 'price': 7.00},
-  ];
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInit) {
+      _isInit = true;
+      final args = ModalRoute.of(context)!.settings.arguments;
+      if (args is Map<String, dynamic>) {
+        _cliente = args['cliente'] as ClienteModel;
+        _cartItems = args['cartItems'] as List<Map<String, dynamic>>;
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -40,75 +53,64 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
     );
     if (picked != null) {
       setState(() {
-        _dateController.text =
-            "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+        _dateController.text = "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
       });
     }
   }
 
-  // Función reutilizable para mostrar el diálogo de confirmación
-  Future<bool> _showConfirmDialog({
-    required String title,
-    required String message,
-    required String confirmText,
-    required Color confirmColor,
-  }) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppColors.ink,
-          ),
-        ),
-        content: Text(
-          message,
-          style: const TextStyle(color: AppColors.inkMuted),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text(
-              'Volver',
-              style: TextStyle(
-                color: AppColors.inkMuted,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: confirmColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(confirmText),
-          ),
-        ],
-      ),
-    );
-    return result ?? false;
-  }
+  Future<void> _registrarFiado() async {
+    if (_dateController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecciona una fecha de pago')));
+      return;
+    }
 
-  // Función para regresar al dashboard limpiando el historial
-  void _goToDashboard() {
-    Navigator.of(context)
-        .pushNamedAndRemoveUntil(AppRoutes.summary, (route) => false);
+    setState(() => _isSaving = true);
+
+    final tiendaId = context.read<AuthProvider>().user?.tiendaId;
+    final dio = DioClient.create();
+
+    // Formatear fecha a YYYY-MM-DD
+    final parts = _dateController.text.split('/');
+    final fechaFormateada = "${parts[2]}-${parts[1]}-${parts[0]}";
+
+    // Preparar productos para el backend
+    final productosJson = _cartItems.map((item) => {
+      'producto_id': item['producto_id'],
+      'cantidad': item['qty'],
+    }).toList();
+
+    try {
+      await dio.post('/fiados', data: {
+        'cliente_id': _cliente.id,
+        'tienda_id': tiendaId,
+        'fecha_vencimiento': fechaFormateada,
+        'productos': productosJson,
+      });
+
+      if (mounted) {
+        // Refrescar los datos del cliente en el provider para que aparezca el saldo
+        context.read<ClienteProvider>().cargarResumenCliente(_cliente.id, tiendaId!);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Fiado registrado exitosamente'), backgroundColor: Colors.green),
+        );
+        
+        Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.summary, (route) => false);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al registrar el fiado. Revisa el límite de crédito.'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    double total = _productos.fold(
-      0,
-      (sum, item) => sum + (item['price'] as double),
-    );
+    double total = _cartItems.fold(0, (sum, item) => sum + (item['price'] * item['qty']));
 
     return AppHeaderConfig(
       title: 'Finalizar fiado',
@@ -120,15 +122,7 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 1. FECHA LÍMITE
-              const Text(
-                'Fecha límite de pago',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.ink,
-                ),
-              ),
+              const Text('Fecha límite de pago', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink)),
               const SizedBox(height: 8),
               TextField(
                 controller: _dateController,
@@ -136,181 +130,54 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
                 onTap: _selectDate,
                 decoration: InputDecoration(
                   hintText: 'Selecciona una fecha',
-                  hintStyle: const TextStyle(
-                    color: AppColors.inkMuted,
-                    fontSize: 14,
-                  ),
-                  suffixIcon: const Icon(
-                    Icons.calendar_today_outlined,
-                    color: AppColors.ink,
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.mist),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.mist),
-                  ),
+                  hintStyle: const TextStyle(color: AppColors.inkMuted, fontSize: 14),
+                  suffixIcon: const Icon(Icons.calendar_today_outlined, color: AppColors.ink),
+                  filled: true, fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.mist)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.mist)),
                 ),
               ),
               const SizedBox(height: 24),
-
-              // 2. TARJETA DE PRODUCTOS
               Container(
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.mist),
-                ),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.mist)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Productos',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.teal,
-                      ),
-                    ),
+                    const Text('Productos', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.teal)),
                     const SizedBox(height: 12),
-                    const Text(
-                      '24 SEP 2026',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.inkMuted,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    ..._productos.map(
-                      (p) =>
-                          FiadoProductItem(name: p['name'], price: p['price']),
+                    ..._cartItems.map(
+                      (p) => FiadoProductItem(name: p['name'], price: p['price'] * p['qty']),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
-
-              // 3. TOTAL
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 14,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.teal.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                decoration: BoxDecoration(color: AppColors.teal.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(10)),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Total :',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.ink,
-                      ),
-                    ),
-                    Text(
-                      total.toStringAsFixed(2),
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.ink,
-                      ),
-                    ),
+                    const Text('Total :', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink)),
+                    Text(total.toStringAsFixed(2), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.ink)),
                   ],
                 ),
               ),
               const SizedBox(height: 32),
-
-              
               ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.gold,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  'Volver a elegir',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Cancelar (Pide confirmación y va al dashboard)
-              ElevatedButton(
-                onPressed: () async {
-                  final confirmed = await _showConfirmDialog(
-                    title: 'Cancelar fiado',
-                    message: '¿Estás seguro de que deseas cancelar este fiado? Los datos ingresados se perderán.',
-                    confirmText: 'Sí, cancelar',
-                    confirmColor: AppColors.danger,
-                  );
-                  if (confirmed && mounted) {
-                    _goToDashboard();
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.gold,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  'Cancelar',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Finalizar (Pide confirmación y va al dashboard)
-              ElevatedButton(
-                onPressed: () async {
-                  final confirmed = await _showConfirmDialog(
-                    title: 'Finalizar fiado',
-                    message:
-                        '¿Estás seguro de que deseas registrar este fiado?',
-                    confirmText: 'Sí, finalizar',
-                    confirmColor: AppColors.teal,
-                  );
-                  if (confirmed && mounted) {
-                    // TODO: Aquí iría la llamada al backend para guardar
-                    _goToDashboard();
-                  }
-                },
+                onPressed: _isSaving ? null : _registrarFiado,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.teal,
                   foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                  minimumSize: const Size.fromHeight(52),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'Finalizar',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
+                child: _isSaving 
+                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Finalizar y Registrar', style: TextStyle(fontWeight: FontWeight.w700)),
               ),
             ],
           ),
