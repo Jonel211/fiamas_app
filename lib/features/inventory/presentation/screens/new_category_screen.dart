@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_header_config.dart';
+import '../../../../core/constants/category_icons.dart';
 import '../../domain/category.dart';
 import '../../domain/inventory_provider.dart';
 import '../widgets/category_color_picker.dart';
@@ -26,7 +27,7 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
 
   bool _active = true;
   Color _color = CategoryStyle.colors.first;
-  String _iconKey = CategoryStyle.icons.keys.first;
+  String _iconKey = 'abarrotes';
 
   @override
   void initState() {
@@ -35,8 +36,9 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
       _name.text = widget.category!.nombre;
       _description.text = widget.category!.descripcion ?? '';
       _active = widget.category!.activo;
-      _iconKey = widget.category!.icono ?? CategoryStyle.icons.keys.first;
-      if (widget.category!.color != null && widget.category!.color!.isNotEmpty) {
+      _iconKey = CategoryStyle.normalizeKey(widget.category!.icono);
+      if (widget.category!.color != null &&
+          widget.category!.color!.isNotEmpty) {
         final hex = widget.category!.color!.replaceAll('#', '');
         final fullHex = hex.length == 6 ? 'FF$hex' : hex;
         _color = Color(int.parse(fullHex, radix: 16));
@@ -51,13 +53,45 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
     super.dispose();
   }
 
+  Future<void> _pickIcon() async {
+    final key = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.75,
+        maxChildSize: 0.95,
+        builder: (ctx, controller) => ListView(
+          controller: controller,
+          padding: EdgeInsets.fromLTRB(
+            20,
+            16,
+            20,
+            24 + MediaQuery.of(ctx).padding.bottom,
+          ),
+          children: [
+            CategoryIconPicker(
+              selectedKey: _iconKey,
+              color: _color,
+              onChanged: (k) => Navigator.pop(ctx, k),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (key != null) setState(() => _iconKey = key);
+  }
+
   void _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final provider = context.read<InventoryProvider>();
 
     provider.clearError();
-    
+
     provider.ensureInitialized(context);
     final realTiendaId = provider.tiendaId;
 
@@ -73,13 +107,15 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
       return;
     }
 
-    final hexColor = '#${_color.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
-    
+    final hexColor =
+        '#${_color.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
+
     final newCategory = Category(
       id: widget.category?.id ?? '',
       tiendaId: realTiendaId,
       nombre: _name.text.trim(),
-      descripcion: _description.text.trim().isEmpty ? null : _description.text.trim(),
+      descripcion:
+          _description.text.trim().isEmpty ? null : _description.text.trim(),
       color: hexColor,
       icono: _iconKey,
       activo: _active,
@@ -94,7 +130,10 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Categoría guardada exitosamente'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Categoría guardada exitosamente'),
+            backgroundColor: Colors.green,
+          ),
         );
         Navigator.of(context).pop(newCategory);
       }
@@ -159,9 +198,10 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
                 const SizedBox(height: 24),
                 const _SectionLabel('Ícono'),
                 const SizedBox(height: 12),
-                CategoryIconPicker(
-                  selectedKey: _iconKey,
-                  onChanged: (k) => setState(() => _iconKey = k),
+                _IconSelectorField(
+                  icon: CategoryIcons.resolve(_iconKey),
+                  color: _color,
+                  onTap: _pickIcon,
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
@@ -197,13 +237,61 @@ class _SectionLabel extends StatelessWidget {
   final String text;
   @override
   Widget build(BuildContext context) => Text(
-    text,
-    style: const TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w700,
-      color: AppColors.ink,
-    ),
-  );
+        text,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: AppColors.ink,
+        ),
+      );
+}
+
+class _IconSelectorField extends StatelessWidget {
+  const _IconSelectorField({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceMuted,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: Colors.white),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Cambiar ícono',
+                style: TextStyle(fontSize: 14, color: AppColors.ink),
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.inkMuted),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _FilledField extends StatelessWidget {

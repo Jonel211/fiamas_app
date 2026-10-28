@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -12,15 +15,14 @@ class AuthProvider with ChangeNotifier {
   late final AuthRepository _repository;
 
   UserModel? _user;
-  String? _token; 
+  String? _token;
   TenderoModel? _perfil;
   bool _isLoading = false;
   String? _errorMessage;
 
   UserModel? get user => _user;
-  String? get token => _token; 
-  String? get tiendaId =>
-      _user?.tiendaId; 
+  String? get token => _token;
+  String? get tiendaId => _user?.tiendaId;
   TenderoModel? get perfil => _perfil;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -33,6 +35,47 @@ class AuthProvider with ChangeNotifier {
     _repository = AuthRepository(remote, storage);
   }
 
+  // ─── Sesión ──────────────────────────────────────────────
+
+  /// Devuelve true si el token JWT ya venció (o no se puede leer).
+  bool _tokenVencido(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return true;
+      final payload = jsonDecode(
+        utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+      ) as Map<String, dynamic>;
+      final exp = payload['exp'];
+      if (exp is! num) return false;
+      final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      return ahora >= exp.toInt();
+    } catch (_) {
+      return true;
+    }
+  }
+
+  /// Restaura token y usuario guardados. Llamar desde el splash.
+  /// Devuelve true si hay una sesión válida.
+  Future<bool> restaurarSesion() async {
+    final token = await _repository.getToken();
+    if (token == null || token.isEmpty || _tokenVencido(token)) {
+      await _repository.logout();
+      return false;
+    }
+
+    final user = await _repository.getSavedUser();
+    if (user == null) {
+      await _repository.logout();
+      return false;
+    }
+
+    _token = token;
+    _user = user;
+    notifyListeners();
+    cargarPerfil(); // refresca foto y datos en segundo plano
+    return true;
+  }
+
   Future<bool> login({
     required String identificador,
     required String password,
@@ -42,16 +85,11 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Asumimos que tu repository.login devuelve el UserModel y guarda el token internamente.
       _user = await _repository.login(
         identificador: identificador,
         password: password,
       );
-
-      const storage = FlutterSecureStorage();
-      _token =
-          await storage.read(key: 'token') ??
-          await storage.read(key: 'auth_token');
+      _token = await _repository.getToken();
 
       _isLoading = false;
       notifyListeners();
@@ -126,7 +164,6 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // función de gestión de estados de carga y errores
   Future<bool> cambiarPassword({
     required String passwordActual,
     required String passwordNuevo,
@@ -180,6 +217,21 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
       _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Subir foto de perfil del tendero
+  Future<bool> subirFotoPerfil(File file) async {
+    _errorMessage = null;
+
+    try {
+      _perfil = await authService.subirFotoPerfil(file);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
       notifyListeners();
       return false;
     }

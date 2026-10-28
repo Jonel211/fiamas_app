@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/hardware/photo_picker.dart';
 import '../../../../core/widgets/labeled_field.dart';
 import 'store_photo_picker.dart';
 
@@ -10,12 +13,14 @@ class StoreFormData {
     required this.address,
     this.ruc = '',
     this.phone = '',
+    this.logo,
   });
 
   final String name;
   final String address;
   final String ruc;
   final String phone;
+  final File? logo;
 }
 
 /// Formulario compartido por "Nueva Tienda" y "Editar Tienda".
@@ -29,6 +34,7 @@ class StoreForm extends StatefulWidget {
     this.initialAddress = '',
     this.initialRuc = '',
     this.initialPhone = '',
+    this.initialLogoUrl,
   });
 
   final String submitLabel;
@@ -37,6 +43,7 @@ class StoreForm extends StatefulWidget {
   final String initialAddress;
   final String initialRuc;
   final String initialPhone;
+  final String? initialLogoUrl;
 
   @override
   State<StoreForm> createState() => _StoreFormState();
@@ -48,6 +55,7 @@ class _StoreFormState extends State<StoreForm> {
   late final _addressController = TextEditingController(text: widget.initialAddress);
   late final _rucController = TextEditingController(text: widget.initialRuc);
   late final _phoneController = TextEditingController(text: widget.initialPhone);
+  File? _logo;
 
   @override
   void dispose() {
@@ -58,6 +66,12 @@ class _StoreFormState extends State<StoreForm> {
     super.dispose();
   }
 
+  Future<void> _pickLogo() async {
+    final file = await PhotoPicker.pick(context);
+    if (file == null || !mounted) return;
+    setState(() => _logo = file);
+  }
+
   void _submit() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     widget.onSubmit(StoreFormData(
@@ -65,6 +79,7 @@ class _StoreFormState extends State<StoreForm> {
       address: _addressController.text.trim(),
       ruc: _rucController.text.trim(),
       phone: _phoneController.text.trim(),
+      logo: _logo,
     ));
   }
 
@@ -79,9 +94,9 @@ class _StoreFormState extends State<StoreForm> {
           children: [
             Center(
               child: StorePhotoPicker(
-                onTap: () {
-                  // TODO: abrir selector de imagen / cámara
-                },
+                imageUrl: widget.initialLogoUrl,
+                localFile: _logo,
+                onTap: _pickLogo,
               ),
             ),
             const SizedBox(height: 36),

@@ -1,59 +1,83 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
-import 'category_style.dart';
+import '../../../../core/constants/category_icons.dart';
 
-/// Cuadrícula de íconos (4 por fila). El elegido se pinta en teal.
 class CategoryIconPicker extends StatelessWidget {
-  const CategoryIconPicker({super.key, required this.selectedKey, required this.onChanged});
+  const CategoryIconPicker({
+    super.key,
+    required this.selectedKey,
+    required this.onChanged,
+    this.color = AppColors.teal,
+  });
 
-  final String selectedKey;
+  final String? selectedKey;
   final ValueChanged<String> onChanged;
-
-  static const int _perRow = 4;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    final entries = CategoryStyle.icons.entries.toList();
-
-    return Column(children: [
-      for (int start = 0; start < entries.length; start += _perRow) ...[
-        if (start > 0) const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            for (final e in entries.skip(start).take(_perRow))
-              _IconCell(
-                icon: e.value,
-                selected: e.key == selectedKey,
-                onTap: () => onChanged(e.key),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final group in CategoryIcons.groups.entries) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
+            child: Text(
+              group.key,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+                color: AppColors.ink,
               ),
-          ],
-        ),
+            ),
+          ),
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 5,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            children: [
+              for (final e in group.value.entries)
+                _IconCell(
+                  icon: e.value,
+                  selected: e.key == selectedKey,
+                  color: color,
+                  onTap: () => onChanged(e.key),
+                ),
+            ],
+          ),
+        ],
       ],
-    ]);
+    );
   }
 }
 
 class _IconCell extends StatelessWidget {
-  const _IconCell({required this.icon, required this.selected, required this.onTap});
+  const _IconCell({
+    required this.icon,
+    required this.selected,
+    required this.color,
+    required this.onTap,
+  });
 
   final IconData icon;
   final bool selected;
+  final Color color;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: selected ? AppColors.teal : AppColors.surfaceMuted,
+    return InkWell(
       borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: SizedBox(
-          width: 56,
-          height: 56,
-          child: Icon(icon, size: 24, color: selected ? Colors.white : AppColors.inkMuted),
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: selected ? color : AppColors.surfaceMuted,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: selected ? color : Colors.grey.shade300),
         ),
+        child: Icon(icon, color: selected ? Colors.white : Colors.black54),
       ),
     );
   }

@@ -7,6 +7,7 @@ class UserProfile {
     required this.email,
     required this.phone,
     this.address = '',
+    this.photoUrl,
   });
 
   const UserProfile.empty()
@@ -15,7 +16,8 @@ class UserProfile {
         dni = '',
         email = '',
         phone = '',
-        address = '';
+        address = '',
+        photoUrl = null;
 
   final String names;
   final String lastNames;
@@ -25,6 +27,7 @@ class UserProfile {
   /// Solo los 9 dígitos, sin prefijo. Ej: 999999999
   final String phone;
   final String address;
+  final String? photoUrl;
 
   String get fullName => '$names $lastNames'.trim();
 
@@ -39,6 +42,7 @@ class UserProfile {
     String? lastNames,
     String? phone,
     String? address,
+    String? photoUrl,
   }) =>
       UserProfile(
         names: names ?? this.names,
@@ -47,5 +51,6 @@ class UserProfile {
         email: email,
         phone: phone ?? this.phone,
         address: address ?? this.address,
+        photoUrl: photoUrl ?? this.photoUrl,
       );
 }

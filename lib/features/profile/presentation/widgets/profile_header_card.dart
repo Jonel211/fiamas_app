@@ -9,12 +9,14 @@ class ProfileHeaderCard extends StatelessWidget {
     super.key,
     required this.name,
     required this.email,
+    this.imageUrl,
     this.verified = true,
     this.onChangePhoto,
   });
 
   final String name;
   final String email;
+  final String? imageUrl;
   final bool verified;
   final VoidCallback? onChangePhoto;
 
@@ -36,7 +38,11 @@ class ProfileHeaderCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          ProfileAvatar(name: name, onChangePhoto: onChangePhoto),
+          ProfileAvatar(
+            name: name,
+            imageUrl: imageUrl,
+            onChangePhoto: onChangePhoto,
+          ),
           const SizedBox(height: 18),
           Text(
             name,

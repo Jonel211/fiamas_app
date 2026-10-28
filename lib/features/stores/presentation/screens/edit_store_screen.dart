@@ -19,7 +19,6 @@ class EditStoreScreen extends StatefulWidget {
 }
 
 class _EditStoreScreenState extends State<EditStoreScreen> {
-  // Controladores para mantener el estado del formulario
   late final TextEditingController _nameController;
   late final TextEditingController _addressController;
   late final TextEditingController _rucController;
@@ -28,7 +27,6 @@ class _EditStoreScreenState extends State<EditStoreScreen> {
   @override
   void initState() {
     super.initState();
-    // Inicializamos los controladores con los datos actuales
     _nameController = TextEditingController(text: widget.tienda.nombre);
     _addressController = TextEditingController(text: widget.tienda.direccion ?? '');
     _rucController = TextEditingController(text: widget.tienda.ruc ?? '');
@@ -66,57 +64,72 @@ class _EditStoreScreenState extends State<EditStoreScreen> {
         backgroundColor: AppColors.ivory,
         body: Consumer<TiendaProvider>(
           builder: (context, provider, _) {
-            if (provider.isLoading) {
-              return const Center(
-                child: CircularProgressIndicator(color: AppColors.teal),
-              );
-            }
-
-            return StoreForm(
-              // Key única para evitar problemas de reconstrucción
-              key: ValueKey('edit-${widget.tienda.id}'),
-              submitLabel: 'Guardar Cambios',
-              initialName: _nameController.text,
-              initialAddress: _addressController.text,
-              initialRuc: _rucController.text,
-              initialPhone: _phoneController.text,
-              onSubmit: (formData) async {
-                // CORRECCIÓN CRÍTICA:
-                // Si el campo está vacío, mantenemos el valor original
-                // NO enviamos null para no sobrescribir datos existentes
-                final success = await provider.updateTienda(
-                  tiendaId: widget.tienda.id,
-                  nombre: formData.name.trim().isEmpty
-                      ? widget.tienda.nombre
-                      : formData.name,
-                  direccion: formData.address.trim().isEmpty
-                      ? widget.tienda.direccion
-                      : formData.address,
-                  ruc: formData.ruc.trim().isEmpty
-                      ? widget.tienda.ruc
-                      : formData.ruc,
-                  telefono: formData.phone.trim().isEmpty
-                      ? widget.tienda.telefono
-                      : formData.phone,
-                );
-
-                if (context.mounted) {
-                  if (success) {
-                    // Recargar la lista antes de cerrar
-                    await context.read<TiendaProvider>().cargarMisTiendas();
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                    }
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(provider.error ?? 'Error al actualizar'),
-                        backgroundColor: AppColors.danger,
-                      ),
+            return Stack(
+              children: [
+                StoreForm(
+                  key: ValueKey('edit-${widget.tienda.id}'),
+                  submitLabel: 'Guardar Cambios',
+                  initialName: _nameController.text,
+                  initialAddress: _addressController.text,
+                  initialRuc: _rucController.text,
+                  initialPhone: _phoneController.text,
+                  initialLogoUrl: widget.tienda.logoUrl,
+                  onSubmit: (formData) async {
+                    // Si el campo está vacío, se mantiene el valor original
+                    final success = await provider.updateTienda(
+                      tiendaId: widget.tienda.id,
+                      nombre: formData.name.trim().isEmpty
+                          ? widget.tienda.nombre
+                          : formData.name,
+                      direccion: formData.address.trim().isEmpty
+                          ? widget.tienda.direccion
+                          : formData.address,
+                      ruc: formData.ruc.trim().isEmpty
+                          ? widget.tienda.ruc
+                          : formData.ruc,
+                      telefono: formData.phone.trim().isEmpty
+                          ? widget.tienda.telefono
+                          : formData.phone,
+                      logo: formData.logo,
                     );
-                  }
-                }
-              },
+
+                    if (!context.mounted) return;
+
+                    if (success) {
+                      final logoError = provider.error;
+                      await context.read<TiendaProvider>().cargarMisTiendas();
+                      if (!context.mounted) return;
+                      if (logoError != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Cambios guardados, pero no se pudo subir el logo',
+                            ),
+                            backgroundColor: AppColors.danger,
+                          ),
+                        );
+                      }
+                      Navigator.pop(context);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(provider.error ?? 'Error al actualizar'),
+                          backgroundColor: AppColors.danger,
+                        ),
+                      );
+                    }
+                  },
+                ),
+                if (provider.isLoading)
+                  Positioned.fill(
+                    child: Container(
+                      color: AppColors.ivory.withValues(alpha: 0.7),
+                      child: const Center(
+                        child: CircularProgressIndicator(color: AppColors.teal),
+                      ),
+                    ),
+                  ),
+              ],
             );
           },
         ),

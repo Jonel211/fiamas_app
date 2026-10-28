@@ -1,14 +1,51 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 
-/// Selector de foto de tienda: círculo gris con cámara grande
-/// y badge dorado de edición en la esquina superior derecha.
 class StorePhotoPicker extends StatelessWidget {
-  const StorePhotoPicker({super.key, this.onTap});
+  const StorePhotoPicker({
+    super.key,
+    this.onTap,
+    this.imageUrl,
+    this.localFile,
+  });
 
   final VoidCallback? onTap;
+  final String? imageUrl;
+  final File? localFile;
 
   static const double _circleSize = 110;
+
+  Widget _placeholder() {
+    return const Icon(
+      Icons.photo_camera_outlined,
+      color: AppColors.ink,
+      size: 44,
+    );
+  }
+
+  Widget _content() {
+    if (localFile != null) {
+      return Image.file(
+        localFile!,
+        width: _circleSize,
+        height: _circleSize,
+        fit: BoxFit.cover,
+      );
+    }
+    if (imageUrl != null && imageUrl!.isNotEmpty) {
+      return Image.network(
+        imageUrl!,
+        key: ValueKey(imageUrl),
+        width: _circleSize,
+        height: _circleSize,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _placeholder(),
+      );
+    }
+    return _placeholder();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,23 +55,17 @@ class StorePhotoPicker extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Círculo con cámara
           Container(
             width: _circleSize,
             height: _circleSize,
             alignment: Alignment.center,
+            clipBehavior: Clip.antiAlias,
             decoration: const BoxDecoration(
               color: AppColors.mist,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.photo_camera_outlined,
-              color: AppColors.ink,
-              size: 44,
-            ),
+            child: _content(),
           ),
-
-          // Badge dorado de edición (esquina superior derecha)
           Positioned(
             top: 0,
             right: 0,

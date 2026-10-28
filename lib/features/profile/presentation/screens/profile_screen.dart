@@ -58,6 +58,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       email: '',
       phone: perfil?.telefono ?? '',
       address: perfil?.tiendas.isNotEmpty == true ? (perfil!.tiendas.first.direccion ?? '') : '',
+      photoUrl: perfil?.fotoUrl,
     );
 
     return AppHeaderConfig(
@@ -82,6 +83,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ProfileHeaderCard(
                 name: p.fullName.isNotEmpty ? p.fullName : 'Tendero Fiamas',
                 email: p.phoneDisplay.isNotEmpty ? p.phoneDisplay : 'Sin teléfono',
+                imageUrl: p.photoUrl,
                 onChangePhoto: () => _openEdit(p),
               ),
               const SizedBox(height: 24),

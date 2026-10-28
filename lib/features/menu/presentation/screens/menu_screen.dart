@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_header_config.dart';
 import '../../../../main.dart';
@@ -44,7 +45,8 @@ class _MenuScreenState extends State<MenuScreen> {
               final userName = perfil?.fullName.isNotEmpty == true
                   ? perfil!.fullName
                   : (authProvider.user?.nombre ?? 'Usuario');
-              final userPhone = (perfil?.telefono != null && perfil!.telefono.isNotEmpty)
+              final userPhone =
+                  (perfil?.telefono != null && perfil!.telefono.isNotEmpty)
                   ? '+51 ${perfil.telefono}'
                   : 'Sin teléfono';
               return Column(
@@ -136,7 +138,12 @@ class _MenuScreenState extends State<MenuScreen> {
 
                   LogoutButton(
                     onTap: () async {
-                      await authProvider.logout();
+                      final tiendaProvider = context.read<TiendaProvider>();
+                      final auth = context.read<AuthProvider>();
+
+                      await tiendaProvider.limpiarSesion();
+                      await auth.logout();
+
                       if (context.mounted) AppRoutes.goToLogin(context);
                     },
                   ),
