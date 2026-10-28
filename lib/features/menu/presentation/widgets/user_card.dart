@@ -8,12 +8,38 @@ class UserCard extends StatelessWidget {
     super.key,
     required this.name,
     required this.phone,
+    this.imageUrl,
     this.onTap,
   });
 
   final String name;
   final String phone;
+  final String? imageUrl;
   final VoidCallback? onTap;
+
+  static const double _avatarSize = 52;
+
+  Widget _placeholder() {
+    return Container(
+      width: _avatarSize,
+      height: _avatarSize,
+      color: AppColors.mist,
+    );
+  }
+
+  Widget _avatar() {
+    final url = imageUrl;
+    if (url == null || url.isEmpty) return _placeholder();
+
+    return Image.network(
+      url,
+      key: ValueKey(url),
+      width: _avatarSize,
+      height: _avatarSize,
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) => _placeholder(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,15 +57,8 @@ class UserCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              // Avatar circular gris
-              Container(
-                width: 52,
-                height: 52,
-                decoration: const BoxDecoration(
-                  color: AppColors.mist,
-                  shape: BoxShape.circle,
-                ),
-              ),
+              // Avatar circular con la foto del tendero
+              ClipOval(child: _avatar()),
               const SizedBox(width: 14),
               // Nombre + teléfono
               Expanded(

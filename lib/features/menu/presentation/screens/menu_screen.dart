@@ -55,6 +55,7 @@ class _MenuScreenState extends State<MenuScreen> {
                   UserCard(
                     name: userName,
                     phone: userPhone,
+                    imageUrl: perfil?.fotoUrl,
                     onTap: () =>
                         Navigator.of(context).pushNamed(AppRoutes.profile),
                   ),
@@ -65,11 +66,10 @@ class _MenuScreenState extends State<MenuScreen> {
                       MenuItem(
                         icon: Icons.sync_rounded,
                         title: 'Respaldo automático',
-                        subtitle: 'Última vez: hoy a las 3 AM',
                         showChevron: false,
                         trailing: Switch(
                           value: _autoBackup,
-                          activeColor: AppColors.teal,
+                          activeThumbColor: AppColors.teal,
                           onChanged: (v) => setState(() => _autoBackup = v),
                         ),
                       ),
@@ -96,9 +96,8 @@ class _MenuScreenState extends State<MenuScreen> {
                       MenuItem(
                         icon: Icons.lock_outline_rounded,
                         title: 'Cambiar contraseña',
-                        onTap: () =>
-                            Navigator.of(context)
-                                .pushNamed(AppRoutes.changePassword),
+                        onTap: () => Navigator.of(context)
+                            .pushNamed(AppRoutes.changePassword),
                       ),
                       MenuItem(
                         icon: Icons.share_outlined,
