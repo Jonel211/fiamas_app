@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'dart:convert'; 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../datasources/auth_remote_datasource.dart';
@@ -13,7 +13,7 @@ class AuthRepository {
 
   AuthRepository(this._remoteDataSource, this._storage);
 
-  // ─── Login ───────────────────────────────────────────────
+  // Login 
   Future<UserModel> login({
     required String identificador,
     required String password,
@@ -27,12 +27,13 @@ class AuthRepository {
     final usuario = UserModel.fromJson(data['usuario'] as Map<String, dynamic>);
 
     await _storage.write(key: _tokenKey, value: token);
+    // Usamos jsonEncode
     await _storage.write(key: _userKey, value: jsonEncode(usuario.toJson()));
 
     return usuario;
   }
 
-  // ─── Registro Tendero ────────────────────────────────────
+  // Registro Tendero
   Future<void> registerTendero({
     required String dni,
     required String nombres,
@@ -51,7 +52,7 @@ class AuthRepository {
     );
   }
 
-  // ─── Registro Cliente ────────────────────────────────────
+  // Registro Cliente
   Future<void> registerCliente({
     required String telefono,
     required String nombres,
@@ -68,7 +69,7 @@ class AuthRepository {
     );
   }
 
-  // ─── Cambiar Contraseña ──────────────────────────────────
+  // Cambiar Contraseña
   Future<String> cambiarPassword({
     required String passwordActual,
     required String passwordNuevo,
@@ -79,17 +80,17 @@ class AuthRepository {
     );
   }
 
-  // ─── Sesión guardada ─────────────────────────────────────
+  // Token
   Future<String?> getToken() async {
     return await _storage.read(key: _tokenKey);
   }
 
-  /// Usuario guardado en el último login (null si no hay o está corrupto).
+  // Recuperar Usuario Guardado 
   Future<UserModel?> getSavedUser() async {
-    final raw = await _storage.read(key: _userKey);
-    if (raw == null || raw.isEmpty) return null;
+    final userJson = await _storage.read(key: _userKey);
+    if (userJson == null || userJson.isEmpty) return null;
     try {
-      return UserModel.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      return UserModel.fromJson(jsonDecode(userJson) as Map<String, dynamic>);
     } catch (_) {
       return null;
     }

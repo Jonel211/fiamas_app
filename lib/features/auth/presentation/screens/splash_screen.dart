@@ -1,8 +1,10 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../main.dart'; 
-import '../providers/auth_provider.dart'; 
+import '../../../../core/widgets/main_shell.dart';
+import '../providers/auth_provider.dart';
+import 'welcome_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -15,15 +17,14 @@ class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   
   static const String _logo = 'assets/images/logo-oscuro.png';
-  static const String _spinner = 'assets/images/spinner.png';
 
   static const _beforeLogo = Duration(milliseconds: 300);
-  static const _logoOnly = Duration(milliseconds: 1400);
-  static const _withSpinner = Duration(milliseconds: 2300);
+  static const _logoOnly = Duration(milliseconds: 1200);
+  static const _withSpinner = Duration(milliseconds: 2500);
 
-  static const double _logoSize = 130;
+  static const double _logoSize = 120;
   static const double _spinnerSize = 180;
-  static const double _logoScaleWithSpinner = 0.55;
+  static const double _logoScaleWithSpinner = 0.6;
 
   late final AnimationController _rotation;
 
@@ -34,7 +35,7 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
-    // Giro continuo del spinner: una vuelta cada 2 segundos.
+    // Giro continuo del spinner de puntos: una vuelta cada 2 segundos.
     _rotation = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -54,11 +55,9 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _runSequence() async {
-    // Iniciamos la precarga de imágenes y la restauración de sesión al mismo tiempo
-    final precacheFuture = Future.wait([_precache(_logo), _precache(_spinner)]);
-    final sessionFuture = context.read<AuthProvider>().restaurarSesion();
-
-    await precacheFuture;
+    // 1. Verificamos sesión y precargamos el logo en paralelo
+    final authFuture = context.read<AuthProvider>().checkAuthStatus();
+    await _precache(_logo);
 
     await Future.delayed(_beforeLogo);
     if (!mounted) return;
@@ -71,17 +70,38 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(_withSpinner);
     if (!mounted) return;
 
-    // Esperamos a que termine la restauración de sesión si tardó más que la animación
-    final hayCuenta = await sessionFuture;
+    // 2. Evaluamos resultado de sesión y redirigimos
+    final isLoggedIn = await authFuture;
     if (!mounted) return;
 
-    _navigateToNextScreen(hayCuenta);
+    if (isLoggedIn) {
+      _goToHome();
+    } else {
+      _goToWelcome();
+    }
   }
 
-  void _navigateToNextScreen(bool hayCuenta) {
-    Navigator.pushReplacementNamed(
-      context,
-      hayCuenta ? AppRoutes.stores : AppRoutes.welcome,
+  void _goToHome() {
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        settings: const RouteSettings(name: '/summary'),
+        transitionDuration: const Duration(milliseconds: 500),
+        pageBuilder: (_, __, ___) => const MainShellScreen(),
+        transitionsBuilder: (_, animation, __, child) =>
+            FadeTransition(opacity: animation, child: child),
+      ),
+    );
+  }
+
+  void _goToWelcome() {
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        settings: const RouteSettings(name: '/welcome'),
+        transitionDuration: const Duration(milliseconds: 500),
+        pageBuilder: (_, __, ___) => const WelcomeScreen(),
+        transitionsBuilder: (_, animation, __, child) =>
+            FadeTransition(opacity: animation, child: child),
+      ),
     );
   }
 
@@ -96,27 +116,27 @@ class _SplashScreenState extends State<SplashScreen>
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // Spinner: puntos que giran alrededor del logo
+              // Spinner de puntos giratorio basado en tu referencia
               AnimatedOpacity(
                 opacity: _showSpinner ? 1 : 0,
-                duration: const Duration(milliseconds: 500),
+                duration: const Duration(milliseconds: 400),
                 child: RotationTransition(
                   turns: _rotation,
-                  child: Image.asset(
-                    _spinner,
-                    width: _spinnerSize,
-                    height: _spinnerSize,
+                  child: CustomPaint(
+                    size: const Size(_spinnerSize, _spinnerSize),
+                    painter: _DottedSpinnerPainter(color: AppColors.teal),
                   ),
                 ),
               ),
 
+              // Logo central con animación de aparición y escala
               AnimatedOpacity(
                 opacity: _logoVisible ? 1 : 0,
-                duration: const Duration(milliseconds: 800),
+                duration: const Duration(milliseconds: 600),
                 curve: Curves.easeOut,
                 child: AnimatedScale(
                   scale: _showSpinner ? _logoScaleWithSpinner : 1,
-                  duration: const Duration(milliseconds: 600),
+                  duration: const Duration(milliseconds: 500),
                   curve: Curves.easeInOut,
                   child: Image.asset(
                     _logo,
@@ -132,4 +152,37 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
   }
+}
+
+// ─── Pintor personalizado para los puntos circulares ─────────
+class _DottedSpinnerPainter extends CustomPainter {
+  final Color color;
+  _DottedSpinnerPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 14;
+    const int count = 10; // Cantidad de puntos en el círculo
+    final dotRadius = size.width * 0.05; // Radio de cada punto
+
+    for (int i = 0; i < count; i++) {
+      final double angle = (i * 2 * pi) / count;
+      final Offset dotCenter = Offset(
+        center.dx + radius * cos(angle),
+        center.dy + radius * sin(angle),
+      );
+
+      // Opacidad progresiva para dar el efecto de estela de carga
+      final double opacity = (i + 1) / count;
+      final paint = Paint()
+        ..color = color.withOpacity(opacity)
+        ..style = PaintingStyle.fill;
+
+      canvas.drawCircle(dotCenter, dotRadius, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

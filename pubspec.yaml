@@ -67,6 +67,10 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
+  # Herramientas para generar icono de la app y splash nativo
+  flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.4
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -82,6 +86,22 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+
+# ─── 1. Configuración del Icono de la App ───────────────────
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/logo-oscuro.png"
+  min_sdk_android: 21
+  # Para Android 8+ (Iconos adaptativos): fondo celeste/blanco y tu logo al centro
+  adaptive_icon_background: "#E3F3F2"
+  adaptive_icon_foreground: "assets/images/logo-oscuro.png"
+
+# ─── 2. Configuración del Arranque Nativo (Android 12+) ─────
+flutter_native_splash:
+  color: "#B1D8F7" # Si quieres el código exacto de tu AppColors.skyBlue, cámbialo aquí
+  android_12:
+    color: "##B1D8F7"
 
   # To add assets to your application, add an assets section, like this:
   # assets:
