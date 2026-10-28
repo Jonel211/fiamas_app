@@ -39,7 +39,7 @@ class CategoryIconPicker extends StatelessWidget {
             crossAxisSpacing: 10,
             children: [
               for (final e in group.value.entries)
-                _IconCell(
+                CategoryIconCell(
                   icon: e.value,
                   selected: e.key == selectedKey,
                   color: color,
@@ -53,8 +53,9 @@ class CategoryIconPicker extends StatelessWidget {
   }
 }
 
-class _IconCell extends StatelessWidget {
-  const _IconCell({
+class CategoryIconCell extends StatelessWidget {
+  const CategoryIconCell({
+    super.key,
     required this.icon,
     required this.selected,
     required this.color,

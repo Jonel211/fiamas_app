@@ -36,7 +36,12 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
       _name.text = widget.category!.nombre;
       _description.text = widget.category!.descripcion ?? '';
       _active = widget.category!.activo;
-      _iconKey = CategoryStyle.normalizeKey(widget.category!.icono);
+
+      final savedIcon = widget.category!.icono;
+      _iconKey = (savedIcon != null && CategoryIcons.all.containsKey(savedIcon))
+          ? savedIcon
+          : 'general';
+
       if (widget.category!.color != null &&
           widget.category!.color!.isNotEmpty) {
         final hex = widget.category!.color!.replaceAll('#', '');
@@ -51,6 +56,14 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
     _name.dispose();
     _description.dispose();
     super.dispose();
+  }
+
+  /// Los 10 destacados. Si el ícono elegido no está entre ellos
+  /// (porque se eligió en "Ver todos"), ocupa el último lugar.
+  List<String> get _quickKeys {
+    final keys = List<String>.from(CategoryIcons.featured);
+    if (!keys.contains(_iconKey)) keys[keys.length - 1] = _iconKey;
+    return keys;
   }
 
   Future<void> _pickIcon() async {
@@ -198,12 +211,30 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
                 const SizedBox(height: 24),
                 const _SectionLabel('Ícono'),
                 const SizedBox(height: 12),
-                _IconSelectorField(
-                  icon: CategoryIcons.resolve(_iconKey),
-                  color: _color,
-                  onTap: _pickIcon,
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 5,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  children: [
+                    for (final key in _quickKeys)
+                      CategoryIconCell(
+                        icon: CategoryIcons.resolve(key),
+                        selected: key == _iconKey,
+                        color: _color,
+                        onTap: () => setState(() => _iconKey = key),
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 4),
+                TextButton.icon(
+                  onPressed: _pickIcon,
+                  style: TextButton.styleFrom(foregroundColor: AppColors.teal),
+                  icon: const Icon(Icons.apps_rounded, size: 18),
+                  label: const Text('Ver todos los íconos'),
+                ),
+                const SizedBox(height: 28),
                 ElevatedButton(
                   onPressed: _save,
                   style: ElevatedButton.styleFrom(
@@ -244,54 +275,6 @@ class _SectionLabel extends StatelessWidget {
           color: AppColors.ink,
         ),
       );
-}
-
-class _IconSelectorField extends StatelessWidget {
-  const _IconSelectorField({
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceMuted,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: Colors.white),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                'Cambiar ícono',
-                style: TextStyle(fontSize: 14, color: AppColors.ink),
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: AppColors.inkMuted),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _FilledField extends StatelessWidget {

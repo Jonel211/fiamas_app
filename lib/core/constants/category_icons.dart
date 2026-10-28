@@ -3,7 +3,21 @@ import 'package:flutter/material.dart';
 class CategoryIcons {
   CategoryIcons._();
 
+
   static const IconData fallback = Icons.category;
+
+  static const List<String> featured = [
+    'abarrotes',
+    'bebidas',
+    'snacks',
+    'panaderia',
+    'carnes',
+    'verduras',
+    'lacteos',
+    'limpieza',
+    'farmacia',
+    'general',
+  ];
 
   static const Map<String, Map<String, IconData>> groups = {
     'Alimentos': {
