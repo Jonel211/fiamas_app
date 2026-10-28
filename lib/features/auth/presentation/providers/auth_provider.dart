@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -35,45 +34,26 @@ class AuthProvider with ChangeNotifier {
     _repository = AuthRepository(remote, storage);
   }
 
-  // ─── Sesión ──────────────────────────────────────────────
-
-  /// Devuelve true si el token JWT ya venció (o no se puede leer).
-  bool _tokenVencido(String token) {
+  // Verificar sesión guardada al iniciar la app
+  Future<bool> checkAuthStatus() async {
     try {
-      final parts = token.split('.');
-      if (parts.length != 3) return true;
-      final payload = jsonDecode(
-        utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
-      ) as Map<String, dynamic>;
-      final exp = payload['exp'];
-      if (exp is! num) return false;
-      final ahora = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-      return ahora >= exp.toInt();
+      final savedToken = await _repository.getToken();
+      final savedUser = await _repository.getSavedUser();
+
+      if (savedToken != null && savedToken.isNotEmpty && savedUser != null) {
+        _token = savedToken;
+        _user = savedUser;
+
+        // Opcional: Cargar el perfil en segundo plano sin bloquear el inicio
+        cargarPerfil();
+
+        notifyListeners();
+        return true;
+      }
+      return false;
     } catch (_) {
-      return true;
-    }
-  }
-
-  /// Restaura token y usuario guardados. Llamar desde el splash.
-  /// Devuelve true si hay una sesión válida.
-  Future<bool> restaurarSesion() async {
-    final token = await _repository.getToken();
-    if (token == null || token.isEmpty || _tokenVencido(token)) {
-      await _repository.logout();
       return false;
     }
-
-    final user = await _repository.getSavedUser();
-    if (user == null) {
-      await _repository.logout();
-      return false;
-    }
-
-    _token = token;
-    _user = user;
-    notifyListeners();
-    cargarPerfil(); // refresca foto y datos en segundo plano
-    return true;
   }
 
   Future<bool> login({

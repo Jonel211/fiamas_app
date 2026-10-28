@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-/// Paleta oficial Fiamas (según el diseño en Figma).
+/// Paleta oficial Fiamas.
 class AppColors {
   AppColors._();
 
-  // ── Paleta principal del diseño ──────────────────────────────
+  // Paleta principal del diseño
   /// Color de marca. Paneles, acentos y navegación activa.
   static const Color teal = Color(0xFF1D9492);
 
@@ -23,7 +23,7 @@ class AppColors {
   /// Fondo alterno de pantallas internas.
   static const Color background = Color(0xFFF8FAFC);
 
-  // ── Se conservan para no romper pantallas existentes ─────────
+  // Se conservan para no romper pantallas existentes
   /// Texto principal / "negro" del sistema.
   static const Color ink = Color(0xFF12172A);
 
@@ -34,7 +34,7 @@ class AppColors {
   static const Color surface = Colors.white; // tarjetas
   static const Color danger = Color(0xFFB3452C); // errores
 
-  // NUEVOS COLORES para pantallas de clientes
+  // Colores para pantallas de clientes
   /// Verde para estados exitosos (pagado, al día).
   static const Color success = Color(0xFF22C55E);
 
@@ -58,7 +58,7 @@ class AppColors {
   /// Verde del ícono de WhatsApp.
   static const Color whatsapp = Color(0xFF25D366);
 
-  // ── Texto y detalles sobre fondos de marca (teal) ────────────
+  // Texto y detalles sobre fondos de marca
   /// Texto principal sobre teal.
   static const Color onBrand = Colors.white;
 
