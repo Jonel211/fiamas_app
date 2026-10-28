@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'core/constants/app_colors.dart';
 import 'core/navigation/app_header_observer.dart';
+import 'core/network/dio_client.dart';
 import 'core/providers/app_bar_controller.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/app_header.dart';
@@ -10,8 +11,8 @@ import 'core/widgets/main_shell.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/auth/presentation/providers/tienda_provider.dart';
 import 'features/auth/data/models/tienda_model.dart';
-import 'features/customers/presentation/providers/cliente_provider.dart'; 
-import 'features/customers/data/models/cliente_model.dart'; 
+import 'features/customers/presentation/providers/cliente_provider.dart';
+import 'features/customers/data/models/cliente_model.dart';
 import 'features/auth/presentation/screens/splash_screen.dart';
 import 'features/auth/presentation/screens/welcome_screen.dart';
 import 'features/auth/presentation/screens/verification_screen.dart';
@@ -19,7 +20,7 @@ import 'features/auth/presentation/screens/change_password_screen.dart';
 import 'features/auth/presentation/screens/forgot_password_screen.dart';
 import 'features/auth/presentation/screens/reset_code_screen.dart';
 import 'features/auth/presentation/screens/new_password_screen.dart';
-import 'features/inventory/domain/inventory_provider.dart'; 
+import 'features/inventory/domain/inventory_provider.dart';
 import 'features/menu/presentation/screens/menu_screen.dart';
 import 'features/profile/presentation/screens/profile_screen.dart';
 import 'features/profile/presentation/screens/edit_profile_screen.dart';
@@ -50,19 +51,70 @@ import 'features/debts/presentation/screens/finalizar_fiado_screen.dart';
 import 'features/reports/presentation/screens/reports_screen.dart';
 import 'features/dashboard/presentation/screens/whatsapp_collection_screen.dart';
 
+/// Permite navegar sin contexto (por ejemplo, al vencer la sesión).
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() {
+  // Si el servidor rechaza el token, se cierra la sesión y se va al login.
+  DioClient.onUnauthorized = _cerrarSesionPorTokenVencido;
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => TiendaProvider()),
-        ChangeNotifierProvider(create: (_) => InventoryProvider()),
-        ChangeNotifierProvider(create: (_) => ClienteProvider()), 
+        // El inventario sigue solo a la tienda seleccionada y al token:
+        // al cambiar de tienda o cerrar sesión se vacía automáticamente.
+        ChangeNotifierProxyProvider2<AuthProvider, TiendaProvider,
+            InventoryProvider>(
+          create: (_) => InventoryProvider(),
+          update: (_, auth, tienda, inventory) {
+            final inv = inventory ?? InventoryProvider();
+            final token = auth.token;
+            final tiendaId = tienda.tiendaSeleccionadaId;
+            if (token == null || tiendaId == null) {
+              inv.reset();
+            } else {
+              inv.updateTiendaContext(token, tiendaId);
+            }
+            return inv;
+          },
+        ),
+        ChangeNotifierProvider(create: (_) => ClienteProvider()),
         ChangeNotifierProvider(create: (_) => AppBarController()),
       ],
       child: const FiamasApp(),
     ),
   );
+}
+
+Future<void> _cerrarSesionPorTokenVencido() async {
+  final context = navigatorKey.currentContext;
+  if (context == null) {
+    DioClient.resetUnauthorized();
+    return;
+  }
+
+  final tienda = context.read<TiendaProvider>();
+  final auth = context.read<AuthProvider>();
+
+  await tienda.limpiarSesion();
+  await auth.logout();
+
+  navigatorKey.currentState?.pushNamedAndRemoveUntil(
+    AppRoutes.welcome,
+    (route) => false,
+    arguments: 'login',
+  );
+
+  final messenger = ScaffoldMessenger.maybeOf(
+    navigatorKey.currentContext ?? context,
+  );
+  messenger?.showSnackBar(
+    const SnackBar(content: Text('Tu sesión venció. Inicia sesión de nuevo.')),
+  );
+
+  DioClient.resetUnauthorized();
 }
 
 class AppRoutes {
@@ -134,6 +186,7 @@ class FiamasApp extends StatelessWidget {
       title: 'Fiamas',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      navigatorKey: navigatorKey,
       initialRoute: AppRoutes.splash,
       navigatorObservers: [_headerObserver],
       builder: (context, child) {

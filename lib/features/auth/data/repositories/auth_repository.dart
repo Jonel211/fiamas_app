@@ -1,4 +1,4 @@
-import 'dart:convert'; // <-- IMPORTANTE AÑADIR ESTO
+import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../datasources/auth_remote_datasource.dart';
@@ -26,9 +26,7 @@ class AuthRepository {
     final token = data['token'] as String;
     final usuario = UserModel.fromJson(data['usuario'] as Map<String, dynamic>);
 
-    // Guardar token y usuario de forma segura
     await _storage.write(key: _tokenKey, value: token);
-    // CORREGIDO: Usamos jsonEncode
     await _storage.write(key: _userKey, value: jsonEncode(usuario.toJson()));
 
     return usuario;
@@ -81,9 +79,20 @@ class AuthRepository {
     );
   }
 
-  // ─── Token ───────────────────────────────────────────────
+  // ─── Sesión guardada ─────────────────────────────────────
   Future<String?> getToken() async {
     return await _storage.read(key: _tokenKey);
+  }
+
+  /// Usuario guardado en el último login (null si no hay o está corrupto).
+  Future<UserModel?> getSavedUser() async {
+    final raw = await _storage.read(key: _userKey);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      return UserModel.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> logout() async {

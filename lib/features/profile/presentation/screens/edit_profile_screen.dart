@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/hardware/photo_picker.dart';
 import '../../../../core/widgets/app_header_config.dart';
 import '../../../../core/widgets/auth_field.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -49,6 +52,8 @@ class _EditProfileFormState extends State<_EditProfileForm> {
   late final TextEditingController _phone;
   late final TextEditingController _address;
   bool _saving = false;
+  File? _photo;
+  bool _uploadingPhoto = false;
 
   @override
   void initState() {
@@ -72,6 +77,31 @@ class _EditProfileFormState extends State<_EditProfileForm> {
 
   String? _required(String? v, String message) =>
       (v == null || v.trim().isEmpty) ? message : null;
+
+  Future<void> _pickPhoto() async {
+    final file = await PhotoPicker.pick(context);
+    if (file == null || !mounted) return;
+
+    setState(() {
+      _photo = file;
+      _uploadingPhoto = true;
+    });
+
+    final success = await context.read<AuthProvider>().subirFotoPerfil(file);
+    if (!mounted) return;
+
+    setState(() {
+      _uploadingPhoto = false;
+      if (!success) _photo = null;
+    });
+
+    if (!success) {
+      final err = context.read<AuthProvider>().errorMessage ?? 'No se pudo subir la foto';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(err), backgroundColor: AppColors.danger),
+      );
+    }
+  }
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
@@ -118,7 +148,10 @@ class _EditProfileFormState extends State<_EditProfileForm> {
             Center(
               child: ProfileAvatar(
                 name: widget.profile.names,
-                onChangePhoto: () {},
+                imageUrl: widget.profile.photoUrl,
+                localFile: _photo,
+                loading: _uploadingPhoto,
+                onChangePhoto: _pickPhoto,
               ),
             ),
             const SizedBox(height: 32),
@@ -170,14 +203,14 @@ class _EditProfileFormState extends State<_EditProfileForm> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              onPressed: _saving ? null : _save,
+              onPressed: (_saving || _uploadingPhoto) ? null : _save,
               child: _saving
-                ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                )
-              : const Text('Guardar cambios'),
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Guardar cambios'),
             ),
           ],
         ),

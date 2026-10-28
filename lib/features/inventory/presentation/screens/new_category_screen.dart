@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_header_config.dart';
+import '../../../../core/constants/category_icons.dart';
 import '../../domain/category.dart';
 import '../../domain/inventory_provider.dart';
 import '../widgets/category_color_picker.dart';
@@ -26,7 +27,7 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
 
   bool _active = true;
   Color _color = CategoryStyle.colors.first;
-  String _iconKey = CategoryStyle.icons.keys.first;
+  String _iconKey = 'abarrotes';
 
   @override
   void initState() {
@@ -35,8 +36,14 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
       _name.text = widget.category!.nombre;
       _description.text = widget.category!.descripcion ?? '';
       _active = widget.category!.activo;
-      _iconKey = widget.category!.icono ?? CategoryStyle.icons.keys.first;
-      if (widget.category!.color != null && widget.category!.color!.isNotEmpty) {
+
+      final savedIcon = widget.category!.icono;
+      _iconKey = (savedIcon != null && CategoryIcons.all.containsKey(savedIcon))
+          ? savedIcon
+          : 'general';
+
+      if (widget.category!.color != null &&
+          widget.category!.color!.isNotEmpty) {
         final hex = widget.category!.color!.replaceAll('#', '');
         final fullHex = hex.length == 6 ? 'FF$hex' : hex;
         _color = Color(int.parse(fullHex, radix: 16));
@@ -51,13 +58,53 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
     super.dispose();
   }
 
+  /// Los 10 destacados. Si el ícono elegido no está entre ellos
+  /// (porque se eligió en "Ver todos"), ocupa el último lugar.
+  List<String> get _quickKeys {
+    final keys = List<String>.from(CategoryIcons.featured);
+    if (!keys.contains(_iconKey)) keys[keys.length - 1] = _iconKey;
+    return keys;
+  }
+
+  Future<void> _pickIcon() async {
+    final key = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.75,
+        maxChildSize: 0.95,
+        builder: (ctx, controller) => ListView(
+          controller: controller,
+          padding: EdgeInsets.fromLTRB(
+            20,
+            16,
+            20,
+            24 + MediaQuery.of(ctx).padding.bottom,
+          ),
+          children: [
+            CategoryIconPicker(
+              selectedKey: _iconKey,
+              color: _color,
+              onChanged: (k) => Navigator.pop(ctx, k),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (key != null) setState(() => _iconKey = key);
+  }
+
   void _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final provider = context.read<InventoryProvider>();
 
     provider.clearError();
-    
+
     provider.ensureInitialized(context);
     final realTiendaId = provider.tiendaId;
 
@@ -73,13 +120,15 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
       return;
     }
 
-    final hexColor = '#${_color.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
-    
+    final hexColor =
+        '#${_color.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
+
     final newCategory = Category(
       id: widget.category?.id ?? '',
       tiendaId: realTiendaId,
       nombre: _name.text.trim(),
-      descripcion: _description.text.trim().isEmpty ? null : _description.text.trim(),
+      descripcion:
+          _description.text.trim().isEmpty ? null : _description.text.trim(),
       color: hexColor,
       icono: _iconKey,
       activo: _active,
@@ -94,7 +143,10 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Categoría guardada exitosamente'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Categoría guardada exitosamente'),
+            backgroundColor: Colors.green,
+          ),
         );
         Navigator.of(context).pop(newCategory);
       }
@@ -159,11 +211,30 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
                 const SizedBox(height: 24),
                 const _SectionLabel('Ícono'),
                 const SizedBox(height: 12),
-                CategoryIconPicker(
-                  selectedKey: _iconKey,
-                  onChanged: (k) => setState(() => _iconKey = k),
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 5,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  children: [
+                    for (final key in _quickKeys)
+                      CategoryIconCell(
+                        icon: CategoryIcons.resolve(key),
+                        selected: key == _iconKey,
+                        color: _color,
+                        onTap: () => setState(() => _iconKey = key),
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 4),
+                TextButton.icon(
+                  onPressed: _pickIcon,
+                  style: TextButton.styleFrom(foregroundColor: AppColors.teal),
+                  icon: const Icon(Icons.apps_rounded, size: 18),
+                  label: const Text('Ver todos los íconos'),
+                ),
+                const SizedBox(height: 28),
                 ElevatedButton(
                   onPressed: _save,
                   style: ElevatedButton.styleFrom(
@@ -197,13 +268,13 @@ class _SectionLabel extends StatelessWidget {
   final String text;
   @override
   Widget build(BuildContext context) => Text(
-    text,
-    style: const TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w700,
-      color: AppColors.ink,
-    ),
-  );
+        text,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: AppColors.ink,
+        ),
+      );
 }
 
 class _FilledField extends StatelessWidget {

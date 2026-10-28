@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../auth/data/models/tienda_model.dart'; 
+import '../../../auth/data/models/tienda_model.dart';
 
 class StoreListItem extends StatelessWidget {
   const StoreListItem({
@@ -11,11 +11,33 @@ class StoreListItem extends StatelessWidget {
     this.onEdit,
   });
 
-  final TiendaModel store; 
+  final TiendaModel store;
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
 
   static const double _circleSize = 140;
+
+  Widget _fallbackIcon() {
+    return const Icon(
+      Icons.storefront_rounded,
+      color: AppColors.ink,
+      size: 62,
+    );
+  }
+
+  Widget _circleContent() {
+    final url = store.logoUrl;
+    if (url == null || url.isEmpty) return _fallbackIcon();
+
+    return Image.network(
+      url,
+      key: ValueKey(url),
+      width: _circleSize,
+      height: _circleSize,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _fallbackIcon(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,15 +56,13 @@ class StoreListItem extends StatelessWidget {
                 Container(
                   width: _circleSize,
                   height: _circleSize,
+                  alignment: Alignment.center,
+                  clipBehavior: Clip.antiAlias,
                   decoration: const BoxDecoration(
                     color: AppColors.skyBlue,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.storefront_rounded,
-                    color: AppColors.ink,
-                    size: 62,
-                  ),
+                  child: _circleContent(),
                 ),
                 Positioned(
                   top: 4,
@@ -68,8 +88,6 @@ class StoreListItem extends StatelessWidget {
               ],
             ),
           ),
-// ... (mantén todo el código igual hasta la parte del texto)
-
           const SizedBox(height: 14),
           Flexible(
             child: Text(

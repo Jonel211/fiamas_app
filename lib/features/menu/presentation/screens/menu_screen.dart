@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_header_config.dart';
 import '../../../../main.dart';
@@ -44,7 +45,8 @@ class _MenuScreenState extends State<MenuScreen> {
               final userName = perfil?.fullName.isNotEmpty == true
                   ? perfil!.fullName
                   : (authProvider.user?.nombre ?? 'Usuario');
-              final userPhone = (perfil?.telefono != null && perfil!.telefono.isNotEmpty)
+              final userPhone =
+                  (perfil?.telefono != null && perfil!.telefono.isNotEmpty)
                   ? '+51 ${perfil.telefono}'
                   : 'Sin teléfono';
               return Column(
@@ -53,6 +55,7 @@ class _MenuScreenState extends State<MenuScreen> {
                   UserCard(
                     name: userName,
                     phone: userPhone,
+                    imageUrl: perfil?.fotoUrl,
                     onTap: () =>
                         Navigator.of(context).pushNamed(AppRoutes.profile),
                   ),
@@ -63,11 +66,10 @@ class _MenuScreenState extends State<MenuScreen> {
                       MenuItem(
                         icon: Icons.sync_rounded,
                         title: 'Respaldo automático',
-                        subtitle: 'Última vez: hoy a las 3 AM',
                         showChevron: false,
                         trailing: Switch(
                           value: _autoBackup,
-                          activeColor: AppColors.teal,
+                          activeThumbColor: AppColors.teal,
                           onChanged: (v) => setState(() => _autoBackup = v),
                         ),
                       ),
@@ -94,9 +96,8 @@ class _MenuScreenState extends State<MenuScreen> {
                       MenuItem(
                         icon: Icons.lock_outline_rounded,
                         title: 'Cambiar contraseña',
-                        onTap: () =>
-                            Navigator.of(context)
-                                .pushNamed(AppRoutes.changePassword),
+                        onTap: () => Navigator.of(context)
+                            .pushNamed(AppRoutes.changePassword),
                       ),
                       MenuItem(
                         icon: Icons.share_outlined,
@@ -136,7 +137,12 @@ class _MenuScreenState extends State<MenuScreen> {
 
                   LogoutButton(
                     onTap: () async {
-                      await authProvider.logout();
+                      final tiendaProvider = context.read<TiendaProvider>();
+                      final auth = context.read<AuthProvider>();
+
+                      await tiendaProvider.limpiarSesion();
+                      await auth.logout();
+
                       if (context.mounted) AppRoutes.goToLogin(context);
                     },
                   ),

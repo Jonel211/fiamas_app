@@ -1,28 +1,4 @@
-class TiendaModel {
-  final String id;
-  final String nombre;
-  final String? direccion;
-  final String? ruc;
-  final String? telefono;
-
-  TiendaModel({
-    required this.id,
-    required this.nombre,
-    this.direccion,
-    this.ruc,
-    this.telefono,
-  });
-
-  factory TiendaModel.fromJson(Map<String, dynamic> json) {
-    return TiendaModel(
-      id: json['id'].toString(),
-      nombre: json['nombre'] ?? '',
-      direccion: json['direccion'],
-      ruc: json['ruc'],
-      telefono: json['telefono'],
-    );
-  }
-}
+import 'tienda_model.dart';
 
 class TenderoModel {
   final String id;
@@ -30,6 +6,7 @@ class TenderoModel {
   final String nombres;
   final String apellidos;
   final String telefono;
+  final String? fotoUrl;
   final List<TiendaModel> tiendas;
 
   TenderoModel({
@@ -38,6 +15,7 @@ class TenderoModel {
     required this.nombres,
     required this.apellidos,
     required this.telefono,
+    this.fotoUrl,
     required this.tiendas,
   });
 
@@ -57,6 +35,7 @@ class TenderoModel {
       nombres: json['nombres'] ?? '',
       apellidos: json['apellidos'] ?? '',
       telefono: json['telefono'] ?? '',
+      fotoUrl: json['foto_perfil_url'],
       tiendas: tiendasList,
     );
   }

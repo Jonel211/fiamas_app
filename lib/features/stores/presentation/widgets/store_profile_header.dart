@@ -5,13 +5,34 @@ class StoreProfileHeader extends StatelessWidget {
   final String storeName;
   final String status;
   final String? subtitle;
+  final String? logoUrl;
 
   const StoreProfileHeader({
     super.key,
     this.storeName = 'Mi Tienda',
     this.status = 'Activa',
     this.subtitle,
+    this.logoUrl,
   });
+
+  static const double _logoSize = 80;
+
+  Widget _fallbackIcon() {
+    return const Icon(Icons.storefront_rounded, size: 40, color: AppColors.teal);
+  }
+
+  Widget _logo() {
+    if (logoUrl == null || logoUrl!.isEmpty) return _fallbackIcon();
+
+    return Image.network(
+      logoUrl!,
+      key: ValueKey(logoUrl),
+      width: _logoSize,
+      height: _logoSize,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _fallbackIcon(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,9 +47,12 @@ class StoreProfileHeader extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            width: _logoSize,
+            height: _logoSize,
+            alignment: Alignment.center,
+            clipBehavior: Clip.antiAlias,
             decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-            child: const Icon(Icons.storefront_rounded, size: 40, color: AppColors.teal),
+            child: _logo(),
           ),
           const SizedBox(height: 16),
           Text(

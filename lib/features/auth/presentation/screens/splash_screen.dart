@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
-import 'welcome_screen.dart';
-
+import '../../../../main.dart'; 
+import '../providers/auth_provider.dart'; 
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -15,7 +16,6 @@ class _SplashScreenState extends State<SplashScreen>
   
   static const String _logo = 'assets/images/logo-oscuro.png';
   static const String _spinner = 'assets/images/spinner.png';
-
 
   static const _beforeLogo = Duration(milliseconds: 300);
   static const _logoOnly = Duration(milliseconds: 1400);
@@ -54,7 +54,11 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _runSequence() async {
-    await Future.wait([_precache(_logo), _precache(_spinner)]);
+    // Iniciamos la precarga de imágenes y la restauración de sesión al mismo tiempo
+    final precacheFuture = Future.wait([_precache(_logo), _precache(_spinner)]);
+    final sessionFuture = context.read<AuthProvider>().restaurarSesion();
+
+    await precacheFuture;
 
     await Future.delayed(_beforeLogo);
     if (!mounted) return;
@@ -66,18 +70,18 @@ class _SplashScreenState extends State<SplashScreen>
 
     await Future.delayed(_withSpinner);
     if (!mounted) return;
-    _goToWelcome();
+
+    // Esperamos a que termine la restauración de sesión si tardó más que la animación
+    final hayCuenta = await sessionFuture;
+    if (!mounted) return;
+
+    _navigateToNextScreen(hayCuenta);
   }
 
-  void _goToWelcome() {
-    Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        settings: const RouteSettings(name: '/welcome'),
-        transitionDuration: const Duration(milliseconds: 600),
-        pageBuilder: (_, __, ___) => const WelcomeScreen(),
-        transitionsBuilder: (_, animation, __, child) =>
-            FadeTransition(opacity: animation, child: child),
-      ),
+  void _navigateToNextScreen(bool hayCuenta) {
+    Navigator.pushReplacementNamed(
+      context,
+      hayCuenta ? AppRoutes.stores : AppRoutes.welcome,
     );
   }
 

@@ -36,10 +36,16 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final routeArg = ModalRoute.of(context)?.settings.arguments;
-    final tiendas = context.watch<TiendaProvider>().tiendas;
-    final TiendaModel? tienda = widget.tienda ??
-        (routeArg is TiendaModel ? routeArg : null) ??
-        (tiendas.isNotEmpty ? tiendas.first : null);
+    final provider = context.watch<TiendaProvider>();
+    final TiendaModel? argTienda =
+        widget.tienda ?? (routeArg is TiendaModel ? routeArg : null);
+
+    // Siempre usa la versión más reciente de la tienda desde el provider
+    final TiendaModel? tienda = argTienda != null
+        ? (provider.tiendas.where((t) => t.id == argTienda.id).firstOrNull ??
+            argTienda)
+        : (provider.tiendaSeleccionada ??
+            (provider.tiendas.isNotEmpty ? provider.tiendas.first : null));
 
     return AppHeaderConfig(
       title: tienda?.nombre ?? 'Mi Tienda',
@@ -67,6 +73,7 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
             StoreProfileHeader(
               storeName: tienda?.nombre ?? 'Mi Tienda',
               status: 'Activa',
+              logoUrl: tienda?.logoUrl,
               subtitle: (tienda?.direccion != null && tienda!.direccion!.isNotEmpty)
                   ? tienda.direccion!
                   : 'Tienda registrada en Fiamas',
