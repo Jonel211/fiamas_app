@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/image_placeholder.dart';
 import '../../domain/product.dart';
 
 class ProductCard extends StatelessWidget {
@@ -38,24 +39,18 @@ class ProductCard extends StatelessWidget {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
+                        width: double.infinity,
                         color: Colors.white,
                         child: hasImage
                             ? SizedBox.expand(
                                 child: Image.network(
                                   product.imagenUrl!,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) => const Icon(
-                                    Icons.image_outlined,
-                                    size: 28,
-                                    color: Colors.grey,
-                                  ),
+                                  errorBuilder: (_, _, _) =>
+                                      const ImagePlaceholder(),
                                 ),
                               )
-                            : const Icon(
-                                Icons.image_outlined,
-                                size: 28,
-                                color: Colors.grey,
-                              ),
+                            : const ImagePlaceholder(),
                       ),
                     ),
                   ),

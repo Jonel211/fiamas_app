@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/image_placeholder.dart';
 import '../../../customers/data/models/cliente_model.dart';
 import '../../../inventory/domain/inventory_provider.dart';
 import '../../../inventory/domain/product.dart';
@@ -197,7 +198,7 @@ class _ProductCard extends StatelessWidget {
                   width: double.infinity,
                   clipBehavior: Clip.antiAlias,
                   decoration: const BoxDecoration(
-                    color: AppColors.skyBlue,
+                    color: Color(0xFFE8E8E8),
                     borderRadius: BorderRadius.vertical(
                       top: Radius.circular(16),
                     ),
@@ -211,22 +212,10 @@ class _ProductCard extends StatelessWidget {
                               if (progress == null) return child;
                               return const SizedBox.expand();
                             },
-                            errorBuilder: (_, _, _) => const Center(
-                              child: Icon(
-                                Icons.inventory_2_rounded,
-                                size: 36,
-                                color: AppColors.teal,
-                              ),
-                            ),
+                            errorBuilder: (_, _, _) => const ImagePlaceholder(),
                           ),
                         )
-                      : const Center(
-                          child: Icon(
-                            Icons.inventory_2_rounded,
-                            size: 36,
-                            color: AppColors.teal,
-                          ),
-                        ),
+                      : const ImagePlaceholder(),
                 ),
               ),
               Padding(

@@ -7,7 +7,7 @@ import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../domain/category.dart';
-import '../../domain/category_delete_exception.dart';
+import '../../domain/inventory_exception.dart';
 import '../../domain/inventory_provider.dart';
 import 'new_category_screen.dart';
 import '../widgets/category_tile.dart';
@@ -19,7 +19,7 @@ class CategoriesScreen extends StatefulWidget {
 }
 
 class _CategoriesScreenState extends State<CategoriesScreen> {
-  void _loadDataForCurrentStore() {
+  Future<void> _loadDataForCurrentStore() async {
     final authProvider = context.read<AuthProvider>();
     final tiendaProvider = context.read<TiendaProvider>();
     final inventoryProvider = context.read<InventoryProvider>();
@@ -30,7 +30,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
     if (currentTiendaId != null && token != null) {
       inventoryProvider.updateTiendaContext(token, currentTiendaId);
-      inventoryProvider.loadCategories();
+      await inventoryProvider.loadCategories();
     }
   }
 
@@ -82,22 +82,27 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     try {
       await provider.deleteCategory(category.id);
       if (!mounted) return;
-      _loadDataForCurrentStore();
+      await _loadDataForCurrentStore();
+      if (!mounted || provider.error != null) return;
+      _showSnackBar(
+        'Categoría eliminada correctamente.',
+        AppColors.success,
+      );
     } catch (e) {
       if (!mounted) return;
       provider.clearError();
-      final message = e is CategoryDeleteException
+      final message = e is InventoryException
           ? e.message
           : 'No se pudo eliminar la categoría. Intenta de nuevo.';
-      _showDeleteError(message);
+      _showSnackBar(message, AppColors.danger);
     }
   }
 
-  void _showDeleteError(String message) {
+  void _showSnackBar(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: AppColors.danger,
+        backgroundColor: color,
         behavior: SnackBarBehavior.floating,
       ),
     );

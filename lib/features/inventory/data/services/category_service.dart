@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/network/dio_client.dart';
 import '../../domain/category.dart';
-import '../../domain/category_delete_exception.dart';
+import '../../domain/inventory_exception.dart';
 
 class CategoryService {
   final Dio _dio;
@@ -85,9 +85,9 @@ class CategoryService {
       if (e.response?.statusCode == 409 &&
           backendMessage is String &&
           backendMessage.trim().isNotEmpty) {
-        throw CategoryDeleteException(backendMessage);
+        throw InventoryException(backendMessage);
       }
-      throw const CategoryDeleteException(fallback);
+      throw const InventoryException(fallback);
     }
   }
 }
