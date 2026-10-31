@@ -172,6 +172,7 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
                                 RecentClientCard(
                                   name: cliente.nombreCompleto,
                                   phone: cliente.telefono,
+                                  imageUrl: cliente.fotoPerfilUrl,
                                   onTap: () => _irAEscaner(cliente),
                                 ),
                             ],
@@ -214,6 +215,7 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
                                 RecentClientCard(
                                   name: cliente.nombreCompleto,
                                   phone: cliente.telefono,
+                                  imageUrl: cliente.fotoPerfilUrl,
                                   onTap: () => _irAEscaner(cliente),
                                 ),
                           ],

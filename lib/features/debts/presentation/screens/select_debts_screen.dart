@@ -57,6 +57,7 @@ class _SelectDebtsScreenState extends State<SelectDebtsScreen> {
         .fold(0.0, (sum, item) => sum + item.amount);
         
     final initial = name.isNotEmpty ? name.split(' ').last[0].toUpperCase() : 'C';
+    final photoUrl = clienteCompleto.fotoPerfilUrl ?? (widget.customer['imageUrl'] as String?);
 
     return AppHeaderConfig(
       title: '${_selectedDebtIds.length} seleccionados',
@@ -99,7 +100,15 @@ class _SelectDebtsScreenState extends State<SelectDebtsScreen> {
               ),
               child: Row(
                 children: [
-                  CircleAvatar(radius: 28, backgroundColor: AppColors.teal, child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold))),
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: AppColors.teal,
+                    backgroundImage: (photoUrl != null && photoUrl.isNotEmpty) ? NetworkImage(photoUrl) : null,
+                    onBackgroundImageError: (photoUrl != null && photoUrl.isNotEmpty) ? (_, __) {} : null,
+                    child: (photoUrl != null && photoUrl.isNotEmpty)
+                        ? null
+                        : Text(initial, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(

@@ -76,6 +76,7 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
     final initial = name.isNotEmpty ? name.split(' ').last[0].toUpperCase() : 'C';
     final badgeText = _getBadgeText(score, categoria);
     final badgeColor = _getBadgeColor(score, categoria);
+    final photoUrl = clienteCompleto.fotoPerfilUrl ?? (widget.customer['imageUrl'] as String?);
 
     final fiadosFiltrados = provider.fiadosCliente.where((d) {
       if (_selectedFilter == 'Todos') return true;
@@ -116,7 +117,11 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                     CircleAvatar(
                       radius: 28,
                       backgroundColor: AppColors.teal,
-                      child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                      backgroundImage: (photoUrl != null && photoUrl.isNotEmpty) ? NetworkImage(photoUrl) : null,
+                      onBackgroundImageError: (photoUrl != null && photoUrl.isNotEmpty) ? (_, __) {} : null,
+                      child: (photoUrl != null && photoUrl.isNotEmpty)
+                          ? null
+                          : Text(initial, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
                     ),
                     const SizedBox(width: 12),
                     Expanded(

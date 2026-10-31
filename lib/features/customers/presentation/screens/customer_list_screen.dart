@@ -215,6 +215,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                     id: cliente.id,
                     name: cliente.nombreCompleto,
                     phone: cliente.telefono,
+                    imageUrl: cliente.fotoPerfilUrl,
                     status: status,
                     debtAmount: cliente.vinculacion.saldoActual,
                     extraInfo: status == 'Al día'
@@ -234,6 +235,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                         'id': cliente.id,
                         'name': cliente.nombreCompleto,
                         'phone': cliente.telefono,
+                        'imageUrl': cliente.fotoPerfilUrl,
                         'debt': cliente.vinculacion.saldoActual,
                         'creditLimit': cliente.vinculacion.limiteCredito,
                         'status': status,
