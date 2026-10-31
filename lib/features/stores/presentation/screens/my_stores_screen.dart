@@ -58,51 +58,72 @@ class _MyStoresScreenState extends State<MyStoresScreen> {
               ),
             ),
             Expanded(
-              child: Consumer<TiendaProvider>(
-                builder: (context, provider, _) {
-                  if (provider.isLoading && provider.tiendas.isEmpty) {
-                    return const Center(
-                      child: CircularProgressIndicator(color: AppColors.teal),
-                    );
-                  }
+              child: RefreshIndicator(
+                onRefresh: _onRefresh,
+                color: AppColors.teal,
+                backgroundColor: Colors.white,
+                child: Consumer<TiendaProvider>(
+                  builder: (context, provider, _) {
+                    if (provider.isLoading && provider.tiendas.isEmpty) {
+                      return const Center(
+                        child: CircularProgressIndicator(color: AppColors.teal),
+                      );
+                    }
 
-                  if (provider.error != null && provider.tiendas.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            provider.error!,
-                            style: const TextStyle(color: AppColors.inkMuted),
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () => provider.cargarMisTiendas(),
-                            child: const Text('Reintentar'),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  if (provider.tiendas.isEmpty) {
-                    return Center(
-                      child: AddStoreItem(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const NewStoreScreen(),
+                    if (provider.error != null && provider.tiendas.isEmpty) {
+                      return LayoutBuilder(
+                        builder: (context, constraints) => SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minHeight: constraints.maxHeight,
+                            ),
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    provider.error!,
+                                    style: const TextStyle(color: AppColors.inkMuted),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton(
+                                    onPressed: () => provider.cargarMisTiendas(),
+                                    child: const Text('Reintentar'),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  }
+                      );
+                    }
 
-                  return RefreshIndicator(
-                    onRefresh: _onRefresh,
-                    color: AppColors.teal,
-                    backgroundColor: Colors.white,
-                    child: GridView.builder(
+                    if (provider.tiendas.isEmpty) {
+                      return LayoutBuilder(
+                        builder: (context, constraints) => SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minHeight: constraints.maxHeight,
+                            ),
+                            child: Center(
+                              child: AddStoreItem(
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const NewStoreScreen(),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    return GridView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.all(24),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
@@ -148,9 +169,9 @@ class _MyStoresScreenState extends State<MyStoresScreen> {
                           },
                         );
                       },
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
           ],

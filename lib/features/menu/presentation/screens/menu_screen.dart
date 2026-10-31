@@ -90,12 +90,6 @@ class _MenuScreenState extends State<MenuScreen> {
                             Navigator.of(context).pushNamed(AppRoutes.help),
                       ),
                       MenuItem(
-                        icon: Icons.report_gmailerrorred_rounded,
-                        title: 'Atención de reclamos',
-                        showChevron: false,
-                        onTap: () {},
-                      ),
-                      MenuItem(
                         icon: Icons.lock_outline_rounded,
                         title: 'Cambiar contraseña',
                         onTap: () => Navigator.of(context)

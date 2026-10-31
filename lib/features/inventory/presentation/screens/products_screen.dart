@@ -44,6 +44,23 @@ class _ProductsScreenState extends State<ProductsScreen> {
     }
   }
 
+  Future<void> _onRefresh() async {
+    final authProvider = context.read<AuthProvider>();
+    final tiendaProvider = context.read<TiendaProvider>();
+    final inventoryProvider = context.read<InventoryProvider>();
+
+    final currentTiendaId = tiendaProvider.tiendaSeleccionadaId ?? authProvider.tiendaId;
+    final token = authProvider.token;
+
+    if (currentTiendaId != null && token != null) {
+      inventoryProvider.updateTiendaContext(token, currentTiendaId);
+      await Future.wait([
+        inventoryProvider.loadProducts(),
+        inventoryProvider.loadCategories(),
+      ]);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -192,7 +209,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   Widget build(BuildContext context) {
     return Consumer<InventoryProvider>(
       builder: (context, provider, child) {
-        if (provider.isLoading) return const Center(child: CircularProgressIndicator());
+        if (provider.isLoading && provider.products.isEmpty) return const Center(child: CircularProgressIndicator());
         
         final products = _getFilteredProducts(provider.products);
         final categoriasActivas = provider.categories.where((c) => c.activo).toList();
@@ -201,8 +218,13 @@ class _ProductsScreenState extends State<ProductsScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: CustomScrollView(
-                slivers: [
+              child: RefreshIndicator(
+                onRefresh: _onRefresh,
+                color: AppColors.teal,
+                backgroundColor: Colors.white,
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
                   SliverToBoxAdapter(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,8 +321,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 ],
               ),
             ),
-          ],
-        );
+          ),
+        ],
+      );
       },
     );
   }
