@@ -7,14 +7,14 @@ import '../../../../core/widgets/image_placeholder.dart';
 import '../../../customers/data/models/cliente_model.dart';
 import '../../../inventory/domain/inventory_provider.dart';
 import '../../../inventory/domain/product.dart';
-import '../../../inventory/domain/sale_unit.dart'; // ✅ Importamos SaleUnit
-import 'weight_product_bottom_sheet.dart'; // ✅ Importamos el modal
+import '../../../inventory/domain/sale_unit.dart'; 
+import 'weight_product_bottom_sheet.dart'; 
 import 'scanner_bottom_sheet.dart';
 
 class ProductCatalogTab extends StatefulWidget {
   final List<Map<String, dynamic>> cartItems;
   final Function(Product) onAdd;
-  final Function(Map<String, dynamic>) onAddWithQuantity; // ✅ NUEVO
+  final Function(Map<String, dynamic>) onAddWithQuantity; 
   final Function(int, int) onUpdateQuantity;
   final ClienteModel cliente;
 
@@ -22,7 +22,7 @@ class ProductCatalogTab extends StatefulWidget {
     super.key,
     required this.cartItems,
     required this.onAdd,
-    required this.onAddWithQuantity, // ✅ NUEVO
+    required this.onAddWithQuantity, 
     required this.onUpdateQuantity,
     required this.cliente,
   });
@@ -108,7 +108,6 @@ class _ProductCatalogTabState extends State<ProductCatalogTab> {
                         return _ProductCard(
                           product: p,
                           onAdd: () async {
-                            // ✅ VALIDACIÓN: Si es por kilo, abrimos el modal de peso
                             if (p.tipoVenta == SaleUnit.kilo) {
                               final result =
                                   await showModalBottomSheet<
@@ -124,7 +123,6 @@ class _ProductCatalogTabState extends State<ProductCatalogTab> {
                                 widget.onAddWithQuantity(result);
                               }
                             } else {
-                              // Si es por unidad, se agrega normal
                               widget.onAdd(p);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(

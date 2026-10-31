@@ -21,6 +21,7 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> {
 
   int _unread = 0;
   StoreSummary? _summary;
+  List<MovimientoReciente> _movimientos = [];
   String? _loadedTiendaId;
   bool _loadingSummary = false;
   String? _summaryError;
@@ -31,15 +32,14 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> {
     _loadUnread();
   }
 
-  /// Reacciona al cambio de tienda aunque esta pantalla siga viva
-  /// (por ejemplo dentro de un IndexedStack): initState no se repetiría.
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final id = Provider.of<TiendaProvider>(context).tiendaSeleccionadaId;
     if (id != _loadedTiendaId) {
       _loadedTiendaId = id;
-      _summary = null; // nunca mostrar datos de la tienda anterior
+      _summary = null; 
+      _movimientos = [];
       _summaryError = null;
       _loadingSummary = id != null;
       if (id != null) _fetchSummary(id);
@@ -48,10 +48,19 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> {
 
   Future<void> _fetchSummary(String id) async {
     try {
-      final data = await _service.getResumen(id);
-      if (!mounted || _loadedTiendaId != id) return; // la tienda cambió
+      final results = await Future.wait([
+        _service.getResumen(id),
+        _service.getMovimientosRecientes(id),
+      ]);
+
+      final data = results[0] as StoreSummary;
+      final movs = results[1] as List<MovimientoReciente>;
+
+      if (!mounted || _loadedTiendaId != id) return; 
+
       setState(() {
         _summary = data;
+        _movimientos = movs;
         _summaryError = null;
       });
     } catch (e) {
@@ -81,7 +90,7 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> {
       final count = await _notifRepo.unreadCount();
       if (mounted) setState(() => _unread = count);
     } catch (_) {
-      // Sin conexión: el badge queda como está
+      // Sin conexion
     }
   }
 
@@ -91,6 +100,26 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> {
   }
 
   String _money(double v) => 'S/ ${v.toStringAsFixed(2)}';
+
+  String _formatTime(DateTime date) {
+    final now = DateTime.now();
+    if (date.year == now.year && date.month == now.month && date.day == now.day) {
+      final hour = date.hour > 12 ? date.hour - 12 : date.hour;
+      final ampm = date.hour >= 12 ? 'PM' : 'AM';
+      return '${hour == 0 ? 12 : hour}:${date.minute.toString().padLeft(2, '0')} $ampm';
+    }
+    return '${date.day}/${date.month}';
+  }
+
+  // NUEVA FUNCION: Arma el mensaje de la alerta de forma inteligente
+  String _buildAlertMessage(int stockBajo, int alertas) {
+    List<String> partes = [];
+    if (stockBajo > 0) partes.add('$stockBajo productos con stock bajo');
+    if (alertas > 0) partes.add('$alertas alertas pendientes');
+    
+    if (partes.isEmpty) return '';
+    return 'Atención requerida: Tienes ${partes.join(' y ')}.';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -195,7 +224,22 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'Cobrado este mes: S/ 7,420',
+                          'Cobrado este mes: ${_money(summary?.cobradoEsteMes ?? 0)}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white.withValues(alpha: 0.9),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        const Icon(
+                          Icons.pending_actions_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Pendientes: ${summary?.fiadosPendientes ?? 0}',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
@@ -277,51 +321,42 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> {
               ),
               const SizedBox(height: 16),
 
-              // 3. TARJETA DE ALERTA DE LÍMITE DE CRÉDITO
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF7EA),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFF3D299), width: 1),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Padding(
-                      padding: EdgeInsets.only(top: 2),
-                      child: Icon(
-                        Icons.warning_amber_rounded,
-                        color: Color(0xFFD98A1B),
-                        size: 20,
+              // 3. TARJETA DE ALERTA DINÁMICA CORREGIDA
+              if ((summary?.alertasPendientes ?? 0) > 0 || (summary?.productosStockBajo ?? 0) > 0) ...[
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF7EA),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFF3D299), width: 1),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(top: 2),
+                        child: Icon(
+                          Icons.warning_amber_rounded,
+                          color: Color(0xFFD98A1B),
+                          size: 20,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: RichText(
-                        text: const TextSpan(
-                          style: TextStyle(
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _buildAlertMessage(summary?.productosStockBajo ?? 0, summary?.alertasPendientes ?? 0),
+                          style: const TextStyle(
                             fontSize: 13,
                             color: Color(0xFF4A3E2C),
                             height: 1.35,
                           ),
-                          children: [
-                            TextSpan(
-                              text: 'Límite cerca: ',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            TextSpan(
-                              text:
-                                  'Don Roberto Ruiz está al 95% de su crédito autorizado.',
-                            ),
-                          ],
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 16),
+              ],
 
               // 4. ENCABEZADO "MOVIMIENTOS DE HOY"
               Row(
@@ -361,7 +396,7 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> {
               ),
               const SizedBox(height: 12),
 
-              // 5. LISTA DE MOVIMIENTOS
+              // 5. LISTA DE MOVIMIENTOS REALES
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -374,43 +409,42 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> {
                     ),
                   ],
                 ),
-                child: const Column(
-                  children: [
-                    MovementTile(
-                      initial: 'M',
-                      avatarBg: Color(0xFFBBDEFB),
-                      avatarFg: Color(0xFF1565C0),
-                      name: 'Doña Martha Gómez',
-                      subtitle: 'Aceite 1L, Arroz 2kg, Leche',
-                      amount: '+ S/ 45.50',
-                      isPositive: true,
-                      time: '10:15 AM',
-                      showBorder: true,
-                    ),
-                    MovementTile(
-                      initial: 'R',
-                      avatarBg: Color(0xFFFFECB3),
-                      avatarFg: Color(0xFFB78103),
-                      name: 'Don Roberto Ruiz',
-                      subtitle: 'Gaseosas 3L, Paquete bot...',
-                      amount: '+ S/ 95.00',
-                      isPositive: true,
-                      time: '6:40 PM',
-                      showBorder: true,
-                    ),
-                    MovementTile(
-                      initial: 'C',
-                      avatarBg: Color(0xFFE8F5E9),
-                      avatarFg: Color(0xFF2E7D32),
-                      name: 'Carlos Mendoza',
-                      subtitle: 'Liquidación total cuenta ...',
-                      amount: '- S/ 150.00',
-                      isPositive: false,
-                      time: '3:10 PM',
-                      showBorder: false,
-                    ),
-                  ],
-                ),
+                child: _loadingSummary && _movimientos.isEmpty
+                    ? const Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    : _movimientos.isEmpty
+                        ? const Padding(
+                            padding: EdgeInsets.all(24.0),
+                            child: Center(
+                              child: Text(
+                                'Aún no hay movimientos hoy',
+                                style: TextStyle(color: AppColors.inkMuted),
+                              ),
+                            ),
+                          )
+                        : Column(
+                            children: _movimientos.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final mov = entry.value;
+                              final isFiado = mov.tipo == 'fiado';
+                              
+                              return MovementTile(
+                                initial: mov.clienteNombre.isNotEmpty 
+                                    ? mov.clienteNombre[0].toUpperCase() 
+                                    : 'C',
+                                avatarBg: isFiado ? const Color(0xFFFFECB3) : const Color(0xFFE8F5E9),
+                                avatarFg: isFiado ? const Color(0xFFB78103) : const Color(0xFF2E7D32),
+                                name: mov.clienteNombre,
+                                subtitle: mov.detalle,
+                                amount: '${isFiado ? '+' : '-'} S/ ${mov.monto.toStringAsFixed(2)}',
+                                isPositive: isFiado,
+                                time: _formatTime(mov.fecha),
+                                showBorder: index < _movimientos.length - 1,
+                              );
+                            }).toList(),
+                          ),
               ),
             ],
           ),

@@ -16,21 +16,23 @@ class DebtsScreen extends StatefulWidget {
 enum _DebtFilter { todos, pendientes, pagados }
 
 class _DebtsScreenState extends State<DebtsScreen> {
+  // Datos de prueba corregidos con paidAmount y quantity decimal
   static const _debts = [
     Debt(
       id: '1',
       customerName: 'Ricardo Mendoza',
       phone: '987 123 456',
       amount: 45.00,
+      paidAmount: 0.0,
       status: DebtStatus.pendiente,
       dateLabel: 'Hoy, 10:30 AM',
       items: [
         DebtItem(
           productName: 'Agua San Mateo 1L',
-          quantity: 1,
+          quantity: 1.0,
           unitPrice: 2.50,
         ),
-        DebtItem(productName: 'Pan Unión', quantity: 2, unitPrice: 6.50),
+        DebtItem(productName: 'Pan Unión', quantity: 2.0, unitPrice: 6.50),
       ],
     ),
     Debt(
@@ -38,6 +40,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
       customerName: 'Lucía García',
       phone: '955 666 777',
       amount: 12.80,
+      paidAmount: 12.80,
       status: DebtStatus.pagado,
       dateLabel: 'Ayer',
     ),
@@ -46,6 +49,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
       customerName: 'Carlos Prado',
       phone: '944 222 111',
       amount: 120.00,
+      paidAmount: 0.0,
       status: DebtStatus.pendiente,
       dateLabel: '20 Oct',
     ),
@@ -58,15 +62,17 @@ class _DebtsScreenState extends State<DebtsScreen> {
       case _DebtFilter.todos:
         return _debts;
       case _DebtFilter.pendientes:
-        return _debts.where((d) => d.status == DebtStatus.pendiente).toList();
+        // Incluye tanto pendientes como parciales
+        return _debts.where((d) => d.status != DebtStatus.pagado).toList();
       case _DebtFilter.pagados:
         return _debts.where((d) => d.status == DebtStatus.pagado).toList();
     }
   }
 
+  // Calcula el saldo pendiente real
   double get _totalPorCobrar => _debts
-      .where((d) => d.status == DebtStatus.pendiente)
-      .fold(0.0, (sum, d) => sum + d.amount);
+      .where((d) => d.status != DebtStatus.pagado)
+      .fold(0.0, (sum, d) => sum + d.remainingAmount);
 
   @override
   Widget build(BuildContext context) {

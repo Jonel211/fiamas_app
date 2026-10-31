@@ -44,14 +44,15 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
     setState(() {
       int index = _cartItems.indexWhere((item) => item['producto_id'] == product.id);
       if (index >= 0) {
-        _cartItems[index]['qty'] += 1;
+        _cartItems[index]['qty'] += 1.0;
       } else {
         _cartItems.add({
           'producto_id': product.id,
           'name': product.nombre,
           'price': product.precioVenta,
-          'qty': 1,
-          'isWeight': false, // Es por unidad
+          'qty': 1.0,
+          'isWeight': false,
+          'imagenUrl': product.imagenUrl, // Se guarda la imagen
         });
       }
     });
@@ -62,10 +63,8 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
     setState(() {
       int index = _cartItems.indexWhere((item) => item['producto_id'] == cartItem['producto_id']);
       if (index >= 0) {
-        // Si ya existe, sumamos los kilos
         _cartItems[index]['qty'] += cartItem['qty'];
       } else {
-        // Si no existe, lo agregamos con la bandera de que es por peso
         _cartItems.add({
           ...cartItem,
           'isWeight': true, // Declarado por kilo

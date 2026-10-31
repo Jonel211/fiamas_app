@@ -102,160 +102,175 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
             children: [
               const Text(
                 'Clientes',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: AppColors.ink,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${provider.clientes.length} clientes registrados',
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.inkMuted,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: _isSearchFocused ? AppColors.teal : AppColors.mist,
-                  width: _isSearchFocused ? 2 : 1,
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.ink,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: _isSearchFocused
-                        ? AppColors.teal.withOpacity(0.15)
-                        : Colors.black.withOpacity(0.04),
-                    blurRadius: _isSearchFocused ? 12 : 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.search,
-                    color: _isSearchFocused
-                        ? AppColors.teal
-                        : AppColors.inkMuted,
-                    size: 20,
+              const SizedBox(height: 4),
+              Text(
+                '${provider.clientes.length} clientes registrados',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.inkMuted,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _isSearchFocused ? AppColors.teal : AppColors.mist,
+                    width: _isSearchFocused ? 2 : 1,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      focusNode: _searchFocusNode,
-                      decoration: const InputDecoration(
-                        hintText: 'Buscar por nombre o teléfono',
-                        hintStyle: TextStyle(
-                          color: AppColors.inkMuted,
-                          fontSize: 14,
+                  boxShadow: [
+                    BoxShadow(
+                      color: _isSearchFocused
+                          ? AppColors.teal.withOpacity(0.15)
+                          : Colors.black.withOpacity(0.04),
+                      blurRadius: _isSearchFocused ? 12 : 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.search,
+                      color: _isSearchFocused
+                          ? AppColors.teal
+                          : AppColors.inkMuted,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        focusNode: _searchFocusNode,
+                        decoration: const InputDecoration(
+                          hintText: 'Buscar por nombre o teléfono',
+                          hintStyle: TextStyle(
+                            color: AppColors.inkMuted,
+                            fontSize: 14,
+                          ),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                          isDense: true,
                         ),
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        contentPadding: EdgeInsets.zero,
-                        isDense: true,
-                      ),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.ink,
-                      ),
-                      onChanged: (value) => setState(() {}),
-                    ),
-                  ),
-                  if (_searchController.text.isNotEmpty)
-                    GestureDetector(
-                      onTap: () => setState(() => _searchController.clear()),
-                      child: const Icon(
-                        Icons.close,
-                        color: AppColors.inkMuted,
-                        size: 18,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.ink,
+                        ),
+                        onChanged: (value) => setState(() {}),
                       ),
                     ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildFilterChip('Todos'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Al día', dotColor: AppColors.success),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Con deuda', dotColor: AppColors.gold),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Vencido', dotColor: AppColors.danger),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            if (provider.isLoading)
-              const Center(child: CircularProgressIndicator())
-            else if (filtrados.isEmpty)
-              const Center(
-                child: Text(
-                  'No se encontraron clientes',
-                  style: TextStyle(color: AppColors.inkMuted),
+                    if (_searchController.text.isNotEmpty)
+                      GestureDetector(
+                        onTap: () =>
+                            setState(() => _searchController.clear()),
+                        child: const Icon(
+                          Icons.close,
+                          color: AppColors.inkMuted,
+                          size: 18,
+                        ),
+                      ),
+                  ],
                 ),
-              )
-            else
-              ...filtrados.map((cliente) {
-                final status = _getStatus(cliente);
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: CustomerCard(
-                    id: cliente.id,
-                    name: cliente.nombreCompleto,
-                    phone: cliente.telefono,
-                    imageUrl: cliente.fotoPerfilUrl,
-                    status: status,
-                    debtAmount: cliente.vinculacion.saldoActual,
-                    extraInfo: status == 'Al día'
-                        ? 'Sin fiados activos'
-                        : '${cliente.vinculacion.totalFiados} fiados activos',
-                    // TOCAR EL CÍRCULO: Va al Perfil
-                    onTapProfile: () {
-                      Navigator.pushNamed(
-                        context,
-                        AppRoutes.customerProfile,
-                        arguments: cliente,
-                      );
-                    },
-                    // TOCAR EL RESTO: Va al Historial (usando el Map que espera la ruta)
-                    onTapHistory: () {
-                      final customerMap = {
-                        'id': cliente.id,
-                        'name': cliente.nombreCompleto,
-                        'phone': cliente.telefono,
-                        'imageUrl': cliente.fotoPerfilUrl,
-                        'debt': cliente.vinculacion.saldoActual,
-                        'creditLimit': cliente.vinculacion.limiteCredito,
-                        'status': status,
-                        'activeDebts': cliente.vinculacion.totalFiados,
-                      };
-                      Navigator.pushNamed(
-                        context,
-                        AppRoutes.debtHistory,
-                        arguments: customerMap,
-                      );
-                    },
+              ),
+              const SizedBox(height: 24),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildFilterChip('Todos'),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Al día', dotColor: AppColors.success),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Con deuda', dotColor: AppColors.gold),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Vencido', dotColor: AppColors.danger),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              if (provider.error != null)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    border: Border.all(color: Colors.red),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                );
-              }),
-          ],
+                  child: Text(
+                    'Error del servidor: ${provider.error}',
+                    style: const TextStyle(
+                        color: Colors.red, fontWeight: FontWeight.bold),
+                  ),
+                )
+              else if (provider.isLoading)
+                const Center(child: CircularProgressIndicator())
+              else if (filtrados.isEmpty)
+                const Center(
+                  child: Text(
+                    'No se encontraron clientes',
+                    style: TextStyle(color: AppColors.inkMuted),
+                  ),
+                )
+              else
+                ...filtrados.map((cliente) {
+                  final status = _getStatus(cliente);
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: CustomerCard(
+                      id: cliente.id,
+                      name: cliente.nombreCompleto,
+                      phone: cliente.telefono,
+                      imageUrl: cliente.fotoPerfilUrl,
+                      status: status,
+                      debtAmount: cliente.vinculacion.saldoActual,
+                      extraInfo: status == 'Al día'
+                          ? 'Sin fiados activos'
+                          : '${cliente.vinculacion.totalFiados} fiados activos',
+                      onTapProfile: () {
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.customerProfile,
+                          arguments: cliente,
+                        );
+                      },
+                      onTapHistory: () {
+                        final customerMap = {
+                          'id': cliente.id,
+                          'name': cliente.nombreCompleto,
+                          'phone': cliente.telefono,
+                          'imageUrl': cliente.fotoPerfilUrl,
+                          'debt': cliente.vinculacion.saldoActual,
+                          'creditLimit': cliente.vinculacion.limiteCredito,
+                          'status': status,
+                          'activeDebts': cliente.vinculacion.totalFiados,
+                        };
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.debtHistory,
+                          arguments: customerMap,
+                        );
+                      },
+                    ),
+                  );
+                }),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildFilterChip(String label, {Color? dotColor}) {
     final isActive = _selectedFilter == label;

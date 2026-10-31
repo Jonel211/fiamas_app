@@ -1,3 +1,4 @@
+// lib/features/debts/presentation/widgets/scanner_bottom_sheet.dart
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../main.dart';
@@ -22,13 +23,11 @@ class ScannerBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     double total = cartItems.fold(0, (sum, item) => sum + (item['price'] * item['qty']));
     
-    // ✅ LÓGICA CORREGIDA: Los productos por peso cuentan como 1 solo ítem.
     int totalItems = cartItems.fold(0, (sum, item) {
       final isWeight = item['isWeight'] == true;
       if (isWeight) {
-        return sum + 1; // Si es por kilo, suma 1 al contador (no importa si son 1.5kg)
+        return sum + 1; 
       } else {
-        // Si es por unidad, suma la cantidad real
         return sum + (item['qty'] as num).toInt(); 
       }
     });
@@ -93,10 +92,9 @@ class ScannerBottomSheet extends StatelessWidget {
                       return CartItemTile(
                         name: item['name'],
                         price: item['price'],
-                        // ✅ Casteo seguro para double
                         quantity: (item['qty'] as num).toDouble(),
-                        // ✅ Ocultamos botones +/- si es por peso
                         isWeight: item['isWeight'] ?? false, 
+                        imageUrl: item['imagenUrl'], // Se pasa la imagen al widget
                         onIncrement: () => onUpdateQuantity(index, 1),
                         onDecrement: () => onUpdateQuantity(index, -1),
                       );

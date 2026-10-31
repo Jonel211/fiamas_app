@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../inventory/domain/product.dart'; // ✅ Importamos Product
+import '../../../inventory/domain/product.dart';
 
 class WeightProductBottomSheet extends StatefulWidget {
-  final Product product; // ✅ Recibe el producto
+  final Product product;
 
   const WeightProductBottomSheet({super.key, required this.product});
 
@@ -28,7 +28,7 @@ class _WeightProductBottomSheetState extends State<WeightProductBottomSheet> {
 
   double get _subtotal {
     double qty = double.tryParse(_qtyController.text) ?? 0;
-    return qty * widget.product.precioVenta; // ✅ Usa el precio real del producto
+    return qty * widget.product.precioVenta;
   }
 
   @override
@@ -58,12 +58,12 @@ class _WeightProductBottomSheetState extends State<WeightProductBottomSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.product.nombre, // ✅ Nombre real
+                    widget.product.nombre,
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'S/ ${widget.product.precioVenta.toStringAsFixed(2)} por kg', // ✅ Precio real
+                    'S/ ${widget.product.precioVenta.toStringAsFixed(2)} por kg',
                     style: const TextStyle(fontSize: 13, color: AppColors.inkMuted),
                   ),
                 ],
@@ -147,12 +147,12 @@ class _WeightProductBottomSheetState extends State<WeightProductBottomSheet> {
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () {
-              // ✅ Devolvemos el producto y la cantidad exacta al catálogo
               Navigator.pop(context, {
                 'producto_id': widget.product.id,
                 'name': widget.product.nombre,
                 'price': widget.product.precioVenta,
                 'qty': double.tryParse(_qtyController.text) ?? 1.0,
+                'imagenUrl': widget.product.imagenUrl, // <-- UNICA LINEA AGREGADA
               });
             },
             style: ElevatedButton.styleFrom(
