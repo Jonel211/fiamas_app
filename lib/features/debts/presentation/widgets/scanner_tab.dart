@@ -1,7 +1,6 @@
 // lib/features/debts/presentation/widgets/scanner_tab.dart
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:dio/dio.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -45,11 +44,23 @@ class _ScannerTabState extends State<ScannerTab> {
       
       if (response.statusCode == 200) {
         final product = Product.fromJson(response.data);
-        widget.onProductScanned(product);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${product.nombre} agregado'), backgroundColor: Colors.green, duration: const Duration(seconds: 1)),
-          );
+        if (!product.activo) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Este producto está desactivado'),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        } else {
+          widget.onProductScanned(product);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('${product.nombre} agregado'), backgroundColor: Colors.green, duration: const Duration(seconds: 1)),
+            );
+          }
         }
       }
     } catch (e) {

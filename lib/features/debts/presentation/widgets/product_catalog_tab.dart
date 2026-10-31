@@ -39,7 +39,7 @@ class _ProductCatalogTabState extends State<ProductCatalogTab> {
   Widget build(BuildContext context) {
     final inventory = context.watch<InventoryProvider>();
     
-    final productos = inventory.products.where((p) => 
+    final productos = inventory.activeProducts.where((p) => 
       p.nombre.toLowerCase().contains(_searchQuery.toLowerCase())
     ).toList();
 

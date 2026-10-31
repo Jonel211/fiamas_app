@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/utils/phone_or_name_input_formatter.dart';
 import '../../../../core/widgets/app_header_config.dart';
 import '../../../../main.dart'; // Para usar AppRoutes
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -96,6 +97,7 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
                       ),
                       child: TextField(
                         controller: _searchController,
+                        inputFormatters: [PhoneOrNameInputFormatter()],
                         onChanged: (val) => setState(() => _searchQuery = val),
                         decoration: InputDecoration(
                           hintText: 'Busca por nombre o teléfono',
