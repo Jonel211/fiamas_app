@@ -9,6 +9,7 @@ import '../../domain/product.dart';
 import '../../domain/sale_unit.dart';
 import '../../domain/inventory_provider.dart';
 import '../../domain/category.dart';
+import '../../domain/inventory_exception.dart';
 import 'barcode_scanner_screen.dart';
 
 class NewProductScreen extends StatefulWidget {
@@ -48,7 +49,8 @@ class _NewProductScreenState extends State<NewProductScreen> {
       _price.text = widget.product!.precioVenta.toStringAsFixed(2);
       _unit = widget.product!.tipoVenta;
       _active = widget.product!.activo;
-      _categoriaId = widget.product!.categoria?.id;
+      _categoriaId =
+          widget.product!.categoria?.id ?? widget.product!.categoriaId;
       _categoriaObjeto = widget.product!.categoria;
     }
   }
@@ -184,8 +186,15 @@ class _NewProductScreenState extends State<NewProductScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final message = e is InventoryException
+            ? e.message
+            : 'No se pudo guardar el producto. Intenta de nuevo.';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al guardar: $e'), backgroundColor: Colors.red, duration: const Duration(seconds: 5)),
+          SnackBar(
+            content: Text(message),
+            backgroundColor: AppColors.danger,
+            duration: const Duration(seconds: 5),
+          ),
         );
       }
     } finally {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/image_placeholder.dart';
 import '../../domain/product.dart';
 
 class ProductCard extends StatelessWidget {
@@ -20,6 +20,7 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final priceText = 'S/ ${product.precioVenta.toStringAsFixed(2)}';
+    final hasImage = product.imagenUrl != null && product.imagenUrl!.isNotEmpty;
 
     return GestureDetector(
       onTap: onTap,
@@ -30,61 +31,47 @@ class ProductCard extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // Contenido principal
             Padding(
               padding: const EdgeInsets.all(8),
               child: Column(
                 children: [
-                  // Imagen del producto
-                  Container(
-                    width: double.infinity,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
+                  Expanded(
+                    child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        width: double.infinity,
+                        color: Colors.white,
+                        child: hasImage
+                            ? SizedBox.expand(
+                                child: Image.network(
+                                  product.imagenUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) =>
+                                      const ImagePlaceholder(),
+                                ),
+                              )
+                            : const ImagePlaceholder(),
+                      ),
                     ),
-                    child:
-                        product.imagenUrl != null &&
-                            product.imagenUrl!.isNotEmpty
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              product.imagenUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => const Icon(
-                                Icons.image_outlined,
-                                size: 40,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          )
-                        : const Icon(
-                            Icons.image_outlined,
-                            size: 40,
-                            color: Colors.grey,
-                          ),
                   ),
-                  const SizedBox(height: 8),
-
-                  // Nombre del producto
+                  const SizedBox(height: 6),
                   Text(
                     product.nombre,
                     textAlign: TextAlign.center,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 11,
+                      height: 1.15,
                       fontWeight: FontWeight.w500,
                       color: Colors.black87,
                     ),
                   ),
-                  const SizedBox(height: 4),
-
-                  // Precio
+                  const SizedBox(height: 2),
                   Text(
                     priceText,
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: Colors.black,
                     ),
@@ -92,40 +79,49 @@ class ProductCard extends StatelessWidget {
                 ],
               ),
             ),
-
-            // ✅ TOGGLE SWITCH FUNCIONAL CON ANIMACIÓN
             Positioned(
-              top: 4,
-              left: 4,
+              top: 0,
+              left: 0,
               child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () {
                   if (onToggle != null) {
                     onToggle!(!active);
                   }
                 },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                child: SizedBox(
                   width: 40,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: active
-                        ? const Color(0xFFFFA500)
-                        : Colors.grey.shade400,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      AnimatedContainer(
+                  height: 40,
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4, left: 4),
+                      child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
-                        width: 20,
+                        width: 32,
                         height: 20,
-                        margin: EdgeInsets.only(left: active ? 18 : 2),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
+                        decoration: BoxDecoration(
+                          color: active
+                              ? const Color(0xFFFFA500)
+                              : Colors.grey.shade400,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              width: 16,
+                              height: 16,
+                              margin: EdgeInsets.only(left: active ? 14 : 2),
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),

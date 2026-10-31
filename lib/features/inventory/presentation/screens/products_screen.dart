@@ -196,7 +196,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
         
         final products = _getFilteredProducts(provider.products);
         final categoriasActivas = provider.categories.where((c) => c.activo).toList();
-        final categories = categoriasActivas.map((c) => c.nombre).toList();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -265,14 +264,14 @@ class _ProductsScreenState extends State<ProductsScreen> {
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             padding: const EdgeInsets.symmetric(horizontal: 20),
-                            itemCount: categories.length + 1,
+                            itemCount: categoriasActivas.length + 1,
                             separatorBuilder: (_, __) => const SizedBox(width: 8),
                             itemBuilder: (context, i) {
                               if (i == 0) {
                                 return _CategoryChip(label: 'Todos', selected: _selectedCategory == null, onTap: () => setState(() => _selectedCategory = null));
                               }
-                              final c = categories[i - 1];
-                              return _CategoryChip(label: c, selected: _selectedCategory == c, onTap: () => _toggleCategory(c));
+                              final c = categoriasActivas[i - 1];
+                              return _CategoryChip(label: c.nombre, selected: _selectedCategory == c.id, onTap: () => _toggleCategory(c.id));
                             },
                           ),
                         ),
@@ -285,7 +284,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     sliver: products.isEmpty
                         ? SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.only(top: 40), child: Center(child: Text('No se encontraron productos', style: Theme.of(context).textTheme.bodyMedium))))
                         : SliverGrid(
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 16, mainAxisSpacing: 16, childAspectRatio: 0.8),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 8, mainAxisSpacing: 12, childAspectRatio: 0.70),
                             delegate: SliverChildBuilderDelegate((context, index) {
                               final product = products[index];
                               return ProductCard(

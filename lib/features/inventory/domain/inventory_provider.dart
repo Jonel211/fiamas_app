@@ -15,6 +15,8 @@ class InventoryProvider extends ChangeNotifier {
   String? _error;
 
   List<Product> get products => _products;
+  List<Product> get activeProducts =>
+      _products.where((p) => p.activo == true).toList(growable: false);
   List<inventory_category.Category> get categories => _categories;
   bool get isLoading => _isLoading;
   String? get error => _error;

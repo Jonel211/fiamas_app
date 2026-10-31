@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 
 import '../../../../core/network/dio_client.dart';
+import '../../domain/inventory_exception.dart';
 import '../../domain/product.dart';
 
 class ProductService {
@@ -12,6 +13,18 @@ class ProductService {
     if (token != null) {
       _dio.options.headers['Authorization'] = 'Bearer $token';
     }
+  }
+
+  InventoryException _saveProductError(DioException e) {
+    const fallback = 'No se pudo guardar el producto. Intenta de nuevo.';
+    final data = e.response?.data;
+    final backendMessage = data is Map ? data['error'] : null;
+    if (e.response?.statusCode == 409 &&
+        backendMessage is String &&
+        backendMessage.trim().isNotEmpty) {
+      return InventoryException(backendMessage);
+    }
+    return const InventoryException(fallback);
   }
 
   Future<List<Product>> getProductsByStore(String tiendaId) async {
@@ -79,14 +92,7 @@ class ProductService {
         }
       }
     } on DioException catch (e) {
-      if (e.response?.data != null) {
-        final errorMsg =
-            e.response!.data['error'] ??
-            e.response!.data['message'] ??
-            'Error desconocido';
-        throw Exception('Backend dice: $errorMsg');
-      }
-      throw Exception('Error de conexión: ${e.message}');
+      throw _saveProductError(e);
     }
   }
 
@@ -144,14 +150,7 @@ class ProductService {
         }
       }
     } on DioException catch (e) {
-      if (e.response?.data != null) {
-        final errorMsg =
-            e.response!.data['error'] ??
-            e.response!.data['message'] ??
-            'Error desconocido';
-        throw Exception('Backend dice: $errorMsg');
-      }
-      throw Exception('Error de conexión: ${e.message}');
+      throw _saveProductError(e);
     }
   }
 
