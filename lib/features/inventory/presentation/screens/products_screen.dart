@@ -285,7 +285,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     sliver: products.isEmpty
                         ? SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.only(top: 40), child: Center(child: Text('No se encontraron productos', style: Theme.of(context).textTheme.bodyMedium))))
                         : SliverGrid(
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 16, mainAxisSpacing: 16, childAspectRatio: 0.8),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 8, mainAxisSpacing: 12, childAspectRatio: 0.70),
                             delegate: SliverChildBuilderDelegate((context, index) {
                               final product = products[index];
                               return ProductCard(
