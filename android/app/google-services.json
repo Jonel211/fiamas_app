@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "824663004900",
+    "project_id": "fiamas-tiendas",
+    "storage_bucket": "fiamas-tiendas.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:824663004900:android:5c45b8065771ece762bef1",
+        "android_client_info": {
+          "package_name": "com.example.fiamas_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNR-fpQPGGSs6G3GvSgbghf81nZPSK9tE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

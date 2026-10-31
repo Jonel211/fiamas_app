@@ -105,4 +105,18 @@ class AuthRepository {
     final token = await getToken();
     return token != null && token.isNotEmpty;
   }
+
+  Future<void> resetPassword({
+    required String identificador,
+    required String nuevaPassword, 
+  }) async {
+    try {
+      await _remoteDataSource.resetPassword(
+        identificador: identificador,
+        nuevaPassword: nuevaPassword,
+      );
+    } catch (e) {
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
+    }
+  }
 }

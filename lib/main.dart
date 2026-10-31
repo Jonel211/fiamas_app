@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'core/constants/app_colors.dart';
 import 'core/navigation/app_header_observer.dart';
@@ -17,9 +18,6 @@ import 'features/auth/presentation/screens/splash_screen.dart';
 import 'features/auth/presentation/screens/welcome_screen.dart';
 import 'features/auth/presentation/screens/verification_screen.dart';
 import 'features/auth/presentation/screens/change_password_screen.dart';
-import 'features/auth/presentation/screens/forgot_password_screen.dart';
-import 'features/auth/presentation/screens/reset_code_screen.dart';
-import 'features/auth/presentation/screens/new_password_screen.dart';
 import 'features/inventory/domain/inventory_provider.dart';
 import 'features/menu/presentation/screens/menu_screen.dart';
 import 'features/profile/presentation/screens/profile_screen.dart';
@@ -47,26 +45,29 @@ import 'features/debts/presentation/screens/nuevo_cliente_screen.dart';
 import 'features/debts/presentation/screens/nuevo_cliente_qr_screen.dart';
 import 'features/debts/presentation/screens/scanner_view_screen.dart';
 import 'features/debts/presentation/screens/finalizar_fiado_screen.dart';
-
 import 'features/reports/presentation/screens/reports_screen.dart';
 import 'features/dashboard/presentation/screens/whatsapp_collection_screen.dart';
+
+import 'firebase_options.dart';
 
 /// Permite navegar sin contexto (por ejemplo, al vencer la sesión).
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-void main() {
-  // Si el servidor rechaza el token, se cierra la sesión y se va al login.
+Future<void> main() async {
   DioClient.onUnauthorized = _cerrarSesionPorTokenVencido;
+
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => TiendaProvider()),
-        // El inventario sigue solo a la tienda seleccionada y al token:
-        // al cambiar de tienda o cerrar sesión se vacía automáticamente.
-        ChangeNotifierProxyProvider2<AuthProvider, TiendaProvider,
-            InventoryProvider>(
+        ChangeNotifierProxyProvider2<AuthProvider, TiendaProvider, InventoryProvider>(
           create: (_) => InventoryProvider(),
           update: (_, auth, tienda, inventory) {
             final inv = inventory ?? InventoryProvider();
@@ -107,9 +108,7 @@ Future<void> _cerrarSesionPorTokenVencido() async {
     arguments: 'login',
   );
 
-  final messenger = ScaffoldMessenger.maybeOf(
-    navigatorKey.currentContext ?? context,
-  );
+  final messenger = ScaffoldMessenger.maybeOf(navigatorKey.currentContext ?? context);
   messenger?.showSnackBar(
     const SnackBar(content: Text('Tu sesión venció. Inicia sesión de nuevo.')),
   );
@@ -124,9 +123,7 @@ class AppRoutes {
   static const welcome = '/welcome';
   static const verification = '/verification';
   static const changePassword = '/change-password';
-  static const forgotPassword = '/forgot-password';
-  static const resetCode = '/reset-code';
-  static const newPassword = '/new-password';
+  // ✅ Eliminadas: forgotPassword, resetCode, newPassword (ahora son bottom sheets)
 
   static const menu = '/menu';
   static const profile = '/profile';
@@ -168,7 +165,6 @@ class AppRoutes {
     Navigator.of(context).popUntil((route) => route.settings.name == summary);
   }
 
-  /// Lleva a la bienvenida con el panel de login ya abierto.
   static void goToLogin(BuildContext context) {
     Navigator.of(context)
         .pushNamedAndRemoveUntil(welcome, (route) => false, arguments: 'login');
@@ -200,10 +196,7 @@ class FiamasApp extends StatelessWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (showHeader)
-                  _buildHeader(config)
-                else
-                  const SizedBox.shrink(),
+                if (showHeader) _buildHeader(config) else const SizedBox.shrink(),
                 Expanded(
                   child: MediaQuery.removePadding(
                     context: context,
@@ -221,9 +214,8 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.welcome: (_) => const WelcomeScreen(),
         AppRoutes.verification: (_) => const VerificationScreen(),
         AppRoutes.changePassword: (_) => const ChangePasswordScreen(),
-        AppRoutes.forgotPassword: (_) => const ForgotPasswordScreen(),
-        AppRoutes.resetCode: (_) => const ResetCodeScreen(),
-        AppRoutes.newPassword: (_) => const NewPasswordScreen(),
+        // ✅ Eliminadas las rutas antiguas de forgot password
+        
         AppRoutes.menu: (_) => const MenuScreen(),
         AppRoutes.profile: (_) => const ProfileScreen(),
         AppRoutes.editProfile: (_) => const EditProfileScreen(),
@@ -236,11 +228,9 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.categories: (_) => const CategoriesScreen(),
         AppRoutes.newCategory: (_) => const NewCategoryScreen(),
         AppRoutes.editStore: (context) {
-          final tienda =
-              ModalRoute.of(context)!.settings.arguments as TiendaModel;
+          final tienda = ModalRoute.of(context)!.settings.arguments as TiendaModel;
           return EditStoreScreen(tienda: tienda);
         },
-        // Fiados
         AppRoutes.debts: (_) => const MainShellScreen(initialIndex: 2),
         AppRoutes.debtDetail: (context) {
           final debt = ModalRoute.of(context)!.settings.arguments as Debt;
@@ -250,9 +240,7 @@ class FiamasApp extends StatelessWidget {
           );
         },
         AppRoutes.debtHistory: (context) {
-          final customer =
-              ModalRoute.of(context)!.settings.arguments
-                  as Map<String, dynamic>;
+          final customer = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
           return DebtHistoryScreen(customer: customer);
         },
         AppRoutes.registroFiado: (_) => const RegistroFiadoScreen(),
@@ -272,8 +260,7 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.privacy: (_) => const PrivacyScreen(),
         AppRoutes.customers: (_) => const MainShellScreen(initialIndex: 3),
         AppRoutes.customerProfile: (context) {
-          final cliente =
-              ModalRoute.of(context)!.settings.arguments as ClienteModel;
+          final cliente = ModalRoute.of(context)!.settings.arguments as ClienteModel;
           return CustomerProfileScreen(customer: cliente);
         },
         AppRoutes.scoringHistory: (context) {

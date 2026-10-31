@@ -1,49 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/auth_field.dart';
-import '../../../../main.dart';
+import '../../../../core/widgets/main_shell.dart';
 import '../providers/auth_provider.dart';
+import '../screens/forgot_password_sheet.dart';
 
-/// Aparece con fade + deslizamiento. `index` define el retraso (cascada).
-class FadeSlideIn extends StatelessWidget {
-  const FadeSlideIn({super.key, required this.index, required this.child});
-
-  final int index;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    const total = 900;
-    final start = (index * 90) / total;
-
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: const Duration(milliseconds: total),
-      curve: Interval(start, 1, curve: Curves.easeOutCubic),
-      builder: (_, v, c) => Opacity(
-        opacity: v,
-        child: Transform.translate(
-          offset: Offset(0, 18 * (1 - v)),
-          child: c,
-        ),
-      ),
-      child: child,
-    );
-  }
-}
-
-/// Formulario de login. Con `onDark: true` usa colores para fondo teal.
 class LoginForm extends StatefulWidget {
-  const LoginForm({
-    super.key,
-    required this.onRegister,
-    this.onDark = false,
-  });
-
   final VoidCallback onRegister;
   final bool onDark;
+
+  const LoginForm({super.key, required this.onRegister, this.onDark = false});
 
   @override
   State<LoginForm> createState() => _LoginFormState();
@@ -51,58 +18,44 @@ class LoginForm extends StatefulWidget {
 
 class _LoginFormState extends State<LoginForm> {
   final _formKey = GlobalKey<FormState>();
-  final _identifierController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _identifierController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
   Future<void> _handleLogin() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-
     final auth = context.read<AuthProvider>();
+    
     final success = await auth.login(
-      identificador: _identifierController.text.trim(),
+      identificador: _phoneController.text.trim(),
       password: _passwordController.text,
     );
 
     if (!mounted) return;
-
     if (success) {
-      final user = auth.user;
-      if (user == null) return;
-
-      if (user.isTendero) {
-        Navigator.of(context)
-            .pushNamedAndRemoveUntil(AppRoutes.stores, (route) => false);
-      } else if (user.isCliente) {
-        Navigator.of(context)
-            .pushNamedAndRemoveUntil(AppRoutes.menu, (route) => false);
-      }
+      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const MainShellScreen()), (route) => false);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(auth.errorMessage ?? 'Error al iniciar sesión'),
-          backgroundColor: AppColors.danger,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.errorMessage ?? 'Error al iniciar sesión'), backgroundColor: AppColors.danger, behavior: SnackBarBehavior.floating));
     }
   }
 
+  Widget _icon(IconData data) => Icon(data, size: 20, color: AppColors.ink);
+
+  Widget _toggle(bool obscured, VoidCallback onPressed) => IconButton(
+    onPressed: onPressed,
+    icon: Icon(obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 20, color: AppColors.inkMuted),
+  );
+
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
-    final dark = widget.onDark;
-
-    final textColor = dark ? AppColors.onBrand : AppColors.ink;
-    final mutedColor = dark ? AppColors.onBrandMuted : AppColors.inkMuted;
-    final accentColor = dark ? AppColors.gold : AppColors.teal;
+    final isLoading = context.watch<AuthProvider>().isLoading;
 
     return Form(
       key: _formKey,
@@ -110,134 +63,59 @@ class _LoginFormState extends State<LoginForm> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          FadeSlideIn(
-            index: 0,
-            child: Text(
-              '¡Ingresa ya!',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: textColor,
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          FadeSlideIn(
-            index: 1,
-            child: AuthField(
-              label: 'Teléfono',
-              controller: _identifierController,
-              keyboardType: TextInputType.phone,
-              digitsOnly: true,
-              onDark: dark,
-              prefixIcon: const Icon(
-                Icons.phone_outlined,
-                size: 20,
-                color: AppColors.teal,
-              ),
-              validator: (v) =>
-                  (v == null || v.isEmpty) ? 'Ingresa tu teléfono' : null,
-            ),
-          ),
-          FadeSlideIn(
-            index: 2,
-            child: AuthField(
-              label: 'Contraseña',
-              controller: _passwordController,
-              obscureText: _obscurePassword,
-              bottomSpacing: 4,
-              onDark: dark,
-              prefixIcon: const Icon(
-                Icons.lock_outline_rounded,
-                size: 20,
-                color: AppColors.teal,
-              ),
-              suffixIcon: IconButton(
-                onPressed: () =>
-                    setState(() => _obscurePassword = !_obscurePassword),
-                icon: Icon(
-                  _obscurePassword
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                  size: 20,
-                  color: AppColors.inkMuted,
-                ),
-              ),
-              validator: (v) =>
-                  (v == null || v.isEmpty) ? 'Ingresa tu contraseña' : null,
-            ),
-          ),
-          FadeSlideIn(
-            index: 3,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.forgotPassword),
-                style: TextButton.styleFrom(
-                  foregroundColor: textColor,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                ),
-                icon: const Icon(Icons.help_outline_rounded, size: 16),
-                label: const Text(
-                  '¿Olvidaste tu contraseña?',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          FadeSlideIn(
-            index: 4,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: dark ? AppColors.gold : AppColors.teal,
-                foregroundColor: dark ? AppColors.ink : AppColors.onBrand,
-                minimumSize: const Size.fromHeight(48),
-                textStyle:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-              onPressed: auth.isLoading ? null : _handleLogin,
-              icon: auth.isLoading
-                  ? const SizedBox.shrink()
-                  : const Icon(Icons.login_rounded, size: 20),
-              label: auth.isLoading
-                  ? SizedBox(
-                      height: 22,
-                      width: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: dark ? AppColors.ink : AppColors.onBrand,
-                      ),
-                    )
-                  : const Text('Ingresar'),
-            ),
-          ),
+          Text('Inicia sesión', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: widget.onDark ? Colors.white : AppColors.ink)),
           const SizedBox(height: 24),
-          FadeSlideIn(
-            index: 5,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '¿No tienes cuenta? ',
-                  style: TextStyle(fontSize: 13, color: mutedColor),
-                ),
-                GestureDetector(
-                  onTap: widget.onRegister,
-                  behavior: HitTestBehavior.opaque,
-                  child: Text(
-                    'Regístrate',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: accentColor,
-                    ),
-                  ),
-                ),
-              ],
+          
+          // ✅ TELÉFONO: Máximo 9 dígitos
+          AuthField(
+            label: 'Número de celular',
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            maxLength: 9, 
+            digitsOnly: true,
+            onDark: widget.onDark,
+            prefixIcon: _icon(Icons.phone_outlined),
+            validator: (v) => (v == null || v.isEmpty) ? 'Ingresa tu celular' : (v.length != 9 ? 'Debe tener 9 dígitos' : null),
+          ),
+          
+          // ✅ CONTRASEÑA: Máximo 6 dígitos
+          AuthField(
+            label: 'Contraseña',
+            controller: _passwordController,
+            obscureText: _obscurePassword,
+            maxLength: 6,
+            onDark: widget.onDark,
+            prefixIcon: _icon(Icons.lock_outline_rounded),
+            suffixIcon: _toggle(_obscurePassword, () => setState(() => _obscurePassword = !_obscurePassword)),
+            validator: (v) => (v == null || v.isEmpty) ? 'Ingresa tu contraseña' : null,
+          ),
+          
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.transparent, builder: (context) => const ForgotPasswordSheet()),
+              child: Text('¿Olvidaste tu contraseña?', style: TextStyle(color: widget.onDark ? Colors.white70 : AppColors.inkMuted, fontSize: 13, fontWeight: FontWeight.w600)),
             ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.gold, foregroundColor: AppColors.ink, minimumSize: const Size.fromHeight(48), textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            onPressed: isLoading ? null : _handleLogin,
+            icon: isLoading ? const SizedBox.shrink() : const Icon(Icons.login_rounded, size: 20),
+            label: isLoading ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.ink)) : const Text('Ingresar'),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('¿No tienes cuenta? ', style: TextStyle(fontSize: 13, color: widget.onDark ? Colors.white70 : AppColors.inkMuted)),
+              GestureDetector(
+                onTap: widget.onRegister,
+                behavior: HitTestBehavior.opaque,
+                child: Text('Regístrate', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: widget.onDark ? Colors.white : AppColors.teal)),
+              ),
+            ],
           ),
         ],
       ),

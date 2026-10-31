@@ -55,6 +55,9 @@ dependencies:
   http: ^1.6.0
   image_picker: ^1.2.4
   permission_handler: ^11.3.0
+  firebase_core: ^5.1.0
+  firebase_auth: ^7.0.1
+  pin_code_fields: ^10.1.1
 
 dev_dependencies:
   flutter_test:
