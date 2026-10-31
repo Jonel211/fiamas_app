@@ -61,11 +61,12 @@ class DebtDetailMultipleScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ VALIDACIÓN: Si el nombre viene vacío, mostramos un texto por defecto
+    // Si el nombre viene vacío, mostramos un texto por defecto
     final rawName = customer['name'] as String? ?? '';
     final name = rawName.trim().isEmpty ? 'Cliente' : rawName;
     
     final initials = _getInitials(name);
+    final photoUrl = customer['imageUrl'] as String?;
     final allPaid = debts.every((d) => d.status == DebtStatus.pagado);
     final totalOriginal = debts.fold(0.0, (sum, d) => sum + d.amount);
     final totalPagado = allPaid ? totalOriginal : 15.0;
@@ -102,7 +103,12 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                     CircleAvatar(
                       radius: 22,
                       backgroundColor: AppColors.teal,
-                      child: Text(
+                      backgroundImage: (photoUrl != null && photoUrl.isNotEmpty) ? NetworkImage(photoUrl) : null,
+                      onBackgroundImageError: (photoUrl != null && photoUrl.isNotEmpty) ? (_, __) {} : null,
+
+                      child: (photoUrl != null && photoUrl.isNotEmpty)
+                          ? null
+                          : Text(
                         initials,
                         style: const TextStyle(
                           color: Colors.white,

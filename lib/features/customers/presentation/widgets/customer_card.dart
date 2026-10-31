@@ -6,17 +6,19 @@ class CustomerCard extends StatelessWidget {
   final String id;
   final String name;
   final String phone;
+  final String? imageUrl;
   final String status;
   final double debtAmount;
   final String extraInfo;
-  final VoidCallback onTapProfile; // ✅ Nuevo
-  final VoidCallback onTapHistory; // ✅ Nuevo
+  final VoidCallback onTapProfile;
+  final VoidCallback onTapHistory;
 
   const CustomerCard({
     super.key,
     required this.id,
     required this.name,
     required this.phone,
+    this.imageUrl,
     required this.status,
     required this.debtAmount,
     required this.extraInfo,
@@ -52,7 +54,7 @@ class CustomerCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // ✅ 1. ZONA DEL AVATAR (Lleva al Perfil)
+          // 1. ZONA DEL AVATAR (Lleva al Perfil)
           GestureDetector(
             onTap: onTapProfile,
             child: Padding(
@@ -60,7 +62,11 @@ class CustomerCard extends StatelessWidget {
               child: CircleAvatar(
                 radius: 28,
                 backgroundColor: _getAvatarColor(),
-                child: Text(
+                backgroundImage: (imageUrl != null && imageUrl!.isNotEmpty) ? NetworkImage(imageUrl!) : null,
+                onBackgroundImageError: (imageUrl != null && imageUrl!.isNotEmpty) ? (_, __) {} : null,
+                child: (imageUrl != null && imageUrl!.isNotEmpty)
+                    ? null
+                    : Text(
                   name[0].toUpperCase(),
                   style: const TextStyle(
                     color: Colors.white,
@@ -72,7 +78,7 @@ class CustomerCard extends StatelessWidget {
             ),
           ),
 
-          // ✅ 2. ZONA DEL RESTO DE LA TARJETA (Lleva al Historial)
+          // 2. ZONA DEL RESTO DE LA TARJETA (Lleva al Historial)
           Expanded(
             child: InkWell(
               onTap: onTapHistory,

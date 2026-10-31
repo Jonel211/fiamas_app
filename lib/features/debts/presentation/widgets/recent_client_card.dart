@@ -8,12 +8,14 @@ class RecentClientCard extends StatelessWidget {
     super.key,
     required this.name,
     required this.phone,
+    this.imageUrl,
     this.ratingLabel = 'Buen pagador',
     this.onTap,
   });
 
   final String name;
   final String phone;
+  final String? imageUrl;
   final String ratingLabel;
   final VoidCallback? onTap;
 
@@ -35,10 +37,20 @@ class RecentClientCard extends StatelessWidget {
             Container(
               width: 48,
               height: 48,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.mist,
                 shape: BoxShape.circle,
+                image: (imageUrl != null && imageUrl!.isNotEmpty)
+                    ? DecorationImage(
+                        image: NetworkImage(imageUrl!),
+                        fit: BoxFit.cover,
+                        onError: (_, __) {},
+                      )
+                    : null,
               ),
+              child: (imageUrl != null && imageUrl!.isNotEmpty)
+                  ? null
+                  : const Icon(Icons.person, color: AppColors.inkMuted, size: 26),
             ),
             const SizedBox(width: 14),
 

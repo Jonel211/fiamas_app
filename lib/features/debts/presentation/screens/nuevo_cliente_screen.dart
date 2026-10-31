@@ -4,6 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_header_config.dart';
 import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../widgets/register_method_card.dart';
 
@@ -82,8 +83,9 @@ class _NuevoClienteScreenState extends State<NuevoClienteScreen> {
 
     // 3. Continuar con el registro
     final authProvider = context.read<AuthProvider>();
+    final tiendaProvider = context.read<TiendaProvider>();
     final clienteProvider = context.read<ClienteProvider>();
-    final tiendaId = authProvider.user?.tiendaId;
+    final tiendaId = tiendaProvider.tiendaSeleccionadaId ?? authProvider.user?.tiendaId;
 
     if (tiendaId == null || tiendaId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:fiamas_app/core/constants/app_colors.dart';
 import 'package:fiamas_app/core/widgets/app_header_config.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../../../customers/data/models/cliente_model.dart';
 import '../widgets/edit_credit_limit_bottom_sheet.dart';
@@ -22,7 +23,8 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final tiendaId = context.read<AuthProvider>().user?.tiendaId;
+      final tiendaId = context.read<TiendaProvider>().tiendaSeleccionadaId ??
+          context.read<AuthProvider>().user?.tiendaId;
       if (tiendaId != null) {
         context.read<ClienteProvider>().cargarResumenCliente(widget.customer.id, tiendaId);
       }
@@ -110,6 +112,14 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     final badgeText = _getBadgeText(score, categoria);
     final badgeColor = _getBadgeColor(score, categoria);
     final fechaTexto = _getFormattedDate(widget.customer.creadoEn);
+    final photoUrl = widget.customer.fotoPerfilUrl ??
+        (resumen?['cliente'] != null
+            ? (resumen!['cliente']['foto_perfil_url'] ??
+                resumen!['cliente']['foto_url'] ??
+                resumen!['cliente']['foto'])
+            : (resumen?['foto_perfil_url'] ??
+                resumen?['foto_url'] ??
+                resumen?['foto']));
 
     final used = debt;
     final available = creditLimit - used;
@@ -143,7 +153,11 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                               CircleAvatar(
                                 radius: 45,
                                 backgroundColor: AppColors.teal,
-                                child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold)),
+                                backgroundImage: (photoUrl != null && photoUrl.isNotEmpty) ? NetworkImage(photoUrl) : null,
+                                onBackgroundImageError: (photoUrl != null && photoUrl.isNotEmpty) ? (_, __) {} : null,
+                                child: (photoUrl != null && photoUrl.isNotEmpty)
+                                    ? null
+                                    : Text(initial, style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold)),
                               ),
                               const SizedBox(height: 16),
                               Text(name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.ink), textAlign: TextAlign.center),

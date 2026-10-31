@@ -7,6 +7,7 @@ import '../../../../core/widgets/app_header_config.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/data/models/cliente_model.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../widgets/fiado_product_item.dart';
@@ -66,7 +67,8 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
 
     setState(() => _isSaving = true);
 
-    final tiendaId = context.read<AuthProvider>().user?.tiendaId;
+    final tiendaId = context.read<TiendaProvider>().tiendaSeleccionadaId ??
+        context.read<AuthProvider>().user?.tiendaId;
     final dio = DioClient.create();
 
     // Formatear fecha a YYYY-MM-DD

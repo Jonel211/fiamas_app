@@ -19,6 +19,7 @@ class ClienteProvider extends ChangeNotifier {
 
   Map<String, dynamic>? _resumenCliente;
   bool _isLoadingResumen = false;
+  String? _tiendaIdCargada;
 
   List<ClienteModel> get clientes => _clientes;
   List<ClienteModel> get recientes => _recientes;
@@ -30,8 +31,24 @@ class ClienteProvider extends ChangeNotifier {
   String? get error => _error;
   Map<String, dynamic>? get resumenCliente => _resumenCliente;
   bool get isLoadingResumen => _isLoadingResumen;
+  String? get tiendaIdCargada => _tiendaIdCargada;
+
+  void limpiarClientes() {
+    _clientes = [];
+    _recientes = [];
+    _fiadosCliente = [];
+    _resumenCliente = null;
+    _tiendaIdCargada = null;
+    _error = null;
+    notifyListeners();
+  }
 
   Future<void> cargarClientes(String tiendaId) async {
+    if (_tiendaIdCargada != tiendaId) {
+      _clientes = [];
+      _recientes = [];
+      _tiendaIdCargada = tiendaId;
+    }
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -47,8 +64,10 @@ class ClienteProvider extends ChangeNotifier {
     } on DioException catch (e) {
       final data = e.response?.data;
       _error = (data is Map ? data['error'] : null) ?? 'Error al cargar los clientes';
+      _clientes = [];
     } catch (e) {
       _error = 'Error desconocido: $e';
+      _clientes = [];
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -125,7 +144,6 @@ class ClienteProvider extends ChangeNotifier {
     }
   }
 
-  // ✅ Cargar fiados reales desde el backend
   Future<void> cargarFiadosCliente(String clienteId, String tiendaId) async {
     _isLoadingFiados = true;
     _fiadosCliente = [];
@@ -136,7 +154,7 @@ class ClienteProvider extends ChangeNotifier {
       final List<dynamic> data = response.data['fiados'] ?? [];
       
       _fiadosCliente = data.map((json) {
-        // ✅ SOLUCIÓN: Extraemos los datos del cliente que vienen en el JSON
+
         final clienteData = json['cliente'];
         final nombreCompleto = clienteData != null 
             ? '${clienteData['nombres']} ${clienteData['apellidos']}'.trim()
@@ -145,8 +163,8 @@ class ClienteProvider extends ChangeNotifier {
 
         return Debt(
           id: json['id'] ?? '',
-          customerName: nombreCompleto, // ✅ Ya no está vacío
-          phone: telefono, // ✅ Ya no está vacío
+          customerName: nombreCompleto,
+          phone: telefono,
           amount: double.tryParse(json['monto_total']?.toString() ?? '') ?? 0.0,
           status: json['estado'] == 'pagado' ? DebtStatus.pagado : DebtStatus.pendiente,
           dateLabel: json['fecha_creacion'] != null 
@@ -163,7 +181,7 @@ class ClienteProvider extends ChangeNotifier {
       }).toList();
 
     } catch (e) {
-      debugPrint('🔥 ERROR AL CARGAR FIADOS: $e'); 
+      debugPrint('ERROR AL CARGAR FIADOS: $e'); 
       _fiadosCliente = [];
     } finally {
       _isLoadingFiados = false;

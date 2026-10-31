@@ -26,7 +26,7 @@ class ClienteModel {
       nombres: json['nombres'] ?? '',
       apellidos: json['apellidos'] ?? '',
       direccion: json['direccion'],
-      fotoPerfilUrl: json['foto_perfil_url'],
+      fotoPerfilUrl: json['foto_perfil_url'] ?? json['foto_url'] ?? json['foto'] ?? json['avatar_url'],
       // Intentamos parsear la fecha (por si el backend la envía)
       creadoEn: json['creado_en'] != null ? DateTime.tryParse(json['creado_en'].toString()) : null,
       vinculacion: VinculacionModel.fromJson(json['vinculacion'] ?? {}),

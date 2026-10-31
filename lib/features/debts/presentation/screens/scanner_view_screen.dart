@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/data/models/cliente_model.dart';
 import '../../../inventory/domain/inventory_provider.dart';
 import '../../../inventory/domain/product.dart';
@@ -26,7 +27,8 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final tiendaId = context.read<AuthProvider>().user?.tiendaId;
+      final tiendaId = context.read<TiendaProvider>().tiendaSeleccionadaId ??
+          context.read<AuthProvider>().user?.tiendaId;
       if (tiendaId != null) {
         context.read<InventoryProvider>().loadProducts(); 
       }
@@ -49,13 +51,13 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
           'name': product.nombre,
           'price': product.precioVenta,
           'qty': 1,
-          'isWeight': false, // ✅ Es por unidad
+          'isWeight': false, // Es por unidad
         });
       }
     });
   }
 
-  // ✅ NUEVA FUNCIÓN: Recibe el producto pesado con su cantidad
+  // Funcion que recibe el producto pesado con su cantidad
   void _addToCartWithQuantity(Map<String, dynamic> cartItem) {
     setState(() {
       int index = _cartItems.indexWhere((item) => item['producto_id'] == cartItem['producto_id']);
@@ -66,7 +68,7 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
         // Si no existe, lo agregamos con la bandera de que es por peso
         _cartItems.add({
           ...cartItem,
-          'isWeight': true, // ✅ Es por kilo
+          'isWeight': true, // Declarado por kilo
         });
       }
     });
@@ -130,7 +132,7 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
                     cliente: widget.cliente,
                     cartItems: _cartItems,
                     onAdd: _addToCart,
-                    onAddWithQuantity: _addToCartWithQuantity, // ✅ Le pasamos la nueva función
+                    onAddWithQuantity: _addToCartWithQuantity, // Le pasamos la función de por kilo
                     onUpdateQuantity: _updateQuantity,
                   ),
                 ],

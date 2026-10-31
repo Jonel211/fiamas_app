@@ -4,6 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_header_config.dart';
 import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../../domain/debt.dart';
 import 'debt_detail_multiple_screen.dart';
@@ -34,7 +35,8 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
   }
 
   void _cargarFiados() {
-    final tiendaId = context.read<AuthProvider>().user?.tiendaId;
+    final tiendaId = context.read<TiendaProvider>().tiendaSeleccionadaId ??
+        context.read<AuthProvider>().user?.tiendaId;
     final clienteId = widget.customer['id'];
     if (tiendaId != null && clienteId != null) {
       context.read<ClienteProvider>().cargarFiadosCliente(clienteId, tiendaId);
@@ -74,6 +76,7 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
     final initial = name.isNotEmpty ? name.split(' ').last[0].toUpperCase() : 'C';
     final badgeText = _getBadgeText(score, categoria);
     final badgeColor = _getBadgeColor(score, categoria);
+    final photoUrl = clienteCompleto.fotoPerfilUrl ?? (widget.customer['imageUrl'] as String?);
 
     final fiadosFiltrados = provider.fiadosCliente.where((d) {
       if (_selectedFilter == 'Todos') return true;
@@ -114,7 +117,11 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                     CircleAvatar(
                       radius: 28,
                       backgroundColor: AppColors.teal,
-                      child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                      backgroundImage: (photoUrl != null && photoUrl.isNotEmpty) ? NetworkImage(photoUrl) : null,
+                      onBackgroundImageError: (photoUrl != null && photoUrl.isNotEmpty) ? (_, __) {} : null,
+                      child: (photoUrl != null && photoUrl.isNotEmpty)
+                          ? null
+                          : Text(initial, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
