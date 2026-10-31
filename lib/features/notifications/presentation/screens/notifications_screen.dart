@@ -228,6 +228,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
+  // Eliminar una notificación mediante deslizamiento
+  Future<void> _deleteOne(String id) async {
+    final previous = _items;
+    setState(() {
+      _items = _items.where((n) => n.id != id).toList();
+    });
+
+    try {
+      await _repo.deleteNotification(id);
+    } catch (_) {
+      if (mounted) setState(() => _items = previous);
+    }
+  }
+
   List<Widget> _buildGroup(NotificationGroup group) {
     final items = _items.where((n) => n.group == group).toList();
     if (items.isEmpty) return const [];
@@ -239,9 +253,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ),
       const SizedBox(height: 10),
       for (final n in items) ...[
-        NotificationCard(
-          notification: n,
-          onTap: () => _markAsRead(n.id),
+        Dismissible(
+          key: ValueKey(n.id),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20),
+            decoration: BoxDecoration(
+              color: Colors.red.shade400,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.delete_outline,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          onDismissed: (_) => _deleteOne(n.id),
+          child: NotificationCard(
+            notification: n,
+            onTap: () => _markAsRead(n.id),
+          ),
         ),
         const SizedBox(height: 12),
       ],
