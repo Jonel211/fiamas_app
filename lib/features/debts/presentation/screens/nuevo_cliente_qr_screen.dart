@@ -10,12 +10,12 @@ class NuevoClienteQrScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Obtenemos la lista de tiendas del provider
+    // Obtenemos la tienda seleccionada o la primera disponible
     final tiendaProvider = context.watch<TiendaProvider>();
-    
-    // Si hay tiendas cargadas, tomamos la primera (o la activa) y sacamos su qrToken
-    final tiendaActual = tiendaProvider.tiendas.isNotEmpty ? tiendaProvider.tiendas.first : null;
+    final tiendaActual = tiendaProvider.tiendaSeleccionada ??
+        (tiendaProvider.tiendas.isNotEmpty ? tiendaProvider.tiendas.first : null);
     final qrToken = tiendaActual?.qrToken;
+    final nombreTienda = tiendaActual?.nombre ?? 'tu tienda';
 
     return AppHeaderConfig(
       title: 'Código QR de la tienda',
@@ -27,15 +27,16 @@ class NuevoClienteQrScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Text(
-                'Escanea este código',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.ink),
+              Text(
+                'QR de $nombreTienda',
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.ink),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Pídele a tu cliente que abra su app de Fiamas y escanee este código para vincularse a tu tienda.',
+              Text(
+                'Pídele a tu cliente que abra su app de Fiamas y escanee este código para vincularse a $nombreTienda.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: AppColors.inkMuted, height: 1.4),
+                style: const TextStyle(fontSize: 14, color: AppColors.inkMuted, height: 1.4),
               ),
               const SizedBox(height: 40),
 

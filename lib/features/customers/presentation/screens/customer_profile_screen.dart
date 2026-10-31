@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:fiamas_app/core/constants/app_colors.dart';
 import 'package:fiamas_app/core/widgets/app_header_config.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../../../customers/data/models/cliente_model.dart';
 import '../widgets/edit_credit_limit_bottom_sheet.dart';
@@ -22,7 +23,8 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final tiendaId = context.read<AuthProvider>().user?.tiendaId;
+      final tiendaId = context.read<TiendaProvider>().tiendaSeleccionadaId ??
+          context.read<AuthProvider>().user?.tiendaId;
       if (tiendaId != null) {
         context.read<ClienteProvider>().cargarResumenCliente(widget.customer.id, tiendaId);
       }

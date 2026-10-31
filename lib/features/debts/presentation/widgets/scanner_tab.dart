@@ -4,6 +4,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/data/models/cliente_model.dart';
 import '../../../inventory/domain/product.dart';
 import 'scanner_bottom_sheet.dart';
@@ -35,7 +36,8 @@ class _ScannerTabState extends State<ScannerTab> {
     if (_isProcessing) return;
     setState(() => _isProcessing = true);
 
-    final tiendaId = context.read<AuthProvider>().user?.tiendaId;
+    final tiendaId = context.read<TiendaProvider>().tiendaSeleccionadaId ??
+        context.read<AuthProvider>().user?.tiendaId;
     if (tiendaId == null) return;
 
     try {

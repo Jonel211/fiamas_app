@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fiamas_app/core/constants/app_colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../../../customers/data/models/cliente_model.dart';
 
@@ -43,7 +44,8 @@ class _EditCreditLimitBottomSheetState extends State<EditCreditLimitBottomSheet>
     
     setState(() => _isSaving = true);
     
-    final tiendaId = context.read<AuthProvider>().user?.tiendaId;
+    final tiendaId = context.read<TiendaProvider>().tiendaSeleccionadaId ??
+        context.read<AuthProvider>().user?.tiendaId;
     if (tiendaId == null) return;
 
     final success = await context.read<ClienteProvider>().actualizarLimiteCredito(
@@ -131,7 +133,7 @@ class _EditCreditLimitBottomSheetState extends State<EditCreditLimitBottomSheet>
             ),
             const SizedBox(height: 20),
             
-            // ✅ ADVERTENCIA PERMANENTE
+            // Idvertencia para que el usuario sepa que no debe sobrepasar el limite de credito
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),

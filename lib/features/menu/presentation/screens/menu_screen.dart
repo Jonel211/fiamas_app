@@ -157,6 +157,7 @@ class _MenuScreenState extends State<MenuScreen> {
     );
   }
 
+  // MODAL PARA COMPARTIR LA APP
   void _mostrarModalCompartir(BuildContext context) {
     const appLink = 'https://fiamas.app/descargar';
     const shareMessage =

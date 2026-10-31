@@ -4,6 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_header_config.dart';
 import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../../domain/debt.dart';
 import 'debt_detail_multiple_screen.dart';
@@ -34,7 +35,8 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
   }
 
   void _cargarFiados() {
-    final tiendaId = context.read<AuthProvider>().user?.tiendaId;
+    final tiendaId = context.read<TiendaProvider>().tiendaSeleccionadaId ??
+        context.read<AuthProvider>().user?.tiendaId;
     final clienteId = widget.customer['id'];
     if (tiendaId != null && clienteId != null) {
       context.read<ClienteProvider>().cargarFiadosCliente(clienteId, tiendaId);

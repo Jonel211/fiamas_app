@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:fiamas_app/core/constants/app_colors.dart';
 import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/data/models/cliente_model.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../widgets/customer_card.dart';
@@ -31,11 +32,33 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final tiendaId = context.read<AuthProvider>().user?.tiendaId;
-      if (tiendaId != null) {
-        context.read<ClienteProvider>().cargarClientes(tiendaId);
-      }
+      _cargarClientesTiendaActual();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _cargarClientesTiendaActual();
+  }
+
+  void _cargarClientesTiendaActual() {
+    final tiendaId = context.read<TiendaProvider>().tiendaSeleccionadaId ??
+        context.read<AuthProvider>().user?.tiendaId;
+    if (tiendaId != null && mounted) {
+      final provider = context.read<ClienteProvider>();
+      if (provider.tiendaIdCargada != tiendaId) {
+        provider.cargarClientes(tiendaId);
+      }
+    }
+  }
+
+  Future<void> _onRefresh() async {
+    final tiendaId = context.read<TiendaProvider>().tiendaSeleccionadaId ??
+        context.read<AuthProvider>().user?.tiendaId;
+    if (tiendaId != null) {
+      await context.read<ClienteProvider>().cargarClientes(tiendaId);
+    }
   }
 
   @override
@@ -68,13 +91,17 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
 
     return Container(
       color: AppColors.background,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Clientes',
+      child: RefreshIndicator(
+        onRefresh: _onRefresh,
+        color: AppColors.teal,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Clientes',
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
@@ -224,8 +251,9 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildFilterChip(String label, {Color? dotColor}) {
     final isActive = _selectedFilter == label;

@@ -5,6 +5,7 @@ import '../../../../core/utils/phone_or_name_input_formatter.dart';
 import '../../../../core/widgets/app_header_config.dart';
 import '../../../../main.dart'; // Para usar AppRoutes
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../widgets/recent_client_card.dart';
 import '../widgets/register_client_suggestion.dart';
@@ -29,9 +30,10 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _cargarDatos());
   }
 
-  // CORRECCIÓN: Ahora es async y espera a que el backend responda
+  // Ahora es async y espera a que el backend responda
   Future<void> _cargarDatos() async {
-    final tiendaId = context.read<AuthProvider>().user?.tiendaId;
+    final tiendaId = context.read<TiendaProvider>().tiendaSeleccionadaId ??
+        context.read<AuthProvider>().user?.tiendaId;
     if (tiendaId != null && tiendaId.isNotEmpty) {
       final provider = context.read<ClienteProvider>();
       await provider.cargarClientes(tiendaId); // para el buscador
@@ -132,7 +134,7 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
                           );
                         }
 
-                        // ─────────── MODO BÚSQUEDA ───────────
+                        // MODO BÚSQUEDA
                         if (buscando) {
                           final resultados = provider.buscarClienteLocal(query);
                           final puedeRegistrar =
@@ -176,7 +178,7 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
                           );
                         }
 
-                        // ─────────── MODO RECIENTES ───────────
+                        // MODO RECIENTES
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [

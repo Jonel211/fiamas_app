@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../constants/app_colors.dart';
 import 'app_bottom_nav.dart';
 import 'app_header.dart';
 import 'app_header_config.dart';
 import '../../main.dart';
+import '../../features/auth/presentation/providers/tienda_provider.dart';
 import '../../features/dashboard/presentation/screens/store_summary_screen.dart';
 import '../../features/inventory/presentation/screens/products_screen.dart';
 import '../../features/inventory/presentation/screens/new_product_screen.dart';
@@ -85,9 +87,12 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tiendaActual = context.watch<TiendaProvider>().tiendaSeleccionada;
+    final tituloTienda = tiendaActual?.nombre.isNotEmpty == true ? tiendaActual!.nombre : 'Mi Tienda';
+
     return AppHeaderConfig(
       visible: _currentIndex != 0,
-      title: 'Bodega Gian Carlos',
+      title: tituloTienda,
       centerTitle: true,
       actions: _buildHeaderActions(),
       child: Scaffold(
