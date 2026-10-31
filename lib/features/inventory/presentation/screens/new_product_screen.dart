@@ -48,7 +48,8 @@ class _NewProductScreenState extends State<NewProductScreen> {
       _price.text = widget.product!.precioVenta.toStringAsFixed(2);
       _unit = widget.product!.tipoVenta;
       _active = widget.product!.activo;
-      _categoriaId = widget.product!.categoria?.id;
+      _categoriaId =
+          widget.product!.categoria?.id ?? widget.product!.categoriaId;
       _categoriaObjeto = widget.product!.categoria;
     }
   }

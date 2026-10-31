@@ -196,7 +196,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
         
         final products = _getFilteredProducts(provider.products);
         final categoriasActivas = provider.categories.where((c) => c.activo).toList();
-        final categories = categoriasActivas.map((c) => c.nombre).toList();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -265,14 +264,14 @@ class _ProductsScreenState extends State<ProductsScreen> {
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             padding: const EdgeInsets.symmetric(horizontal: 20),
-                            itemCount: categories.length + 1,
+                            itemCount: categoriasActivas.length + 1,
                             separatorBuilder: (_, __) => const SizedBox(width: 8),
                             itemBuilder: (context, i) {
                               if (i == 0) {
                                 return _CategoryChip(label: 'Todos', selected: _selectedCategory == null, onTap: () => setState(() => _selectedCategory = null));
                               }
-                              final c = categories[i - 1];
-                              return _CategoryChip(label: c, selected: _selectedCategory == c, onTap: () => _toggleCategory(c));
+                              final c = categoriasActivas[i - 1];
+                              return _CategoryChip(label: c.nombre, selected: _selectedCategory == c.id, onTap: () => _toggleCategory(c.id));
                             },
                           ),
                         ),
