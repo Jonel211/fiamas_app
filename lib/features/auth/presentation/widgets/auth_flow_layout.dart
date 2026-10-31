@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/step_indicator.dart';
 
-/// Estructura compartida por las pantallas de recuperar contraseña:
-/// franja azul con el logo, panel blanco, indicador de pasos y contenido.
+/// Layout rediseñado para el flujo de recuperación de contraseña:
+/// - Fondo azul con imagen del tendero
+/// - Logo FIAMAS blanco centrado
+/// - Card blanca anclada en la parte inferior
 class AuthFlowLayout extends StatelessWidget {
   const AuthFlowLayout({
     super.key,
@@ -11,15 +14,10 @@ class AuthFlowLayout extends StatelessWidget {
     required this.children,
   });
 
-  // Logo vertical y medidas. Sube _logoHeight para agrandar el logo.
-  static const String _logo = 'assets/images/fiamas-vertical.png';
-  static const double _headerHeight = 300;
-  static const double _logoHeight = 250;
+  static const double _headerHeight = 280;
+  static const double _logoHeight = 120;
 
-  /// Paso actual del proceso (1, 2 o 3).
   final int currentStep;
-
-  /// Contenido que va debajo del indicador de pasos.
   final List<Widget> children;
 
   @override
@@ -28,32 +26,89 @@ class AuthFlowLayout extends StatelessWidget {
       backgroundColor: AppColors.skyBlue,
       body: SafeArea(
         bottom: false,
-        child: Column(
+        child: Stack(
           children: [
-            const _Header(
-              logoPath: _logo,
+            // FONDO AZUL CON IMAGEN DEL TENDERO
+            SizedBox(
               height: _headerHeight,
-              logoHeight: _logoHeight,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Imagen de fondo del tendero (silueta)
+                  Opacity(
+                    opacity: 0.15,
+                    child: Image.asset(
+                      'assets/images/tendero.jpg',
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(),
+                    ),
+                  ),
+                  // Gradiente azul sobre la imagen
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          AppColors.skyBlue.withOpacity(0.9),
+                          AppColors.skyBlue.withOpacity(0.7),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Logo FIAMAS blanco centrado
+                  Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset(
+                          'assets/images/logo-os.png', // Logo blanco/oscuro
+                          height: _logoHeight,
+                          errorBuilder: (_, __, ___) => const Text(
+                            'FIAMAS',
+                            style: TextStyle(
+                              fontSize: 36,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-            Expanded(
+            // CARD BLANCA ANCLADA EN LA PARTE INFERIOR
+            Positioned.fill(
+              top: _headerHeight - 40, // Superposición para efecto moderno
               child: Container(
-                width: double.infinity,
                 decoration: const BoxDecoration(
                   color: AppColors.surface,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 20,
+                      offset: Offset(0, -5),
+                    ),
+                  ],
                 ),
                 child: SingleChildScrollView(
                   padding: EdgeInsets.fromLTRB(
                     24,
-                    24,
+                    40,
                     24,
                     24 + MediaQuery.of(context).padding.bottom,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // Indicador de pasos
                       Center(child: StepIndicator(currentStep: currentStep)),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 32),
+                      // Contenido dinámico
                       ...children,
                     ],
                   ),
@@ -67,67 +122,26 @@ class AuthFlowLayout extends StatelessWidget {
   }
 }
 
-class _Header extends StatelessWidget {
-  const _Header({
-    required this.logoPath,
-    required this.height,
-    required this.logoHeight,
-  });
-
-  final String logoPath;
-  final double height;
-  final double logoHeight;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.center,
-        children: [
-          OverflowBox(
-            maxWidth: double.infinity,
-            maxHeight: double.infinity,
-            child: Image.asset(
-              logoPath,
-              height: logoHeight,
-              fit: BoxFit.contain,
-              errorBuilder: (_, _, _) => const Text(
-                'FIAMAS',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.ink,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// Estilos de texto comunes de estas pantallas.
 class AuthFlowText {
   AuthFlowText._();
 
   static const TextStyle title = TextStyle(
-    fontSize: 20,
-    fontWeight: FontWeight.w700,
+    fontSize: 22,
+    fontWeight: FontWeight.w800,
     color: AppColors.ink,
+    letterSpacing: -0.5,
   );
 
   static const TextStyle body = TextStyle(
-    fontSize: 16,
-    color: AppColors.ink,
-    height: 1.35,
+    fontSize: 15,
+    color: AppColors.inkMuted,
+    height: 1.5,
   );
 
   static const TextStyle hint = TextStyle(
     fontSize: 13,
-    color: AppColors.ink,
-    height: 1.35,
+    color: AppColors.inkMuted,
+    height: 1.4,
   );
 }

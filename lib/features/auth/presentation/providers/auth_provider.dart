@@ -201,7 +201,7 @@ class AuthProvider with ChangeNotifier {
       return false;
     }
   }
-
+  
   // Subir foto de perfil del tendero
   Future<bool> subirFotoPerfil(File file) async {
     _errorMessage = null;
@@ -229,4 +229,29 @@ class AuthProvider with ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
   }
+  Future<bool> resetPassword({
+    required String identificador,
+    required String nuevaPassword, 
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _repository.resetPassword(
+        identificador: identificador,
+        nuevaPassword: nuevaPassword,
+      );
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+  
 }

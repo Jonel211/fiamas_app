@@ -5,6 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../widgets/login_form.dart';
 import '../widgets/register_client_content.dart';
 import '../widgets/register_tendero_form.dart';
+import 'forgot_password_sheet.dart'; 
 
 enum _PanelMode { welcome, login, registerTendero, registerCliente }
 
@@ -30,7 +31,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     if (_argsRead) return;
     _argsRead = true;
 
-    // Si llegamos con el argumento 'login', el panel sube solo.
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args == 'login') {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -76,9 +76,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           key: const ValueKey('tendero'),
           minHeight: tenderoHeight,
           onClose: toWelcome,
-          child: RegisterTenderoForm(
-            onLogin: () => _setMode(_PanelMode.login),
-          ),
+          child: RegisterTenderoForm(onLogin: () => _setMode(_PanelMode.login)),
         );
 
       case _PanelMode.registerCliente:
@@ -156,6 +154,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 }
+
 
 /// Foto de fondo con zoom animado y degradado superior.
 class _Photo extends StatelessWidget {

@@ -135,4 +135,34 @@ class AuthRemoteDataSource {
 
     return 'Ocurrió un error inesperado';
   }
+
+     Future<void> resetPassword({
+    required String identificador,
+    required String nuevaPassword, // ✅ Nombre corregido
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/auth/restablecer-password',
+        data: {
+          'identificador': identificador,
+          'nuevaPassword': nuevaPassword, // ✅ Enviamos 'nuevaPassword' exactamente como lo espera el backend
+        },
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          response.data['error'] ?? 'Error al restablecer la contraseña',
+        );
+      }
+    } on DioException catch (e) {
+      if (e.response != null) {
+        throw Exception(
+          e.response?.data['error'] ?? 'Error al restablecer contraseña',
+        );
+      }
+      throw Exception('Error de conexión al restablecer contraseña');
+    } catch (e) {
+      throw Exception('Error inesperado: $e');
+    }
+  }
 }
