@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -102,8 +104,8 @@ class _MenuScreenState extends State<MenuScreen> {
                       MenuItem(
                         icon: Icons.share_outlined,
                         title: 'Compartir aplicación',
-                        showChevron: false,
-                        onTap: () {},
+                        showChevron: true,
+                        onTap: () => _mostrarModalCompartir(context),
                       ),
                     ],
                   ),
@@ -152,6 +154,219 @@ class _MenuScreenState extends State<MenuScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  void _mostrarModalCompartir(BuildContext context) {
+    const appLink = 'https://fiamas.app/descargar';
+    const shareMessage =
+        '¡Hola! Te invito a usar Fiamas para gestionar tus compras y fiados de forma rápida, segura y transparente. Descarga la aplicación aquí: $appLink';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: EdgeInsets.fromLTRB(
+            24,
+            16,
+            24,
+            24 + MediaQuery.of(ctx).padding.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Indicador superior
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Encabezado
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.teal.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.share_rounded,
+                      color: AppColors.teal,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Compartir Fiamas',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.ink,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Invita a clientes u otros tenderos',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.inkMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: AppColors.inkMuted),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Caja con el enlace
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.mist),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.link_rounded, color: AppColors.teal, size: 22),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        appLink,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.ink,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.teal,
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                      icon: const Icon(Icons.copy_rounded, size: 16),
+                      label: const Text('Copiar'),
+                      onPressed: () {
+                        Clipboard.setData(const ClipboardData(text: appLink));
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('¡Enlace copiado al portapapeles!'),
+                            backgroundColor: AppColors.teal,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Canales rápidos
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF25D366),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size.fromHeight(48),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: const Icon(Icons.chat_bubble_outline_rounded, size: 20),
+                      label: const Text(
+                        'WhatsApp',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        final uri = Uri.parse(
+                          'https://wa.me/?text=${Uri.encodeComponent(shareMessage)}',
+                        );
+                        try {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        } catch (_) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('No se pudo abrir WhatsApp')),
+                            );
+                          }
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.ink,
+                        side: const BorderSide(color: AppColors.mist),
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: const Icon(Icons.sms_outlined, size: 20),
+                      label: const Text(
+                        'SMS',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        final uri = Uri.parse(
+                          'sms:?body=${Uri.encodeComponent(shareMessage)}',
+                        );
+                        try {
+                          await launchUrl(uri);
+                        } catch (_) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('No se pudo abrir la app de mensajes')),
+                            );
+                          }
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
