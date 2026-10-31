@@ -7,6 +7,7 @@ import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../domain/category.dart';
+import '../../domain/category_delete_exception.dart';
 import '../../domain/inventory_provider.dart';
 import 'new_category_screen.dart';
 import '../widgets/category_tile.dart';
@@ -75,10 +76,31 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         ],
       ),
     );
-    if (confirmed == true && mounted) {
-      await context.read<InventoryProvider>().deleteCategory(category.id);
+    if (confirmed != true || !mounted) return;
+
+    final provider = context.read<InventoryProvider>();
+    try {
+      await provider.deleteCategory(category.id);
+      if (!mounted) return;
       _loadDataForCurrentStore();
+    } catch (e) {
+      if (!mounted) return;
+      provider.clearError();
+      final message = e is CategoryDeleteException
+          ? e.message
+          : 'No se pudo eliminar la categoría. Intenta de nuevo.';
+      _showDeleteError(message);
     }
+  }
+
+  void _showDeleteError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.danger,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override

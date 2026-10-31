@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/network/dio_client.dart';
 import '../../domain/category.dart';
+import '../../domain/category_delete_exception.dart';
 
 class CategoryService {
   final Dio _dio;
@@ -75,19 +76,18 @@ class CategoryService {
   }
 
   Future<void> deleteCategory(String id) async {
+    const fallback = 'No se pudo eliminar la categoría. Intenta de nuevo.';
     try {
-      final response = await _dio.delete('/categorias/$id');
-
-      if (response.statusCode != 200) {
-        final error = response.data;
-        throw Exception(error['error'] ?? 'Error al eliminar categoría');
-      }
+      await _dio.delete('/categorias/$id');
     } on DioException catch (e) {
-      if (e.response?.data != null) {
-        final error = e.response!.data;
-        throw Exception(error['error'] ?? 'Error al eliminar categoría');
+      final data = e.response?.data;
+      final backendMessage = data is Map ? data['error'] : null;
+      if (e.response?.statusCode == 409 &&
+          backendMessage is String &&
+          backendMessage.trim().isNotEmpty) {
+        throw CategoryDeleteException(backendMessage);
       }
-      throw Exception('Error de conexión: ${e.message}');
+      throw const CategoryDeleteException(fallback);
     }
   }
 }
