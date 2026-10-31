@@ -40,19 +40,14 @@ class _ForgotPasswordSheetState extends State<ForgotPasswordSheet> {
               context: context,
               isScrollControlled: true,
               backgroundColor: Colors.transparent,
-              builder: (_) => ResetCodeSheet(
-                phone: _phoneController.text.trim(),
-                verificationId: verificationId,
-              ),
+              builder: (_) => ResetCodeSheet(phone: _phoneController.text.trim(), verificationId: verificationId),
             );
           }
         },
         onError: (error) {
           if (mounted) {
             setState(() => _isLoading = false);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(error), backgroundColor: AppColors.danger),
-            );
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error), backgroundColor: AppColors.danger));
           }
         },
       );
@@ -69,6 +64,7 @@ class _ForgotPasswordSheetState extends State<ForgotPasswordSheet> {
         children: [
           const StepIndicator(currentStep: 1),
           const SizedBox(height: 24),
+          // ✅ TELÉFONO: Máximo 9 dígitos
           Form(
             key: _formKey,
             child: AuthField(
@@ -78,41 +74,19 @@ class _ForgotPasswordSheetState extends State<ForgotPasswordSheet> {
               maxLength: 9,
               digitsOnly: true,
               prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.teal),
-              validator: (v) =>
-                  (v == null || v.isEmpty || v.length != 9) ? 'Debe tener 9 dígitos' : null,
+              validator: (v) => (v == null || v.isEmpty || v.length != 9) ? 'Debe tener 9 dígitos' : null,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Te enviaremos un código de validación',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: AppColors.inkMuted),
-          ),
+          const Text('Te enviaremos un código de validación', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: AppColors.inkMuted)),
           const SizedBox(height: 24),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.teal,
-              foregroundColor: Colors.white,
-              minimumSize: const Size.fromHeight(48),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.teal, foregroundColor: Colors.white, minimumSize: const Size.fromHeight(48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             onPressed: _isLoading ? null : _sendCode,
-            child: _isLoading
-                ? const SizedBox(
-                    height: 22,
-                    width: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
-                  )
-                : const Text('Enviar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            child: _isLoading ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white)) : const Text('Enviar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
           ),
           const SizedBox(height: 12),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text(
-              'Cancelar',
-              style: TextStyle(color: AppColors.inkMuted, fontWeight: FontWeight.w600),
-            ),
-          ),
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar', style: TextStyle(color: AppColors.inkMuted, fontWeight: FontWeight.w600))),
         ],
       ),
     );
