@@ -12,7 +12,7 @@ class StoreSummary {
     required this.totalCategorias,
     required this.productosStockBajo,
     required this.alertasPendientes,
-    required this.cobradoEsteMes, // NUEVO
+    required this.cobradoEsteMes, 
   });
 
   final String tiendaId;
@@ -24,7 +24,7 @@ class StoreSummary {
   final int totalCategorias;
   final int productosStockBajo;
   final int alertasPendientes;
-  final double cobradoEsteMes; // NUEVO
+  final double cobradoEsteMes; 
 
   factory StoreSummary.fromJson(Map<String, dynamic> j) {
     int i(String k) => (j[k] as num?)?.toInt() ?? 0;
@@ -38,15 +38,14 @@ class StoreSummary {
       totalCategorias: i('total_categorias'),
       productosStockBajo: i('productos_stock_bajo'),
       alertasPendientes: i('alertas_pendientes'),
-      cobradoEsteMes: (j['cobrado_este_mes'] as num?)?.toDouble() ?? 0, // NUEVO
+      cobradoEsteMes: (j['cobrado_este_mes'] as num?)?.toDouble() ?? 0, 
     );
   }
 }
 
-// CLASE: Modelo para los movimientos recientes
 class MovimientoReciente {
   final String id;
-  final String tipo; // 'fiado' o 'pago'
+  final String tipo; 
   final String clienteNombre;
   final double monto;
   final DateTime fecha;
@@ -62,12 +61,15 @@ class MovimientoReciente {
   });
 
   factory MovimientoReciente.fromJson(Map<String, dynamic> json) {
+    // Se convierte la fecha a la hora local del dispositivo con .toLocal()
+    final fechaUtc = DateTime.tryParse(json['fecha']?.toString() ?? '') ?? DateTime.now();
+    
     return MovimientoReciente(
       id: json['id']?.toString() ?? '',
       tipo: json['tipo']?.toString() ?? 'fiado',
       clienteNombre: json['cliente_nombre']?.toString() ?? 'Cliente',
       monto: double.tryParse(json['monto']?.toString() ?? '') ?? 0.0,
-      fecha: DateTime.tryParse(json['fecha']?.toString() ?? '') ?? DateTime.now(),
+      fecha: fechaUtc.toLocal(), 
       detalle: json['detalle']?.toString() ?? '',
     );
   }

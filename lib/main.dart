@@ -53,7 +53,11 @@ import 'firebase_options.dart';
 /// Permite navegar sin contexto (por ejemplo, al vencer la sesión).
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+// Observador global de rutas para detectar cuando se regresa a una pantalla
+final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
+
 Future<void> main() async {
+  // Si el servidor rechaza el token, se cierra la sesión y se va al login.
   DioClient.onUnauthorized = _cerrarSesionPorTokenVencido;
 
   WidgetsFlutterBinding.ensureInitialized();
@@ -123,7 +127,6 @@ class AppRoutes {
   static const welcome = '/welcome';
   static const verification = '/verification';
   static const changePassword = '/change-password';
-  // ✅ Eliminadas: forgotPassword, resetCode, newPassword (ahora son bottom sheets)
 
   static const menu = '/menu';
   static const profile = '/profile';
@@ -184,7 +187,7 @@ class FiamasApp extends StatelessWidget {
       theme: AppTheme.light,
       navigatorKey: navigatorKey,
       initialRoute: AppRoutes.splash,
-      navigatorObservers: [_headerObserver],
+      navigatorObservers: [_headerObserver, routeObserver], // Agregamos el routeObserver a la lista 
       builder: (context, child) {
         final content = child ?? const SizedBox.shrink();
 
@@ -214,7 +217,6 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.welcome: (_) => const WelcomeScreen(),
         AppRoutes.verification: (_) => const VerificationScreen(),
         AppRoutes.changePassword: (_) => const ChangePasswordScreen(),
-        // ✅ Eliminadas las rutas antiguas de forgot password
         
         AppRoutes.menu: (_) => const MenuScreen(),
         AppRoutes.profile: (_) => const ProfileScreen(),

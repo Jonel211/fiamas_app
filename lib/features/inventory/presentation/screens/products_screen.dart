@@ -22,7 +22,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   final _search = TextEditingController();
   String _query = '';
   
-  // ✅ Variables de filtros
+  // Variables de filtros
   String? _selectedCategory;
   String _selectedStatus = 'todos';
   String _selectedSort = 'nombre_asc';
@@ -75,7 +75,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
     super.dispose();
   }
 
-  // ✅ MÉTODO PARA ABRIR EL BOTTOM SHEET DE FILTROS
+  // MÉTODO PARA ABRIR EL BOTTOM SHEET DE FILTROS
   void _openFilterSheet() {
     final provider = context.read<InventoryProvider>();
     final categoriasActivas = provider.categories.where((c) => c.activo).toList();
@@ -110,7 +110,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
     );
   }
 
-  // ✅ MÉTODO PARA ACTIVAR/DESACTIVAR PRODUCTO
+  // MÉTODO PARA ACTIVAR/DESACTIVAR PRODUCTO
   Future<void> _toggleProduct(Product product, bool nuevoEstado) async {
     try {
       await context.read<InventoryProvider>().toggleProductActive(product.id, nuevoEstado);
@@ -135,7 +135,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
     }
   }
 
-  // ✅ MÉTODO DE FILTRADO COMPLETO
+  // MÉTODO DE FILTRADO COMPLETO
   List<Product> _getFilteredProducts(List<Product> products) {
     final q = _query.trim().toLowerCase();
     
@@ -304,7 +304,25 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
                     sliver: products.isEmpty
-                        ? SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.only(top: 40), child: Center(child: Text('No se encontraron productos', style: Theme.of(context).textTheme.bodyMedium))))
+                      ? SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 40),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'No se encontraron productos',
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                                const SizedBox(height: 12),
+                                OutlinedButton.icon(
+                                  onPressed: _clearFilters,
+                                  icon: const Icon(Icons.filter_alt_off),
+                                  label: const Text('Limpiar filtros'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
                         : SliverGrid(
                             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 8, mainAxisSpacing: 12, childAspectRatio: 0.70),
                             delegate: SliverChildBuilderDelegate((context, index) {

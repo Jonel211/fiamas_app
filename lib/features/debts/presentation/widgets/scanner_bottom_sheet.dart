@@ -1,4 +1,3 @@
-// lib/features/debts/presentation/widgets/scanner_bottom_sheet.dart
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../main.dart';
@@ -10,6 +9,8 @@ class ScannerBottomSheet extends StatelessWidget {
   final Function(int index, int delta) onUpdateQuantity;
   final Function(double)? onDrag;
   final ClienteModel cliente; 
+  final Function(int index)? onEditWeightItem; 
+  final Function(int index)? onRemoveItem; // NUEVO
 
   const ScannerBottomSheet({
     super.key,
@@ -17,6 +18,8 @@ class ScannerBottomSheet extends StatelessWidget {
     required this.onUpdateQuantity,
     this.onDrag,
     required this.cliente, 
+    this.onEditWeightItem, 
+    this.onRemoveItem, // NUEVO
   });
 
   @override
@@ -89,14 +92,22 @@ class ScannerBottomSheet extends StatelessWidget {
                     itemCount: cartItems.length,
                     itemBuilder: (context, index) {
                       final item = cartItems[index];
+                      final isWeight = item['isWeight'] ?? false;
+                      
                       return CartItemTile(
                         name: item['name'],
                         price: item['price'],
                         quantity: (item['qty'] as num).toDouble(),
-                        isWeight: item['isWeight'] ?? false, 
-                        imageUrl: item['imagenUrl'], // Se pasa la imagen al widget
+                        isWeight: isWeight, 
+                        imageUrl: item['imagenUrl'],
                         onIncrement: () => onUpdateQuantity(index, 1),
                         onDecrement: () => onUpdateQuantity(index, -1),
+                        onTap: isWeight && onEditWeightItem != null 
+                            ? () => onEditWeightItem!(index) 
+                            : null,
+                        onRemove: onRemoveItem != null 
+                            ? () => onRemoveItem!(index) 
+                            : null,
                       );
                     },
                   ),

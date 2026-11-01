@@ -5,7 +5,6 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_header.dart';
 import '../../../../core/widgets/app_header_config.dart';
 import '../../../../main.dart';
-import '../../../auth/data/models/tienda_model.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../widgets/add_store_item.dart';
 import '../widgets/store_list_item.dart';

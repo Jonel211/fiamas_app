@@ -4,19 +4,26 @@ import '../../../inventory/domain/product.dart';
 
 class WeightProductBottomSheet extends StatefulWidget {
   final Product product;
+  final double initialQty; 
 
-  const WeightProductBottomSheet({super.key, required this.product});
+  const WeightProductBottomSheet({
+    super.key, 
+    required this.product,
+    this.initialQty = 1.0, 
+  });
 
   @override
   State<WeightProductBottomSheet> createState() => _WeightProductBottomSheetState();
 }
 
 class _WeightProductBottomSheetState extends State<WeightProductBottomSheet> {
-  final TextEditingController _qtyController = TextEditingController(text: '1.00');
+  late TextEditingController _qtyController;
+  bool get isEditing => widget.initialQty != 1.0; 
 
   @override
   void initState() {
     super.initState();
+    _qtyController = TextEditingController(text: widget.initialQty.toStringAsFixed(2));
     _qtyController.addListener(() => setState(() {}));
   }
 
@@ -28,7 +35,7 @@ class _WeightProductBottomSheetState extends State<WeightProductBottomSheet> {
 
   double get _subtotal {
     double qty = double.tryParse(_qtyController.text) ?? 0;
-    return qty * widget.product.precioVenta;
+    return qty * widget.product.precioVenta; 
   }
 
   @override
@@ -58,12 +65,12 @@ class _WeightProductBottomSheetState extends State<WeightProductBottomSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.product.nombre,
+                    widget.product.nombre, 
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'S/ ${widget.product.precioVenta.toStringAsFixed(2)} por kg',
+                    'S/ ${widget.product.precioVenta.toStringAsFixed(2)} por kg', 
                     style: const TextStyle(fontSize: 13, color: AppColors.inkMuted),
                   ),
                 ],
@@ -145,6 +152,16 @@ class _WeightProductBottomSheetState extends State<WeightProductBottomSheet> {
             ],
           ),
           const SizedBox(height: 20),
+          
+          // BOTON DE ELIMINAR (Solo visible si se esta editando)
+          if (isEditing)
+            TextButton.icon(
+              onPressed: () => Navigator.pop(context, {'qty': 0.0}), // Retorna 0 para indicar que se elimine
+              icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+              label: const Text('Eliminar producto', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600)),
+            ),
+
+          const SizedBox(height: 10),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context, {
@@ -152,7 +169,7 @@ class _WeightProductBottomSheetState extends State<WeightProductBottomSheet> {
                 'name': widget.product.nombre,
                 'price': widget.product.precioVenta,
                 'qty': double.tryParse(_qtyController.text) ?? 1.0,
-                'imagenUrl': widget.product.imagenUrl, // <-- UNICA LINEA AGREGADA
+                'imagenUrl': widget.product.imagenUrl,
               });
             },
             style: ElevatedButton.styleFrom(
@@ -161,12 +178,12 @@ class _WeightProductBottomSheetState extends State<WeightProductBottomSheet> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               elevation: 0,
             ),
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Agregar a la orden', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                SizedBox(width: 8),
-                Icon(Icons.arrow_forward_rounded, size: 20),
+                Text(isEditing ? 'Actualizar peso' : 'Agregar a la orden', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                const SizedBox(width: 8),
+                const Icon(Icons.arrow_forward_rounded, size: 20),
               ],
             ),
           ),

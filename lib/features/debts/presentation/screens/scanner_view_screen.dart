@@ -1,4 +1,3 @@
-// lib/features/debts/presentation/screens/scanner_view_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -9,6 +8,7 @@ import '../../../inventory/domain/inventory_provider.dart';
 import '../../../inventory/domain/product.dart';
 import '../widgets/scanner_tab.dart';
 import '../widgets/product_catalog_tab.dart';
+import '../widgets/weight_product_bottom_sheet.dart'; 
 
 class ScannerViewScreen extends StatefulWidget {
   final ClienteModel cliente;
@@ -52,7 +52,7 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
           'price': product.precioVenta,
           'qty': 1.0,
           'isWeight': false,
-          'imagenUrl': product.imagenUrl, // Se guarda la imagen
+          'imagenUrl': product.imagenUrl,
         });
       }
     });
@@ -77,6 +77,40 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
     setState(() {
       _cartItems[index]['qty'] += delta;
       if (_cartItems[index]['qty'] <= 0) _cartItems.removeAt(index);
+    });
+  }
+
+  // NUEVO: Funcion para eliminar un item del carrito
+  void _removeItem(int index) {
+    setState(() {
+      _cartItems.removeAt(index);
+    });
+  }
+
+  void _editWeightItem(int index) {
+    final item = _cartItems[index];
+    final inventory = context.read<InventoryProvider>();
+    final product = inventory.products.firstWhere((p) => p.id == item['producto_id']);
+
+    showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => WeightProductBottomSheet(
+        product: product,
+        initialQty: (item['qty'] as num).toDouble(),
+      ),
+    ).then((result) {
+      if (result != null && mounted) {
+        setState(() {
+          // Si el modal devuelve qty 0, significa que se debe eliminar
+          if (result['qty'] <= 0) {
+            _cartItems.removeAt(index);
+          } else {
+            _cartItems[index]['qty'] = result['qty'];
+          }
+        });
+      }
     });
   }
 
@@ -126,6 +160,8 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
                     cartItems: _cartItems,
                     onUpdateQuantity: _updateQuantity,
                     onProductScanned: _addToCart,
+                    onEditWeightItem: _editWeightItem,
+                    onRemoveItem: _removeItem, // LE PASAMOS LA FUNCION
                   ),
                   ProductCatalogTab(
                     cliente: widget.cliente,
@@ -133,6 +169,8 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
                     onAdd: _addToCart,
                     onAddWithQuantity: _addToCartWithQuantity, // Le pasamos la función de por kilo
                     onUpdateQuantity: _updateQuantity,
+                    onEditWeightItem: _editWeightItem,
+                    onRemoveItem: _removeItem, // LE PASAMOS LA FUNCION
                   ),
                 ],
               ),

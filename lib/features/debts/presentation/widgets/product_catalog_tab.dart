@@ -16,7 +16,9 @@ class ProductCatalogTab extends StatefulWidget {
   final Function(Product) onAdd;
   final Function(Map<String, dynamic>) onAddWithQuantity; 
   final Function(int, int) onUpdateQuantity;
-  final ClienteModel cliente;
+  final ClienteModel cliente; 
+  final Function(int)? onEditWeightItem; 
+  final Function(int)? onRemoveItem;
 
   const ProductCatalogTab({
     super.key,
@@ -24,7 +26,9 @@ class ProductCatalogTab extends StatefulWidget {
     required this.onAdd,
     required this.onAddWithQuantity, 
     required this.onUpdateQuantity,
-    required this.cliente,
+    required this.cliente, 
+    this.onEditWeightItem, 
+    this.onRemoveItem,
   });
 
   @override
@@ -148,6 +152,8 @@ class _ProductCatalogTabState extends State<ProductCatalogTab> {
             cartItems: widget.cartItems,
             onUpdateQuantity: widget.onUpdateQuantity,
             cliente: widget.cliente,
+            onEditWeightItem: widget.onEditWeightItem,
+            onRemoveItem: widget.onRemoveItem, // SE PASA LA FUNCION
             onDrag: (deltaY) {
               setState(() {
                 _panelHeight -= deltaY;

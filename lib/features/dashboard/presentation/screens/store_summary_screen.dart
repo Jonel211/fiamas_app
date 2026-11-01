@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../main.dart';
+import '../../../../main.dart'; // Aquí está el routeObserver
 import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../notifications/data/notification_repository.dart';
 import '../../data/dashboard_service.dart';
@@ -15,7 +15,8 @@ class StoreSummaryScreen extends StatefulWidget {
   State<StoreSummaryScreen> createState() => _StoreSummaryScreenState();
 }
 
-class _StoreSummaryScreenState extends State<StoreSummaryScreen> {
+// NUEVO: Se agrega RouteAware para detectar cuando se vuelve a esta pantalla
+class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware {
   final _notifRepo = NotificationRepository();
   final _service = DashboardService();
 
@@ -35,6 +36,9 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Suscribimos la pantalla al observer de rutas
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+
     final id = Provider.of<TiendaProvider>(context).tiendaSeleccionadaId;
     if (id != _loadedTiendaId) {
       _loadedTiendaId = id;
@@ -44,6 +48,18 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> {
       _loadingSummary = id != null;
       if (id != null) _fetchSummary(id);
     }
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this); // Desuscribimos al salir
+    super.dispose();
+  }
+
+  // NUEVO: Se ejecuta cuando regresas a esta pantalla (ej. al volver de un cobro)
+  @override
+  void didPopNext() {
+    _refresh();
   }
 
   Future<void> _fetchSummary(String id) async {
@@ -111,7 +127,6 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> {
     return '${date.day}/${date.month}';
   }
 
-  // NUEVA FUNCION: Arma el mensaje de la alerta de forma inteligente
   String _buildAlertMessage(int stockBajo, int alertas) {
     List<String> partes = [];
     if (stockBajo > 0) partes.add('$stockBajo productos con stock bajo');
@@ -321,7 +336,7 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> {
               ),
               const SizedBox(height: 16),
 
-              // 3. TARJETA DE ALERTA DINÁMICA CORREGIDA
+              // 3. TARJETA DE ALERTA DINÁMICA
               if ((summary?.alertasPendientes ?? 0) > 0 || (summary?.productosStockBajo ?? 0) > 0) ...[
                 Container(
                   padding: const EdgeInsets.all(14),
@@ -358,12 +373,12 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> {
                 const SizedBox(height: 16),
               ],
 
-              // 4. ENCABEZADO "MOVIMIENTOS DE HOY"
+              // 4. ENCABEZADO DE MOVIMIENTOS (TEXTO CAMBIADO AQUI)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Movimientos de hoy',
+                    'Últimos movimientos', // ANTES: Movimientos de hoy
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -419,7 +434,7 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> {
                             padding: EdgeInsets.all(24.0),
                             child: Center(
                               child: Text(
-                                'Aún no hay movimientos hoy',
+                                'Aún no hay movimientos registrados', // ANTES: Aún no hay movimientos hoy
                                 style: TextStyle(color: AppColors.inkMuted),
                               ),
                             ),

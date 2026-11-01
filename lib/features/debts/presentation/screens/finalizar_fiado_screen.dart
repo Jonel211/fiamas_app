@@ -1,7 +1,6 @@
-// lib/features/debts/presentation/screens/finalizar_fiado_screen.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_header_config.dart';
 import '../../../../core/network/dio_client.dart';
@@ -10,6 +9,7 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/data/models/cliente_model.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
+import '../../../customers/presentation/widgets/edit_credit_limit_bottom_sheet.dart'; // IMPORTANTE: Para editar el limite
 import '../widgets/fiado_product_item.dart';
 
 class FinalizarFiadoScreen extends StatefulWidget {
@@ -59,6 +59,33 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
     }
   }
 
+  // NUEVO: Funcion para cancelar el fiado con confirmacion
+  Future<void> _cancelarFiado() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancelar Fiado'),
+        content: const Text('¿Estás seguro de que deseas cancelar este fiado? Los productos agregados se perderán.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Volver', style: TextStyle(color: AppColors.inkMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+            child: const Text('Sí, cancelar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar == true && mounted) {
+      // Regresamos al inicio
+      Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.summary, (route) => false);
+    }
+  }
+
   Future<void> _registrarFiado() async {
     if (_dateController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecciona una fecha de pago')));
@@ -71,11 +98,9 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
         context.read<AuthProvider>().user?.tiendaId;
     final dio = DioClient.create();
 
-    // Formatear fecha a YYYY-MM-DD
     final parts = _dateController.text.split('/');
     final fechaFormateada = "${parts[2]}-${parts[1]}-${parts[0]}";
 
-    // Preparar productos para el backend
     final productosJson = _cartItems.map((item) => {
       'producto_id': item['producto_id'],
       'cantidad': item['qty'],
@@ -90,24 +115,64 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
       });
 
       if (mounted) {
-        // Refrescar los datos del cliente en el provider para que aparezca el saldo
         context.read<ClienteProvider>().cargarResumenCliente(_cliente.id, tiendaId!);
-        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Fiado registrado exitosamente'), backgroundColor: Colors.green),
         );
-        
         Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.summary, (route) => false);
+      }
+    } on DioException catch (e) {
+      if (!mounted) return;
+      
+      // Si el backend rechaza por limite de credito (Error 400)
+      if (e.response?.statusCode == 400 && e.response?.data['error'].toString().contains('límite') == true) {
+        _mostrarDialogoLimiteExcedido();
+      } else {
+        // Otro tipo de error
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al registrar el fiado. Intente de nuevo.'), backgroundColor: Colors.red),
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error al registrar el fiado. Revisa el límite de crédito.'), backgroundColor: Colors.red),
+          const SnackBar(content: Text('Error inesperado al registrar.'), backgroundColor: Colors.red),
         );
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  // NUEVO: Dialogo cuando el limite de credito es excedido
+  void _mostrarDialogoLimiteExcedido() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Límite excedido'),
+        content: Text('El monto de este fiado supera el límite de crédito de ${_cliente.nombreCompleto}. ¿Qué deseas hacer?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context), // Solo cierra el dialogo
+            child: const Text('Entendido', style: TextStyle(color: AppColors.inkMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context); // Cierra el dialogo
+              // Abre el panel para editar el limite
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => EditCreditLimitBottomSheet(customer: _cliente),
+              );
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.teal, foregroundColor: Colors.white),
+            child: const Text('Editar límite'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -168,6 +233,8 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
                 ),
               ),
               const SizedBox(height: 32),
+              
+              // BOTON FINALIZAR
               ElevatedButton(
                 onPressed: _isSaving ? null : _registrarFiado,
                 style: ElevatedButton.styleFrom(
@@ -180,6 +247,17 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
                 child: _isSaving 
                   ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : const Text('Finalizar y Registrar', style: TextStyle(fontWeight: FontWeight.w700)),
+              ),
+              const SizedBox(height: 12),
+
+              // NUEVO: BOTON CANCELAR FIADO (Sutil)
+              TextButton(
+                onPressed: _isSaving ? null : _cancelarFiado,
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.redAccent,
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                child: const Text('Cancelar fiado', style: TextStyle(fontWeight: FontWeight.w600)),
               ),
             ],
           ),

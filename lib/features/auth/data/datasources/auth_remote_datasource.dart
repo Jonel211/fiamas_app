@@ -1,7 +1,5 @@
 import 'package:dio/dio.dart';
 
-import '../models/user_model.dart';
-
 class AuthRemoteDataSource {
   final Dio _dio;
 
