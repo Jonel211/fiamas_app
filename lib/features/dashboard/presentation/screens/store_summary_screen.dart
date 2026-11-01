@@ -15,7 +15,7 @@ class StoreSummaryScreen extends StatefulWidget {
   State<StoreSummaryScreen> createState() => _StoreSummaryScreenState();
 }
 
-// NUEVO: Se agrega RouteAware para detectar cuando se vuelve a esta pantalla
+// Se agrega RouteAware para detectar cuando se vuelve a esta pantalla
 class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware {
   final _notifRepo = NotificationRepository();
   final _service = DashboardService();
@@ -230,36 +230,48 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
                       ),
                     ),
                     const SizedBox(height: 14),
-                    Row(
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        const Icon(
-                          Icons.trending_up_rounded,
-                          color: Colors.white,
-                          size: 18,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.trending_up_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Cobrado este mes: ${_money(summary?.cobradoEsteMes ?? 0)}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white.withValues(alpha: 0.9),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Cobrado este mes: ${_money(summary?.cobradoEsteMes ?? 0)}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const Icon(
-                          Icons.pending_actions_rounded,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Pendientes: ${summary?.fiadosPendientes ?? 0}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.pending_actions_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Pendientes: ${summary?.fiadosPendientes ?? 0}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white.withValues(alpha: 0.9),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
