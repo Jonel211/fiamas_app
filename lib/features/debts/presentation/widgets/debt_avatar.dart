@@ -18,6 +18,8 @@ class DebtAvatar extends StatelessWidget {
     switch (status) {
       case DebtStatus.pendiente:
         return AppColors.gold;
+      case DebtStatus.parcial:
+        return AppColors.skyBlue; // Color para estado parcial
       case DebtStatus.pagado:
         return AppColors.teal;
       case null:

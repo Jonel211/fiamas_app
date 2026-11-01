@@ -15,13 +15,13 @@ class StoreListItem extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
 
-  static const double _circleSize = 140;
+  static const double _circleSize = 120;
 
   Widget _fallbackIcon() {
     return const Icon(
       Icons.storefront_rounded,
       color: AppColors.ink,
-      size: 62,
+      size: 54,
     );
   }
 
@@ -88,7 +88,7 @@ class StoreListItem extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 8),
           Flexible(
             child: Text(
               store.nombre,

@@ -9,6 +9,8 @@ class ScannerBottomSheet extends StatelessWidget {
   final Function(int index, int delta) onUpdateQuantity;
   final Function(double)? onDrag;
   final ClienteModel cliente; 
+  final Function(int index)? onEditWeightItem; 
+  final Function(int index)? onRemoveItem; // NUEVO
 
   const ScannerBottomSheet({
     super.key,
@@ -16,19 +18,19 @@ class ScannerBottomSheet extends StatelessWidget {
     required this.onUpdateQuantity,
     this.onDrag,
     required this.cliente, 
+    this.onEditWeightItem, 
+    this.onRemoveItem, // NUEVO
   });
 
   @override
   Widget build(BuildContext context) {
     double total = cartItems.fold(0, (sum, item) => sum + (item['price'] * item['qty']));
     
-    // ✅ LÓGICA CORREGIDA: Los productos por peso cuentan como 1 solo ítem.
     int totalItems = cartItems.fold(0, (sum, item) {
       final isWeight = item['isWeight'] == true;
       if (isWeight) {
-        return sum + 1; // Si es por kilo, suma 1 al contador (no importa si son 1.5kg)
+        return sum + 1; 
       } else {
-        // Si es por unidad, suma la cantidad real
         return sum + (item['qty'] as num).toInt(); 
       }
     });
@@ -90,15 +92,22 @@ class ScannerBottomSheet extends StatelessWidget {
                     itemCount: cartItems.length,
                     itemBuilder: (context, index) {
                       final item = cartItems[index];
+                      final isWeight = item['isWeight'] ?? false;
+                      
                       return CartItemTile(
                         name: item['name'],
                         price: item['price'],
-                        // ✅ Casteo seguro para double
                         quantity: (item['qty'] as num).toDouble(),
-                        // ✅ Ocultamos botones +/- si es por peso
-                        isWeight: item['isWeight'] ?? false, 
+                        isWeight: isWeight, 
+                        imageUrl: item['imagenUrl'],
                         onIncrement: () => onUpdateQuantity(index, 1),
                         onDecrement: () => onUpdateQuantity(index, -1),
+                        onTap: isWeight && onEditWeightItem != null 
+                            ? () => onEditWeightItem!(index) 
+                            : null,
+                        onRemove: onRemoveItem != null 
+                            ? () => onRemoveItem!(index) 
+                            : null,
                       );
                     },
                   ),

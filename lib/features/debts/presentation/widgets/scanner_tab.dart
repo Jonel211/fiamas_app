@@ -15,6 +15,8 @@ class ScannerTab extends StatefulWidget {
   final Function(int, int) onUpdateQuantity;
   final Function(Product) onProductScanned;
   final ClienteModel cliente; 
+  final Function(int)? onEditWeightItem; 
+  final Function(int)? onRemoveItem; // NUEVO
 
   const ScannerTab({
     super.key, 
@@ -22,6 +24,8 @@ class ScannerTab extends StatefulWidget {
     required this.onUpdateQuantity,
     required this.onProductScanned,
     required this.cliente, 
+    this.onEditWeightItem, 
+    this.onRemoveItem, // NUEVO
   });
 
   @override
@@ -95,7 +99,6 @@ class _ScannerTabState extends State<ScannerTab> {
                   }
                 },
               ),
-              // ✅ CUADRO RECTANGULAR SIN LÍNEA EN MEDIO
               Container(
                 width: 280, 
                 height: 180,
@@ -126,6 +129,8 @@ class _ScannerTabState extends State<ScannerTab> {
             cartItems: widget.cartItems,
             onUpdateQuantity: widget.onUpdateQuantity,
             cliente: widget.cliente,
+            onEditWeightItem: widget.onEditWeightItem,
+            onRemoveItem: widget.onRemoveItem, // SE PASA LA FUNCION
             onDrag: (deltaY) {
               setState(() {
                 _panelHeight -= deltaY;

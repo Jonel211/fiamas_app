@@ -115,8 +115,8 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     final photoUrl = widget.customer.fotoPerfilUrl ??
         (resumen?['cliente'] != null
             ? (resumen!['cliente']['foto_perfil_url'] ??
-                resumen!['cliente']['foto_url'] ??
-                resumen!['cliente']['foto'])
+                resumen['cliente']['foto_url'] ??
+                resumen['cliente']['foto'])
             : (resumen?['foto_perfil_url'] ??
                 resumen?['foto_url'] ??
                 resumen?['foto']));

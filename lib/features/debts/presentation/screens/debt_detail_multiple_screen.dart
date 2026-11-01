@@ -15,10 +15,9 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     required this.debts,
   });
 
-  // ✅ FUNCIÓN BLINDADA: Evita el error de "RangeError" si el nombre está vacío
   String _getInitials(String name) {
     final cleanName = name.trim();
-    if (cleanName.isEmpty) return 'C'; // Si está vacío, devuelve "C" de Cliente
+    if (cleanName.isEmpty) return 'C';
     
     final parts = cleanName.split(RegExp(r'\s+'));
     
@@ -36,6 +35,8 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     switch (status) {
       case DebtStatus.pendiente:
         return 'Pendiente';
+      case DebtStatus.parcial:
+        return 'Parcial';
       case DebtStatus.pagado:
         return 'Pagado';
     }
@@ -45,6 +46,8 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     switch (status) {
       case DebtStatus.pendiente:
         return AppColors.gold;
+      case DebtStatus.parcial:
+        return AppColors.skyBlue;
       case DebtStatus.pagado:
         return AppColors.success;
     }
@@ -54,6 +57,8 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     switch (status) {
       case DebtStatus.pendiente:
         return AppColors.gold.withOpacity(0.15);
+      case DebtStatus.parcial:
+        return AppColors.skyBlue.withOpacity(0.15);
       case DebtStatus.pagado:
         return AppColors.success.withOpacity(0.15);
     }
@@ -61,18 +66,18 @@ class DebtDetailMultipleScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Si el nombre viene vacío, mostramos un texto por defecto
     final rawName = customer['name'] as String? ?? '';
     final name = rawName.trim().isEmpty ? 'Cliente' : rawName;
     
     final initials = _getInitials(name);
     final photoUrl = customer['imageUrl'] as String?;
     final allPaid = debts.every((d) => d.status == DebtStatus.pagado);
+    
+    // Calculos reales basados en el modelo Debt actualizado
     final totalOriginal = debts.fold(0.0, (sum, d) => sum + d.amount);
-    final totalPagado = allPaid ? totalOriginal : 15.0;
-    final totalRestante = totalOriginal - totalPagado;
+    final totalPagado = debts.fold(0.0, (sum, d) => sum + d.paidAmount);
+    final totalRestante = debts.fold(0.0, (sum, d) => sum + d.remainingAmount);
 
-    // Agrupar productos por fecha
     final Map<String, List<DebtItem>> productsByDate = {};
     for (final debt in debts) {
       productsByDate.putIfAbsent(debt.dateLabel, () => []);
@@ -89,7 +94,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // TARJETA DEL CLIENTE
+              // Tarjeta del cliente
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -166,7 +171,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // FIADOS INCLUIDOS
+              // Fiados incluidos
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -244,7 +249,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // PRODUCTOS
+              // Productos
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -321,7 +326,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // RESUMEN DE CUENTA
+              // Resumen de cuenta
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -387,13 +392,12 @@ class DebtDetailMultipleScreen extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              // Botones solo si hay deuda pendiente
               if (!allPaid) ...[
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
+                    onPressed: () async {
+                      final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => CollectMultiplePaymentScreen(
@@ -402,6 +406,12 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                           ),
                         ),
                       );
+
+                      // Si el pago se registro con exito, cerramos esta pantalla
+                      // para volver al historial ya actualizado.
+                      if (result == true && context.mounted) {
+                        Navigator.pop(context);
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.teal,

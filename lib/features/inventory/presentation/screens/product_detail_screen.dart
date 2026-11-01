@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_header_config.dart';
 import '../../domain/product.dart';
-import '../../domain/sale_unit.dart';
-import '../../domain/inventory_provider.dart';
 import '../widgets/product_detail_field.dart';
 import 'new_product_screen.dart';
 

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:fiamas_app/core/constants/app_colors.dart';
 import 'package:fiamas_app/core/widgets/app_header_config.dart';
-
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../../domain/debt.dart';
 
 class CollectMultiplePaymentScreen extends StatefulWidget {
@@ -28,13 +30,15 @@ class _CollectMultiplePaymentScreenState
   final TextEditingController _referenceController = TextEditingController();
 
   late double _totalDebt;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
+    // Calculamos la deuda total sumando el saldo restante de cada fiado
     _totalDebt = widget.selectedDebts.fold(
       0.0,
-      (sum, debt) => sum + debt.amount,
+      (sum, debt) => sum + debt.remainingAmount,
     );
     _amountController.text = _totalDebt.toStringAsFixed(2);
   }
@@ -70,7 +74,6 @@ class _CollectMultiplePaymentScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            
               Center(
                 child: Column(
                   children: [
@@ -95,10 +98,8 @@ class _CollectMultiplePaymentScreenState
                   ],
                 ),
               ),
-
               const SizedBox(height: 32),
-
-             
+              
               _buildPaymentOption(
                 iconPath: 'assets/icons/bill_icon.png',
                 title: 'Pagó todo',
@@ -111,9 +112,7 @@ class _CollectMultiplePaymentScreenState
                   });
                 },
               ),
-
               const SizedBox(height: 12),
-
               _buildPaymentOption(
                 iconPath: 'assets/icons/bill_icon.png',
                 title: 'Pagó una parte',
@@ -126,10 +125,8 @@ class _CollectMultiplePaymentScreenState
                   });
                 },
               ),
-
               const SizedBox(height: 24),
 
-              
               if (_paidPartial) ...[
                 const Text(
                   'Monto abonado',
@@ -190,7 +187,6 @@ class _CollectMultiplePaymentScreenState
                 const SizedBox(height: 24),
               ],
 
-             
               const Text(
                 'Medio de pago',
                 style: TextStyle(
@@ -235,10 +231,8 @@ class _CollectMultiplePaymentScreenState
                   ),
                 ],
               ),
-
               const SizedBox(height: 24),
 
-              
               const Text(
                 'Referencia (Opcional)',
                 style: TextStyle(
@@ -274,10 +268,8 @@ class _CollectMultiplePaymentScreenState
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
 
-             
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -330,19 +322,21 @@ class _CollectMultiplePaymentScreenState
                   ],
                 ),
               ),
-
               const SizedBox(height: 24),
 
-              
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    _confirmPayment();
-                  },
-                  icon: const Icon(Icons.check, size: 20),
+                  onPressed: _isSaving ? null : _confirmPayment,
+                  icon: _isSaving 
+                      ? const SizedBox(
+                          width: 20, 
+                          height: 20, 
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                        )
+                      : const Icon(Icons.check, size: 20),
                   label: Text(
-                    'Confirmar abono S/ ${_paidAmount.toStringAsFixed(2)}',
+                    _isSaving ? 'Procesando...' : 'Confirmar abono S/ ${_paidAmount.toStringAsFixed(2)}',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -358,7 +352,6 @@ class _CollectMultiplePaymentScreenState
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
             ],
           ),
@@ -366,8 +359,6 @@ class _CollectMultiplePaymentScreenState
       ),
     );
   }
-
-  
 
   Widget _buildPaymentOption({
     required String iconPath,
@@ -469,7 +460,7 @@ class _CollectMultiplePaymentScreenState
     );
   }
 
-  void _confirmPayment() {
+  Future<void> _confirmPayment() async {
     if (_paidAmount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('El monto debe ser mayor a 0')),
@@ -486,24 +477,91 @@ class _CollectMultiplePaymentScreenState
       return;
     }
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cobro registrado'),
-        content: Text(
-          'Se ha registrado un cobro de S/ ${_paidAmount.toStringAsFixed(2)} de ${widget.selectedDebts.length} fiados mediante $_selectedPaymentMethod.\n\n'
-          'Referencia: ${_referenceController.text.isNotEmpty ? _referenceController.text : "Sin referencia"}',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context, true);
-            },
-            child: const Text('Aceptar'),
+    setState(() => _isSaving = true);
+
+    final tiendaId = context.read<AuthProvider>().user?.tiendaId;
+    final clienteId = widget.customer['id'];
+    final clienteProvider = context.read<ClienteProvider>();
+
+    if (tiendaId == null || clienteId == null) {
+      setState(() => _isSaving = false);
+      return;
+    }
+
+    double montoRestante = _paidAmount;
+    bool huboError = false;
+
+    // Recorremos los fiados seleccionados
+    for (var debt in widget.selectedDebts) {
+      if (montoRestante <= 0) break;
+
+      double saldoFiado = debt.remainingAmount;
+      
+      // Si el monto restante cubre todo el fiado
+      if (montoRestante >= saldoFiado) {
+        final success = await clienteProvider.registrarPago(
+          fiadoId: debt.id,
+          monto: saldoFiado,
+          metodoPago: _selectedPaymentMethod,
+          referencia: _referenceController.text,
+          tiendaId: tiendaId,
+          clienteId: clienteId,
+        );
+        if (success) {
+          montoRestante -= saldoFiado;
+        } else {
+          huboError = true;
+          break;
+        }
+      } 
+      // Si el monto restante solo cubre una parte del fiado
+      else {
+        final success = await clienteProvider.registrarPago(
+          fiadoId: debt.id,
+          monto: montoRestante,
+          metodoPago: _selectedPaymentMethod,
+          referencia: _referenceController.text,
+          tiendaId: tiendaId,
+          clienteId: clienteId,
+        );
+        if (success) {
+          montoRestante = 0;
+        } else {
+          huboError = true;
+        }
+        break; 
+      }
+    }
+
+    if (mounted) {
+      setState(() => _isSaving = false);
+
+      if (huboError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al registrar el pago. Intente de nuevo.'), backgroundColor: Colors.red),
+        );
+      } else {
+        // Exito
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Text('Cobro registrado'),
+            content: Text(
+              'Se ha registrado un cobro de S/ ${_paidAmount.toStringAsFixed(2)} correctamente.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Cierra el dialogo
+                  Navigator.pop(context, true); // Regresa a la pantalla de historial
+                },
+                child: const Text('Aceptar'),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        );
+      }
+    }
   }
 }
