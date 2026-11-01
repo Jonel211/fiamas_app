@@ -128,7 +128,7 @@ class _MyStoresScreenState extends State<MyStoresScreen> {
                         crossAxisCount: 2,
                         crossAxisSpacing: 20,
                         mainAxisSpacing: 20,
-                        childAspectRatio: 0.85,
+                        childAspectRatio: 0.74,
                       ),
                       itemCount: provider.tiendas.length + 1,
                       itemBuilder: (context, index) {

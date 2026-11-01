@@ -8,7 +8,7 @@ class AddStoreItem extends StatelessWidget {
 
   final VoidCallback? onTap;
 
-  static const double _circleSize = 140;
+  static const double _circleSize = 120;
 
   @override
   Widget build(BuildContext context) {
@@ -29,11 +29,12 @@ class AddStoreItem extends StatelessWidget {
             child: const Icon(
               Icons.add_rounded,
               color: AppColors.ink,
-              size: 56,
+              size: 48,
             ),
           ),
-          const SizedBox(height: 14),
-          const Text(
+          const SizedBox(height: 8),
+          const Flexible(
+            child: Text(
             'Nueva Tienda',
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -41,6 +42,7 @@ class AddStoreItem extends StatelessWidget {
               fontWeight: FontWeight.w700,
               color: AppColors.ink,
               height: 1.2,
+            ),
             ),
           ),
         ],
