@@ -81,3 +81,4 @@ ios/Podfile
 ios/Podfile.lock
 ios/Pods/
 .symlinks/
+android/.kotlin/
