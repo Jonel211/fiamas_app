@@ -9,18 +9,22 @@ class ClienteProvider extends ChangeNotifier {
   final Dio _dio = DioClient.create();
 
   List<ClienteModel> _clientes = [];
+  List<ClienteModel> _clientesConDeuda = [];
   List<ClienteModel> _recientes = [];
   List<Debt> _fiadosCliente = [];
   bool _isLoading = false;
+  bool _isLoadingConDeuda = false;
   bool _isLoadingRecientes = false;
   bool _isCreating = false;
   bool _isLoadingFiados = false;
   String? _error;
+  String? _errorConDeuda;
   String? _errorFiados;
 
   // Última tienda pedida: evita que una respuesta tardía de otra tienda
   // reemplace la lista actual.
   String? _tiendaClientesId;
+  String? _tiendaConDeudaId;
 
   // Nombre y teléfono del cliente cuyos fiados se están viendo.
   String _fiadosNombre = 'Cliente';
@@ -31,25 +35,32 @@ class ClienteProvider extends ChangeNotifier {
   String? _tiendaIdCargada;
 
   List<ClienteModel> get clientes => _clientes;
+  List<ClienteModel> get clientesConDeuda => _clientesConDeuda;
   List<ClienteModel> get recientes => _recientes;
   List<Debt> get fiadosCliente => _fiadosCliente;
   bool get isLoading => _isLoading;
+  bool get isLoadingConDeuda => _isLoadingConDeuda;
   bool get isLoadingRecientes => _isLoadingRecientes;
   bool get isCreating => _isCreating;
   bool get isLoadingFiados => _isLoadingFiados;
   String? get error => _error;
+  String? get errorConDeuda => _errorConDeuda;
   String? get errorFiados => _errorFiados;
   Map<String, dynamic>? get resumenCliente => _resumenCliente;
   bool get isLoadingResumen => _isLoadingResumen;
   String? get tiendaIdCargada => _tiendaIdCargada;
+  String? get tiendaConDeudaId => _tiendaConDeudaId;
 
   void limpiarClientes() {
     _clientes = [];
+    _clientesConDeuda = [];
     _recientes = [];
     _fiadosCliente = [];
     _resumenCliente = null;
     _tiendaIdCargada = null;
+    _tiendaConDeudaId = null;
     _error = null;
+    _errorConDeuda = null;
     notifyListeners();
   }
 
@@ -79,8 +90,10 @@ class ClienteProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response =
-          await _dio.get('/clientes', queryParameters: {'tienda_id': tiendaId});
+      final response = await _dio.get(
+        '/clientes',
+        queryParameters: {'tienda_id': tiendaId},
+      );
 
       // Si mientras tanto se pidió otra tienda, ignora esta respuesta
       if (_tiendaClientesId != tiendaId) return;
@@ -109,13 +122,61 @@ class ClienteProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> cargarClientesConDeuda(String tiendaId) async {
+    if (_tiendaConDeudaId != tiendaId) {
+      _clientesConDeuda = [];
+    }
+    _tiendaConDeudaId = tiendaId;
+    _isLoadingConDeuda = true;
+    _errorConDeuda = null;
+    notifyListeners();
+
+    try {
+      final response = await _dio.get(
+        '/clientes',
+        queryParameters: {
+          'tienda_id': tiendaId,
+          'con_deuda': true,
+          'orden': 'saldo_desc',
+        },
+      );
+
+      if (_tiendaConDeudaId != tiendaId) return;
+
+      final List<dynamic> data = response.data['clientes'] ?? [];
+      _clientesConDeuda = data
+          .map((json) => ClienteModel.fromJson(json))
+          .toList();
+    } on DioException catch (e) {
+      if (_tiendaConDeudaId == tiendaId) {
+        _errorConDeuda = _mensajeError(
+          e,
+          'Error al cargar los clientes con deuda',
+        );
+        _clientesConDeuda = [];
+      }
+    } catch (e) {
+      if (_tiendaConDeudaId == tiendaId) {
+        _errorConDeuda = 'Error desconocido: $e';
+        _clientesConDeuda = [];
+      }
+    } finally {
+      if (_tiendaConDeudaId == tiendaId) {
+        _isLoadingConDeuda = false;
+        notifyListeners();
+      }
+    }
+  }
+
   Future<void> cargarRecientes(String tiendaId, {int limit = 4}) async {
     _isLoadingRecientes = true;
     notifyListeners();
 
     try {
-      final response = await _dio.get('/clientes/recientes',
-          queryParameters: {'tienda_id': tiendaId, 'limit': limit});
+      final response = await _dio.get(
+        '/clientes/recientes',
+        queryParameters: {'tienda_id': tiendaId, 'limit': limit},
+      );
       final List<dynamic> data = response.data['clientes'] ?? [];
       _recientes = data.map((json) => ClienteModel.fromJson(json)).toList();
     } catch (_) {
@@ -139,14 +200,17 @@ class ClienteProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _dio.post('/clientes', data: {
-        'nombres': nombres,
-        'apellidos': apellidos,
-        'telefono': telefono,
-        'limite_credito': limiteCredito,
-        'tienda_id': tiendaId,
-        'direccion': direccion,
-      });
+      await _dio.post(
+        '/clientes',
+        data: {
+          'nombres': nombres,
+          'apellidos': apellidos,
+          'telefono': telefono,
+          'limite_credito': limiteCredito,
+          'tienda_id': tiendaId,
+          'direccion': direccion,
+        },
+      );
 
       await cargarClientes(tiendaId);
       await cargarRecientes(tiendaId);
@@ -169,8 +233,10 @@ class ClienteProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _dio.get('/clientes/$clienteId/resumen',
-          queryParameters: {'tienda_id': tiendaId});
+      final response = await _dio.get(
+        '/clientes/$clienteId/resumen',
+        queryParameters: {'tienda_id': tiendaId},
+      );
       _resumenCliente = response.data;
     } catch (e) {
       _resumenCliente = null;
@@ -196,11 +262,14 @@ class ClienteProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _dio.get('/clientes/$clienteId/fiados',
-          queryParameters: {'tienda_id': tiendaId});
+      final response = await _dio.get(
+        '/clientes/$clienteId/fiados',
+        queryParameters: {'tienda_id': tiendaId},
+      );
 
       debugPrint(
-          '>>> FIADOS cliente=$clienteId tienda=$tiendaId total=${response.data['total']}');
+        '>>> FIADOS cliente=$clienteId tienda=$tiendaId total=${response.data['total']}',
+      );
 
       final List<dynamic> data = response.data['fiados'] ?? [];
 
@@ -239,7 +308,8 @@ class ClienteProvider extends ChangeNotifier {
       }).toList();
     } on DioException catch (e) {
       debugPrint(
-          'ERROR AL CARGAR FIADOS: status=${e.response?.statusCode} body=${e.response?.data}');
+        'ERROR AL CARGAR FIADOS: status=${e.response?.statusCode} body=${e.response?.data}',
+      );
       _errorFiados = _mensajeError(e, 'No se pudieron cargar los fiados.');
       _fiadosCliente = [];
     } catch (e) {
@@ -253,10 +323,15 @@ class ClienteProvider extends ChangeNotifier {
   }
 
   Future<bool> actualizarLimiteCredito(
-      String clienteId, String tiendaId, double nuevoLimite) async {
+    String clienteId,
+    String tiendaId,
+    double nuevoLimite,
+  ) async {
     try {
-      await _dio.put('/clientes/$clienteId/tiendas/$tiendaId',
-          data: {'limite_credito': nuevoLimite});
+      await _dio.put(
+        '/clientes/$clienteId/tiendas/$tiendaId',
+        data: {'limite_credito': nuevoLimite},
+      );
       await cargarClientes(tiendaId);
       if (_resumenCliente != null) {
         await cargarResumenCliente(clienteId, tiendaId);
@@ -276,14 +351,17 @@ class ClienteProvider extends ChangeNotifier {
     required String clienteId,
   }) async {
     try {
-      await _dio.post('/pagos', data: {
-        'fiado_id': fiadoId,
-        'monto': monto,
-        'metodo_pago': metodoPago,
-        'referencia': (referencia == null || referencia.trim().isEmpty)
-            ? null
-            : referencia,
-      });
+      await _dio.post(
+        '/pagos',
+        data: {
+          'fiado_id': fiadoId,
+          'monto': monto,
+          'metodo_pago': metodoPago,
+          'referencia': (referencia == null || referencia.trim().isEmpty)
+              ? null
+              : referencia,
+        },
+      );
 
       await cargarFiadosCliente(clienteId, tiendaId);
       await cargarResumenCliente(clienteId, tiendaId);
@@ -292,7 +370,8 @@ class ClienteProvider extends ChangeNotifier {
       return true;
     } on DioException catch (e) {
       debugPrint(
-          'ERROR AL REGISTRAR PAGO: status=${e.response?.statusCode} body=${e.response?.data}');
+        'ERROR AL REGISTRAR PAGO: status=${e.response?.statusCode} body=${e.response?.data}',
+      );
       return false;
     } catch (e) {
       debugPrint('ERROR AL REGISTRAR PAGO: $e');
