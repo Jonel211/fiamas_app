@@ -30,7 +30,6 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _cargarDatos());
   }
 
-  // Ahora es async y espera a que el backend responda
   Future<void> _cargarDatos() async {
     final tiendaId = context.read<TiendaProvider>().tiendaSeleccionadaId ??
         context.read<AuthProvider>().user?.tiendaId;
@@ -39,7 +38,6 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
       await provider.cargarClientes(tiendaId); // para el buscador
       await provider.cargarRecientes(tiendaId, limit: 4); // para "Recientes"
       
-      // Forzamos el redibujado para que aparezca el cliente nuevo
       if (mounted) setState(() {});
     }
   }
@@ -121,20 +119,38 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
 
                     Consumer<ClienteProvider>(
                       builder: (context, provider, _) {
-                        if (provider.error != null) {
+                        // 1. Mostrar carga solo si la lista está completamente vacía
+                        if (provider.isLoading && provider.clientes.isEmpty) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 24),
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+
+                        //  2. Mostrar error SOLO si hay error Y la lista está vacía (sin caché)
+                        if (provider.error != null && provider.clientes.isEmpty) {
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 24),
                             child: Center(
-                              child: Text(
-                                provider.error!,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.red),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    provider.error!,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(color: Colors.red),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton(
+                                    onPressed: _cargarDatos,
+                                    child: const Text('Reintentar'),
+                                  )
+                                ],
                               ),
                             ),
                           );
                         }
 
-                        // MODO BÚSQUEDA
+                        //  3. MODO BÚSQUEDA (Funciona con datos de red o caché)
                         if (buscando) {
                           final resultados = provider.buscarClienteLocal(query);
                           final puedeRegistrar =
@@ -152,7 +168,7 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
                                       arguments: query,
                                     );
                                     if (!mounted) return;
-                                    await _cargarDatos(); // Refresca la lista al volver
+                                    await _cargarDatos();
                                   },
                                 ),
 
@@ -179,7 +195,7 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
                           );
                         }
 
-                        // MODO RECIENTES
+                        //  4. MODO RECIENTES (O fallback a los primeros del caché si no hay recientes)
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
@@ -194,12 +210,12 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
                             ),
                             const SizedBox(height: 12),
 
-                            if (provider.isLoadingRecientes)
+                            if (provider.isLoadingRecientes && provider.recientes.isEmpty && provider.clientes.isEmpty)
                               const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 24),
                                 child: Center(child: CircularProgressIndicator()),
                               )
-                            else if (provider.recientes.isEmpty)
+                            else if (provider.recientes.isEmpty && provider.clientes.isEmpty)
                               const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 24),
                                 child: Center(
@@ -211,7 +227,10 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
                                 ),
                               )
                             else
-                              for (final cliente in provider.recientes)
+                              // Muestra recientes si existen, si no, muestra los primeros 4 del caché general
+                              for (final cliente in provider.recientes.isNotEmpty 
+                                  ? provider.recientes 
+                                  : provider.clientes.take(4))
                                 RecentClientCard(
                                   name: cliente.nombreCompleto,
                                   phone: cliente.telefono,

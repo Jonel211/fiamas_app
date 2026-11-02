@@ -8,7 +8,7 @@ import '../../../inventory/domain/inventory_provider.dart';
 import '../../../inventory/domain/product.dart';
 import '../widgets/scanner_tab.dart';
 import '../widgets/product_catalog_tab.dart';
-import '../widgets/weight_product_bottom_sheet.dart'; 
+import '../widgets/weight_product_bottom_sheet.dart';
 
 class ScannerViewScreen extends StatefulWidget {
   final ClienteModel cliente;
@@ -26,11 +26,18 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final tiendaId = context.read<TiendaProvider>().tiendaSeleccionadaId ??
-          context.read<AuthProvider>().user?.tiendaId;
-      if (tiendaId != null) {
-        context.read<InventoryProvider>().loadProducts(); 
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final authProvider = context.read<AuthProvider>();
+      final tiendaProvider = context.read<TiendaProvider>();
+      final inventoryProvider = context.read<InventoryProvider>();
+
+      final tiendaId = tiendaProvider.tiendaSeleccionadaId ?? authProvider.user?.tiendaId;
+      final token = authProvider.token;
+
+      if (tiendaId != null && token != null) {
+        inventoryProvider.updateTiendaContext(token, tiendaId);
+        await inventoryProvider.loadProducts();
       }
     });
   }
@@ -47,28 +54,20 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
         _cartItems[index]['qty'] += 1.0;
       } else {
         _cartItems.add({
-          'producto_id': product.id,
-          'name': product.nombre,
-          'price': product.precioVenta,
-          'qty': 1.0,
-          'isWeight': false,
-          'imagenUrl': product.imagenUrl,
+          'producto_id': product.id, 'name': product.nombre, 'price': product.precioVenta,
+          'qty': 1.0, 'isWeight': false, 'imagenUrl': product.imagenUrl,
         });
       }
     });
   }
 
-  // Funcion que recibe el producto pesado con su cantidad
   void _addToCartWithQuantity(Map<String, dynamic> cartItem) {
     setState(() {
       int index = _cartItems.indexWhere((item) => item['producto_id'] == cartItem['producto_id']);
       if (index >= 0) {
         _cartItems[index]['qty'] += cartItem['qty'];
       } else {
-        _cartItems.add({
-          ...cartItem,
-          'isWeight': true, // Declarado por kilo
-        });
+        _cartItems.add({...cartItem, 'isWeight': true});
       }
     });
   }
@@ -80,11 +79,8 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
     });
   }
 
-  // NUEVO: Funcion para eliminar un item del carrito
   void _removeItem(int index) {
-    setState(() {
-      _cartItems.removeAt(index);
-    });
+    setState(() { _cartItems.removeAt(index); });
   }
 
   void _editWeightItem(int index) {
@@ -93,17 +89,11 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
     final product = inventory.products.firstWhere((p) => p.id == item['producto_id']);
 
     showModalBottomSheet<Map<String, dynamic>>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => WeightProductBottomSheet(
-        product: product,
-        initialQty: (item['qty'] as num).toDouble(),
-      ),
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (_) => WeightProductBottomSheet(product: product, initialQty: (item['qty'] as num).toDouble()),
     ).then((result) {
       if (result != null && mounted) {
         setState(() {
-          // Si el modal devuelve qty 0, significa que se debe eliminar
           if (result['qty'] <= 0) {
             _cartItems.removeAt(index);
           } else {
@@ -127,24 +117,12 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: Icon(Icons.arrow_back_ios_new_rounded, color: isDark ? Colors.white : AppColors.ink),
-                  ),
+                  IconButton(onPressed: () => Navigator.of(context).pop(), icon: Icon(Icons.arrow_back_ios_new_rounded, color: isDark ? Colors.white : AppColors.ink)),
                   Expanded(
                     child: Container(
                       height: 44,
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withOpacity(0.1) : Colors.white,
-                        borderRadius: BorderRadius.circular(22),
-                        border: isDark ? null : Border.all(color: AppColors.mist),
-                      ),
-                      child: Row(
-                        children: [
-                          _buildTopTab('Escanear', 0, isDark),
-                          _buildTopTab('Productos', 1, isDark),
-                        ],
-                      ),
+                      decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white, borderRadius: BorderRadius.circular(22), border: isDark ? null : Border.all(color: AppColors.mist)),
+                      child: Row(children: [_buildTopTab('Escanear', 0, isDark), _buildTopTab('Productos', 1, isDark)]),
                     ),
                   ),
                 ],
@@ -155,23 +133,8 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
                 controller: _pageController,
                 onPageChanged: (index) => setState(() => _currentIndex = index),
                 children: [
-                  ScannerTab(
-                    cliente: widget.cliente,
-                    cartItems: _cartItems,
-                    onUpdateQuantity: _updateQuantity,
-                    onProductScanned: _addToCart,
-                    onEditWeightItem: _editWeightItem,
-                    onRemoveItem: _removeItem, // LE PASAMOS LA FUNCION
-                  ),
-                  ProductCatalogTab(
-                    cliente: widget.cliente,
-                    cartItems: _cartItems,
-                    onAdd: _addToCart,
-                    onAddWithQuantity: _addToCartWithQuantity, // Le pasamos la función de por kilo
-                    onUpdateQuantity: _updateQuantity,
-                    onEditWeightItem: _editWeightItem,
-                    onRemoveItem: _removeItem, // LE PASAMOS LA FUNCION
-                  ),
+                  ScannerTab(cliente: widget.cliente, cartItems: _cartItems, onUpdateQuantity: _updateQuantity, onProductScanned: _addToCart, onEditWeightItem: _editWeightItem, onRemoveItem: _removeItem),
+                  ProductCatalogTab(cliente: widget.cliente, cartItems: _cartItems, onAdd: _addToCart, onAddWithQuantity: _addToCartWithQuantity, onUpdateQuantity: _updateQuantity, onEditWeightItem: _editWeightItem, onRemoveItem: _removeItem),
                 ],
               ),
             ),
@@ -187,22 +150,9 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
       child: GestureDetector(
         onTap: () => _changeTab(index),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          margin: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: isActive ? (isDark ? Colors.white : AppColors.teal) : Colors.transparent,
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Center(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-                color: isActive ? (isDark ? AppColors.ink : Colors.white) : (isDark ? Colors.white70 : AppColors.inkMuted),
-              ),
-            ),
-          ),
+          duration: const Duration(milliseconds: 300), margin: const EdgeInsets.all(4),
+          decoration: BoxDecoration(color: isActive ? (isDark ? Colors.white : AppColors.teal) : Colors.transparent, borderRadius: BorderRadius.circular(18)),
+          child: Center(child: Text(text, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: isActive ? (isDark ? AppColors.ink : Colors.white) : (isDark ? Colors.white70 : AppColors.inkMuted)))),
         ),
       ),
     );

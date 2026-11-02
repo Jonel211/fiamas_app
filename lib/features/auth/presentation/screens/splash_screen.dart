@@ -55,10 +55,13 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _runSequence() async {
-    // 1. Verificamos sesión y precargamos el logo en paralelo
+    // 1. Iniciamos la verificación de sesión en segundo plano
     final authFuture = context.read<AuthProvider>().checkAuthStatus();
+    
+    // Precargamos el logo
     await _precache(_logo);
 
+    // --- ANIMACIÓN ORIGINAL RESTAURADA ---
     await Future.delayed(_beforeLogo);
     if (!mounted) return;
     setState(() => _logoVisible = true);
@@ -70,10 +73,21 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(_withSpinner);
     if (!mounted) return;
 
-    // 2. Evaluamos resultado de sesión y redirigimos
-    final isLoggedIn = await authFuture;
+    // 2. Evaluamos resultado de sesión con protección anti-crash
+    bool isLoggedIn = false;
+    try {
+      // Esperamos el resultado de la verificación
+      isLoggedIn = await authFuture;
+    } catch (e) {
+      // Si hay un error (ej. sin internet y algo falló), asumimos que NO hay sesión válida
+      // o que debe ir al login para reintentar.
+      print('⚠️ Error en checkAuthStatus: $e');
+      isLoggedIn = false;
+    }
+
     if (!mounted) return;
 
+    // 3. Redirección segura
     if (isLoggedIn) {
       _goToHome();
     } else {
@@ -116,7 +130,7 @@ class _SplashScreenState extends State<SplashScreen>
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // Spinner de puntos giratorio basado en tu referencia
+              // Spinner de puntos giratorio
               AnimatedOpacity(
                 opacity: _showSpinner ? 1 : 0,
                 duration: const Duration(milliseconds: 400),

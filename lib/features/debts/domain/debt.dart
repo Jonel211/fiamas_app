@@ -41,7 +41,7 @@ class DebtItem {
   });
 
   final String productName;
-  final double quantity; // ✅ CAMBIADO A DOUBLE
+  final double quantity;
   final double unitPrice;
 
   double get subtotal => quantity * unitPrice;
