@@ -1,44 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/utils/whatsapp_reminder.dart';
 import '../../../../core/widgets/app_header_config.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/data/models/cliente_model.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
-
-enum _TonoMensaje {
-  respetuosa('Respetuosa'),
-  firme('Firme'),
-  urgente('Urgente');
-
-  const _TonoMensaje(this.label);
-
-  final String label;
-
-  String mensaje({
-    required String nombreCliente,
-    required String deuda,
-    required String nombreTienda,
-  }) {
-    switch (this) {
-      case _TonoMensaje.respetuosa:
-        return 'Hola $nombreCliente, ¿cómo estás? Te recordamos con cariño '
-            'que tienes una deuda pendiente de S/ $deuda en $nombreTienda. '
-            '¡Gracias!';
-      case _TonoMensaje.firme:
-        return 'Hola $nombreCliente, te escribimos de $nombreTienda para '
-            'recordarte que tienes una deuda pendiente de S/ $deuda. '
-            'Te agradecemos regularizarlo a la brevedad.';
-      case _TonoMensaje.urgente:
-        return 'Hola $nombreCliente, tu deuda pendiente de S/ $deuda en '
-            '$nombreTienda requiere atención inmediata. Por favor, '
-            'comunícate con nosotros hoy para regularizarlo.';
-    }
-  }
-}
 
 class WhatsappCollectionScreen extends StatefulWidget {
   const WhatsappCollectionScreen({super.key});
@@ -49,7 +18,7 @@ class WhatsappCollectionScreen extends StatefulWidget {
 }
 
 class _WhatsappCollectionScreenState extends State<WhatsappCollectionScreen> {
-  _TonoMensaje _tono = _TonoMensaje.respetuosa;
+  TonoRecordatorio _tono = TonoRecordatorio.respetuosa;
   final Set<String> _recordados = <String>{};
   String? _tiendaCargada;
 
@@ -85,15 +54,8 @@ class _WhatsappCollectionScreenState extends State<WhatsappCollectionScreen> {
     await context.read<ClienteProvider>().cargarClientesConDeuda(tiendaId);
   }
 
-  String _normalizarTelefono(String telefono) {
-    final digitos = telefono.replaceAll(RegExp(r'\D'), '');
-    if (digitos.isEmpty) return '';
-    if (digitos.length == 9) return '51$digitos';
-    return digitos;
-  }
-
   Future<void> _recordar(ClienteModel cliente, String nombreTienda) async {
-    final telefono = _normalizarTelefono(cliente.telefono);
+    final telefono = normalizarTelefonoWhatsapp(cliente.telefono);
     if (telefono.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -113,16 +75,10 @@ class _WhatsappCollectionScreenState extends State<WhatsappCollectionScreen> {
       deuda: deudaActual,
       nombreTienda: nombreTienda,
     );
-    final uri = Uri.parse(
-      'https://wa.me/$telefono?text=${Uri.encodeComponent(mensaje)}',
+    final abierto = await abrirWhatsapp(
+      telefono: cliente.telefono,
+      mensaje: mensaje,
     );
-
-    var abierto = false;
-    try {
-      abierto = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (_) {
-      abierto = false;
-    }
 
     if (!mounted) return;
 
@@ -237,20 +193,20 @@ class _WhatsappCollectionScreenState extends State<WhatsappCollectionScreen> {
 class _TonoChip extends StatelessWidget {
   const _TonoChip({required this.tono, required this.onSelected});
 
-  final _TonoMensaje tono;
-  final ValueChanged<_TonoMensaje> onSelected;
+  final TonoRecordatorio tono;
+  final ValueChanged<TonoRecordatorio> onSelected;
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<_TonoMensaje>(
+    return PopupMenuButton<TonoRecordatorio>(
       onSelected: onSelected,
       position: PopupMenuPosition.under,
       color: AppColors.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       itemBuilder: (context) {
-        return _TonoMensaje.values.map((opcion) {
+        return TonoRecordatorio.values.map((opcion) {
           final seleccionado = opcion == tono;
-          return PopupMenuItem<_TonoMensaje>(
+          return PopupMenuItem<TonoRecordatorio>(
             value: opcion,
             child: Row(
               children: [
