@@ -109,7 +109,7 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
         await _registrarOffline(tiendaId, tenderoId, fechaFormateada, productosParaBackend);
       }
     } catch (e) {
-      debugPrint('⚠️ Error detectado, guardando offline: $e');
+      debugPrint(' Error detectado, guardando offline: $e');
       await _registrarOffline(tiendaId, tenderoId, fechaFormateada, productosParaBackend);
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -134,46 +134,85 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
       if (e.response?.statusCode == 400 && e.response?.data['error'].toString().contains('límite') == true) {
         _mostrarDialogoLimiteExcedido();
       } else {
-        debugPrint('⚠️ Falló online, guardando offline: $e');
+        debugPrint(' Falló online, guardando offline: $e');
         final tenderoId = context.read<AuthProvider>().user?.id ?? 'unknown';
         await _registrarOffline(tiendaId, tenderoId, fechaFormateada, productosParaBackend);
       }
     } catch (e) {
-      debugPrint('⚠️ Falló online, guardando offline: $e');
+      debugPrint(' Falló online, guardando offline: $e');
       final tenderoId = context.read<AuthProvider>().user?.id ?? 'unknown';
       await _registrarOffline(tiendaId, tenderoId, fechaFormateada, productosParaBackend);
     }
   }
 
-  Future<void> _registrarOffline(String tiendaId, String tenderoId, String fechaFormateada, List<dynamic> productosParaBackend) async {
+  Future<void> _registrarOffline(
+    String tiendaId,
+    String tenderoId,
+    String fechaFormateada,
+    List<dynamic> productosParaBackend,
+  ) async {
     final localFiadoId = const Uuid().v4();
     final numeroFiadoLocal = 'F-OFF-${DateTime.now().millisecondsSinceEpoch}';
     final fechaActual = DateTime.now().toIso8601String();
-    double montoTotal = _cartItems.fold(0, (sum, item) => sum + (item['price'] * item['qty']));
+    double montoTotal = _cartItems.fold(
+      0,
+      (sum, item) => sum + (item['price'] * item['qty']),
+    );
 
+    //  IDs REALES, NUNCA 'pendiente'
     await _dbHelper.saveFiado({
-      'id': localFiadoId, 'cliente_id': _cliente.id, 'tienda_id': tiendaId, 'tendero_id': tenderoId,
-      'numero_fiado': numeroFiadoLocal, 'monto_total': montoTotal, 'monto_pagado': 0.0,
-      'estado': 'pendiente', 'fecha_fiado': fechaActual, 'fecha_vencimiento': fechaFormateada,
-      'notas': '', 'creado_en': fechaActual,
+      'id': localFiadoId,
+      'cliente_id': _cliente.id,
+      'tienda_id': tiendaId,
+      'tendero_id': tenderoId,
+      'numero_fiado': numeroFiadoLocal,
+      'monto_total': montoTotal,
+      'monto_pagado': 0.0,
+      'estado': 'pendiente',
+      'fecha_fiado': fechaActual,
+      'fecha_vencimiento': fechaFormateada,
+      'notas': '',
+      'creado_en': fechaActual,
     });
 
     for (var item in _cartItems) {
       await _dbHelper.saveFiadoDetalle({
-        'id': const Uuid().v4(), 'fiado_id': localFiadoId, 'producto_id': item['producto_id'],
-        'nombre_producto': item['name'], 'cantidad': item['qty'],
-        'precio_unitario': item['price'], 'subtotal': item['price'] * item['qty'],
+        'id': const Uuid().v4(),
+        'fiado_id': localFiadoId,
+        'producto_id': item['producto_id'],
+        'nombre_producto': item['name'],
+        'cantidad': item['qty'],
+        'precio_unitario': item['price'],
+        'subtotal': item['price'] * item['qty'],
       });
     }
 
-    await _syncService.addToQueue(SyncOperation(
-      type: 'create_fiado', entity: 'fiado', entityId: localFiadoId,
-      payload: {'cliente_id': _cliente.id, 'tienda_id': tiendaId, 'fecha_vencimiento': fechaFormateada, 'productos': productosParaBackend},
-    ));
+    await _syncService.addToQueue(
+      SyncOperation(
+        type: 'create_fiado',
+        entity: 'fiado',
+        entityId: localFiadoId,
+        payload: {
+          'cliente_id': _cliente.id,
+          'tienda_id': tiendaId,
+          'fecha_vencimiento': fechaFormateada,
+          'productos': productosParaBackend,
+        },
+      ),
+    );
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✓ Fiado guardado localmente. Se sincronizará al tener internet.'), backgroundColor: Colors.orange, duration: Duration(seconds: 3)));
-      Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.summary, (route) => false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            '✓ Fiado guardado localmente. Se sincronizará al tener internet.',
+          ),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      Navigator.of(context)
+          .pushNamedAndRemoveUntil(AppRoutes.summary, (route) => false);
     }
   }
 

@@ -13,6 +13,7 @@ import 'product_detail_screen.dart';
 
 class ProductsScreen extends StatefulWidget {
   const ProductsScreen({super.key});
+
   @override
   State<ProductsScreen> createState() => _ProductsScreenState();
 }
@@ -21,7 +22,6 @@ class _ProductsScreenState extends State<ProductsScreen> with WidgetsBindingObse
   final _search = TextEditingController();
   String _query = '';
   
-  // Variables de filtros
   String? _selectedCategory;
   String _selectedStatus = 'todos';
   String _selectedSort = 'nombre_asc';
@@ -40,35 +40,50 @@ class _ProductsScreenState extends State<ProductsScreen> with WidgetsBindingObse
 
     if (currentTiendaId != null && token != null && mounted) {
       inventoryProvider.updateTiendaContext(token, currentTiendaId);
+      
       if (!_hasLoadedOnce || forceRefresh) {
-        await Future.wait([inventoryProvider.loadProducts(), inventoryProvider.loadCategories()]);
+        await Future.wait([
+          inventoryProvider.loadProducts(),
+          inventoryProvider.loadCategories(),
+        ]);
         _hasLoadedOnce = true;
       }
     }
   }
 
-  Future<void> _onRefresh() async { await _loadDataForCurrentStore(forceRefresh: true); }
+  Future<void> _onRefresh() async {
+    await _loadDataForCurrentStore(forceRefresh: true);
+  }
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) _loadDataForCurrentStore(); });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadDataForCurrentStore();
+    });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) _loadDataForCurrentStore(); });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _loadDataForCurrentStore();
+      });
     }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final authProvider = context.watch<AuthProvider>();
     final tiendaProvider = context.watch<TiendaProvider>();
-    if (tiendaProvider.tiendaSeleccionadaId != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) _loadDataForCurrentStore(); });
+    final currentTiendaId = tiendaProvider.tiendaSeleccionadaId ?? authProvider.tiendaId;
+
+    if (currentTiendaId != null && authProvider.token != null && !_hasLoadedOnce) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _loadDataForCurrentStore();
+      });
     }
   }
 
@@ -84,15 +99,26 @@ class _ProductsScreenState extends State<ProductsScreen> with WidgetsBindingObse
     final categoriasActivas = provider.categories.where((c) => c.activo).toList();
 
     showModalBottomSheet(
-      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20))),
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+      ),
       builder: (context) => FilterBottomSheet(
-        categories: categoriasActivas, selectedCategory: _selectedCategory, selectedStatus: _selectedStatus,
-        selectedSort: _selectedSort, minPrice: _minPrice, maxPrice: _maxPrice,
+        categories: categoriasActivas,
+        selectedCategory: _selectedCategory,
+        selectedStatus: _selectedStatus,
+        selectedSort: _selectedSort,
+        minPrice: _minPrice,
+        maxPrice: _maxPrice,
         onApplyFilters: (options) {
           setState(() {
-            _selectedCategory = options.category; _selectedStatus = options.status;
-            _selectedSort = options.sort; _minPrice = options.minPrice; _maxPrice = options.maxPrice;
+            _selectedCategory = options.category;
+            _selectedStatus = options.status;
+            _selectedSort = options.sort;
+            _minPrice = options.minPrice;
+            _maxPrice = options.maxPrice;
           });
         },
       ),
@@ -103,7 +129,9 @@ class _ProductsScreenState extends State<ProductsScreen> with WidgetsBindingObse
     try {
       await context.read<InventoryProvider>().toggleProductActive(product.id, nuevoEstado);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(nuevoEstado ? 'Producto activado' : 'Producto desactivado'), duration: const Duration(seconds: 2)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(nuevoEstado ? 'Producto activado' : 'Producto desactivado'), duration: const Duration(seconds: 2)),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -133,19 +161,24 @@ class _ProductsScreenState extends State<ProductsScreen> with WidgetsBindingObse
   }
 
   void _toggleCategory(String category) { setState(() => _selectedCategory = _selectedCategory == category ? null : category); }
+  
   void _clearFilters() {
     _search.clear(); FocusScope.of(context).unfocus();
     setState(() { _query = ''; _selectedCategory = null; _selectedStatus = 'todos'; _selectedSort = 'nombre_asc'; _minPrice = null; _maxPrice = null; });
   }
+  
   void _openDetail(Product product) { Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProductDetailScreen(product: product))); }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<InventoryProvider>(
       builder: (context, provider, child) {
+        //  CORRECCIÓN: Solo mostrar spinner si NO hay productos en caché
+        // Si hay productos (del caché), mostrarlos inmediatamente aunque esté cargando de la API
         if (provider.isLoading && provider.products.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
+        
         if (provider.error != null && provider.products.isEmpty) {
           return Center(
             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [

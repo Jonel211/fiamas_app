@@ -12,6 +12,7 @@ class ConnectionBanner extends StatefulWidget {
 class _ConnectionBannerState extends State<ConnectionBanner> {
   bool _isConnected = true;
   bool _serviceReady = false;
+  bool _isSyncing = false;
 
   @override
   void initState() {
@@ -22,14 +23,12 @@ class _ConnectionBannerState extends State<ConnectionBanner> {
   Future<void> _setupConnectivity() async {
     final service = ConnectivityService();
     
-    // Si el servicio ya está inicializado, usar el estado conocido
     if (service.isInitialized) {
       setState(() {
         _isConnected = service.lastKnownStatus;
         _serviceReady = true;
       });
     } else {
-      // Si no está inicializado, esperar a que lo esté
       await service.init();
       setState(() {
         _isConnected = service.lastKnownStatus;
@@ -37,7 +36,6 @@ class _ConnectionBannerState extends State<ConnectionBanner> {
       });
     }
 
-    // Escuchar cambios futuros
     service.connectionStatusStream.listen((connected) {
       if (mounted) {
         setState(() => _isConnected = connected);
@@ -45,9 +43,36 @@ class _ConnectionBannerState extends State<ConnectionBanner> {
     });
   }
 
+  Future<void> _handleSync() async {
+    setState(() => _isSyncing = true);
+    
+    final syncService = SyncService();
+    await syncService.forceSync();
+    
+    if (mounted) {
+      setState(() => _isSyncing = false);
+      
+      final pendingCount = await syncService.getPendingCount();
+      if (pendingCount == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Todos los datos sincronizados'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('⚠️ Quedan $pendingCount operaciones pendientes'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Mientras el servicio no esté listo, no mostrar nada
     if (!_serviceReady) {
       return const SizedBox.shrink();
     }
@@ -76,19 +101,27 @@ class _ConnectionBannerState extends State<ConnectionBanner> {
               textAlign: TextAlign.center,
             ),
           ),
+          const SizedBox(width: 8),
           TextButton(
-            onPressed: () {
-              SyncService().forceSync();
-            },
-            child: const Text(
-              'Sincronizar',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-                decoration: TextDecoration.underline,
-              ),
-            ),
+            onPressed: _isSyncing ? null : _handleSync,
+            child: _isSyncing
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text(
+                    'Sincronizar',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
           ),
         ],
       ),

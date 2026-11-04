@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as dev;
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 class ConnectivityService {
@@ -15,41 +16,34 @@ class ConnectivityService {
 
   Future<void> init() async {
     if (_isInitialized) return;
-    
-    // Verificar estado inicial
-    _lastKnownStatus = await _checkConnection();
+
+    _lastKnownStatus = await _hasConnection();
     _isInitialized = true;
-    
-    // Emitir estado inicial
     _connectionStatusController.add(_lastKnownStatus);
 
-    // Escuchar cambios de conectividad
-    _connectivity.onConnectivityChanged.listen((List<ConnectivityResult> results) {
+    _connectivity.onConnectivityChanged.listen((List<ConnectivityResult> results) async {
       final result = results.first;
-      final isConnected = result != ConnectivityResult.none;
-      
-      if (isConnected != _lastKnownStatus) {
-        _lastKnownStatus = isConnected;
-        _connectionStatusController.add(isConnected);
-      }
+      _lastKnownStatus = (result != ConnectivityResult.none);
+      _connectionStatusController.add(_lastKnownStatus);
     });
   }
 
   Future<bool> isConnected() async {
-    return await _checkConnection();
+    return await _hasConnection();
+  }
+
+  Future<bool> _hasConnection() async {
+    try {
+      final results = await _connectivity.checkConnectivity();
+      return results != ConnectivityResult.none;
+    } catch (e) {
+      dev.log('Error verificando conexión: $e', name: 'CONNECTIVITY');
+      return false;
+    }
   }
 
   bool get isInitialized => _isInitialized;
   bool get lastKnownStatus => _lastKnownStatus;
-
-  Future<bool> _checkConnection() async {
-    try {
-      final result = await _connectivity.checkConnectivity();
-      return result != ConnectivityResult.none;
-    } catch (e) {
-      return false;
-    }
-  }
 
   void dispose() {
     _connectionStatusController.close();

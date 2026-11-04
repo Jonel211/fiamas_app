@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'dart:developer' as dev;
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -19,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 4, // Versión 4 para la migración de clientes
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
       onConfigure: (db) async {
@@ -29,29 +30,31 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    print('🔄 Actualizando BD de v$oldVersion a v$newVersion');
+    dev.log('🔄 Actualizando BD de v$oldVersion a v$newVersion', name: 'DB_MIGRATION');
     if (oldVersion < 2) {
       try {
         await db.execute('ALTER TABLE categorias ADD COLUMN icono TEXT');
         await db.execute('ALTER TABLE categorias ADD COLUMN color TEXT');
-      } catch (e) {
-        print('⚠️ Columnas de categorías ya existen o error: $e');
-      }
+      } catch (e) { dev.log('⚠️ Columnas categorías: $e', name: 'DB_MIGRATION'); }
     }
     if (oldVersion < 3) {
-      try {
-        await db.execute(
-          'ALTER TABLE productos ADD COLUMN stock_actual INTEGER',
-        );
-      } catch (e) {
-        print('⚠️ Columna stock_actual ya existe o error: $e');
-      }
+      try { await db.execute('ALTER TABLE productos ADD COLUMN stock_actual INTEGER'); } 
+      catch (e) { dev.log('⚠️ Columna stock: $e', name: 'DB_MIGRATION'); }
+    }
+    if (oldVersion < 4) {
+      // Agregar tienda_id a clientes sin perder datos existentes
+      try { await db.execute('ALTER TABLE clientes ADD COLUMN tienda_id TEXT'); } 
+      catch (e) { dev.log('⚠️ Columna tienda_id en clientes: $e', name: 'DB_MIGRATION'); }
     }
   }
 
   Future _createDB(Database db, int version) async {
     await db.execute('''
-      CREATE TABLE clientes (id TEXT PRIMARY KEY, telefono TEXT NOT NULL, nombres TEXT NOT NULL, apellidos TEXT NOT NULL, direccion TEXT, foto_perfil_url TEXT, creado_en TEXT, limite_credito REAL, saldo_actual REAL)
+      CREATE TABLE clientes (
+        id TEXT PRIMARY KEY, tienda_id TEXT, telefono TEXT NOT NULL, nombres TEXT NOT NULL, 
+        apellidos TEXT NOT NULL, direccion TEXT, foto_perfil_url TEXT, creado_en TEXT, 
+        limite_credito REAL, saldo_actual REAL
+      )
     ''');
     await db.execute('''
       CREATE TABLE categorias (id TEXT PRIMARY KEY, tienda_id TEXT NOT NULL, nombre TEXT NOT NULL, descripcion TEXT, icono TEXT, color TEXT, activo INTEGER DEFAULT 1)
@@ -73,77 +76,53 @@ class DatabaseHelper {
     ''');
   }
 
-  // ✅ CATEGORÍAS POR TIENDA
-  Future<void> saveCategorias(
-    String tiendaId,
-    List<Map<String, dynamic>> categorias,
-  ) async {
+  // ✅ UPSERT SEGURO: Reemplaza si existe, inserta si no. No borra toda la tabla.
+  Future<void> saveClientes(String tiendaId, List<Map<String, dynamic>> clientes) async {
     final db = await database;
     await db.transaction((txn) async {
-      await txn.delete(
-        'categorias',
-        where: 'tienda_id = ?',
-        whereArgs: [tiendaId],
-      );
-      for (var cat in categorias) await txn.insert('categorias', cat);
+      for (var cliente in clientes) {
+        await txn.insert('clientes', cliente, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+    });
+  }
+
+  // ✅ FILTRADO POR TIENDA: Evita mezclar clientes de diferentes tiendas
+  Future<List<Map<String, dynamic>>> getClientes(String tiendaId) async {
+    final db = await database;
+    return await db.query('clientes', where: 'tienda_id = ?', whereArgs: [tiendaId], orderBy: 'nombres ASC');
+  }
+
+  Future<void> saveCategorias(String tiendaId, List<Map<String, dynamic>> categorias) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      for (var cat in categorias) {
+        await txn.insert('categorias', cat, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
     });
   }
 
   Future<List<Map<String, dynamic>>> getCategorias(String tiendaId) async {
     final db = await database;
-    return await db.query(
-      'categorias',
-      where: 'tienda_id = ?',
-      whereArgs: [tiendaId],
-    );
+    return await db.query('categorias', where: 'tienda_id = ?', whereArgs: [tiendaId]);
   }
 
-  // ✅ PRODUCTOS POR TIENDA
-  Future<void> saveProductos(
-    String tiendaId,
-    List<Map<String, dynamic>> productos,
-  ) async {
+  Future<void> saveProductos(String tiendaId, List<Map<String, dynamic>> productos) async {
     final db = await database;
     await db.transaction((txn) async {
-      await txn.delete(
-        'productos',
-        where: 'tienda_id = ?',
-        whereArgs: [tiendaId],
-      );
-      for (var producto in productos) await txn.insert('productos', producto);
+      for (var producto in productos) {
+        await txn.insert('productos', producto, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
     });
   }
 
   Future<List<Map<String, dynamic>>> getProductos(String tiendaId) async {
     final db = await database;
-    return await db.query(
-      'productos',
-      where: 'tienda_id = ? AND activo = ?',
-      whereArgs: [tiendaId, 1],
-    );
-  }
-
-  // ... (Mantén los demás métodos de clientes, fiados, pagos y sync_queue igual que antes) ...
-  Future<void> saveClientes(List<Map<String, dynamic>> clientes) async {
-    final db = await database;
-    await db.transaction((txn) async {
-      await txn.delete('clientes');
-      for (var cliente in clientes) await txn.insert('clientes', cliente);
-    });
-  }
-
-  Future<List<Map<String, dynamic>>> getClientes() async {
-    final db = await database;
-    return await db.query('clientes', orderBy: 'nombres ASC');
+    return await db.query('productos', where: 'tienda_id = ? AND activo = ?', whereArgs: [tiendaId, 1]);
   }
 
   Future<void> saveFiado(Map<String, dynamic> fiado) async {
     final db = await database;
-    await db.insert(
-      'fiados',
-      fiado,
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert('fiados', fiado, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<List<Map<String, dynamic>>> getFiados() async {
@@ -158,11 +137,7 @@ class DatabaseHelper {
 
   Future<void> savePago(Map<String, dynamic> pago) async {
     final db = await database;
-    await db.insert(
-      'pagos',
-      pago,
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert('pagos', pago, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<void> addToSyncQueue(Map<String, dynamic> operation) async {
@@ -172,13 +147,7 @@ class DatabaseHelper {
 
   Future<List<Map<String, dynamic>>> getPendingSyncOperations() async {
     final db = await database;
-    return await db.query(
-      'sync_queue',
-      where: 'status = ?',
-      whereArgs: ['pending'],
-      orderBy: 'created_at ASC',
-      limit: 10,
-    );
+    return await db.query('sync_queue', where: 'status = ?', whereArgs: ['pending'], orderBy: 'created_at ASC');
   }
 
   Future<void> removeSyncQueue(String id) async {
@@ -186,18 +155,9 @@ class DatabaseHelper {
     await db.delete('sync_queue', where: 'id = ?', whereArgs: [id]);
   }
 
-  Future<void> updateSyncQueueStatus(
-    String id,
-    String status,
-    int retryCount,
-  ) async {
+  Future<void> updateSyncQueueStatus(String id, String status, int retryCount) async {
     final db = await database;
-    await db.update(
-      'sync_queue',
-      {'status': status, 'retry_count': retryCount},
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    await db.update('sync_queue', {'status': status, 'retry_count': retryCount}, where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> close() async {

@@ -64,6 +64,7 @@ dependencies:
   sqflite: ^2.3.3                 # Base de datos local SQLite
   path: ^1.9.0                    # Para manejar rutas de archivos
   uuid: ^4.5.1                    # Para generar IDs únicos (UUID) para los registros locales
+  internet_connection_checker: ^3.0.1
 
 dev_dependencies:
   flutter_test:
