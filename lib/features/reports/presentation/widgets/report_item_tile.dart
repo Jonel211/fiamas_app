@@ -12,6 +12,7 @@ class ReportItemTile extends StatelessWidget {
     required this.iconColor,
     required this.iconBg,
     required this.statusColor,
+    this.onExportPdf, // NUEVO: Acción para el botón PDF
   });
 
   final String title;
@@ -22,6 +23,7 @@ class ReportItemTile extends StatelessWidget {
   final Color iconColor;
   final Color iconBg;
   final Color statusColor;
+  final VoidCallback? onExportPdf; // NUEVO
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +46,7 @@ class ReportItemTile extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Column(
-              mainAxisSize: MainAxisSize.min, // <--- ESTA ES LA SOLUCIÓN
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink)),
@@ -59,7 +61,7 @@ class ReportItemTile extends StatelessWidget {
             width: 60,
             height: 44,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: onExportPdf, // Se conecta la acción aquí
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange.withOpacity(0.1),
                 foregroundColor: Colors.orange,

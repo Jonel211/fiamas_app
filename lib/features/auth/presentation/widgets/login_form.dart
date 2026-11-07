@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/auth_field.dart';
-import '../../../../core/widgets/main_shell.dart';
+import '../../../../main.dart'; // Importante para usar AppRoutes
 import '../providers/auth_provider.dart';
 import '../screens/forgot_password_sheet.dart';
 
@@ -40,7 +40,8 @@ class _LoginFormState extends State<LoginForm> {
 
     if (!mounted) return;
     if (success) {
-      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const MainShellScreen()), (route) => false);
+      // CAMBIO: Ahora te manda a "Mis Tiendas" para que selecciones la tienda
+      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.stores, (route) => false);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.errorMessage ?? 'Error al iniciar sesión'), backgroundColor: AppColors.danger, behavior: SnackBarBehavior.floating));
     }
@@ -66,7 +67,6 @@ class _LoginFormState extends State<LoginForm> {
           Text('Inicia sesión', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: widget.onDark ? Colors.white : AppColors.ink)),
           const SizedBox(height: 24),
           
-          // ✅ TELÉFONO: Máximo 9 dígitos
           AuthField(
             label: 'Número de celular',
             controller: _phoneController,
@@ -78,7 +78,6 @@ class _LoginFormState extends State<LoginForm> {
             validator: (v) => (v == null || v.isEmpty) ? 'Ingresa tu celular' : (v.length != 9 ? 'Debe tener 9 dígitos' : null),
           ),
           
-          // ✅ CONTRASEÑA: Máximo 6 dígitos
           AuthField(
             label: 'Contraseña',
             controller: _passwordController,
