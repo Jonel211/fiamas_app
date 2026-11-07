@@ -6,7 +6,10 @@ import '../../../../core/widgets/app_header.dart';
 import '../../../../core/widgets/app_header_config.dart';
 import '../../../../main.dart';
 import '../../../auth/data/models/tienda_model.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
+import '../../../reports/data/services/reporte_service.dart'; // NUEVO
+import '../../../reports/data/models/reporte_resumen_model.dart'; // NUEVO
 import '../widgets/store_profile_header.dart';
 import '../widgets/store_profile_tiles.dart';
 import '../widgets/store_profile_stats.dart';
@@ -25,12 +28,41 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
   bool _reminders = true;
   bool _whatsapp = true;
 
+  // Variables para los datos reales
+  final _reporteService = ReporteService();
+  ReporteResumenModel? _resumen;
+  bool _isLoadingStats = true;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TiendaProvider>().cargarMisTiendas();
+      _cargarEstadisticas();
     });
+  }
+
+  Future<void> _cargarEstadisticas() async {
+    final tiendaId = context.read<TiendaProvider>().tiendaSeleccionadaId ??
+        context.read<AuthProvider>().user?.tiendaId;
+
+    if (tiendaId == null) {
+      if (mounted) setState(() => _isLoadingStats = false);
+      return;
+    }
+
+    try {
+      final data = await _reporteService.getResumenReportes(tiendaId, 'todo');
+      if (mounted) {
+        setState(() {
+          _resumen = ReporteResumenModel.fromJson(data);
+          _isLoadingStats = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingStats = false);
+      debugPrint('Error al cargar estadísticas: $e');
+    }
   }
 
   @override
@@ -145,24 +177,47 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
             ),
             const SizedBox(height: 16),
 
-            // 3. ESTADÍSTICAS
+            // 3. ESTADÍSTICAS (CONECTADAS AL BACKEND)
             _buildSectionTitle('ESTADÍSTICAS'),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.6,
-                children: const [
-                  ProfileStatCard(icon: Icons.people_outline_rounded, value: '48', label: 'Clientes'),
-                  ProfileStatCard(icon: Icons.inventory_2_outlined, value: '156', label: 'Productos'),
-                  ProfileStatCard(icon: Icons.receipt_long_outlined, value: '412', label: 'Fiados totales'),
-                  ProfileStatCard(icon: Icons.attach_money_rounded, value: 'S/ 945.50', label: 'Por cobrar'),
-                ],
-              ),
+              child: _isLoadingStats
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  : GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 1.6,
+                      children: [
+                        ProfileStatCard(
+                          icon: Icons.people_outline_rounded,
+                          value: '${_resumen?.totalClientes ?? 0}',
+                          label: 'Clientes',
+                        ),
+                        ProfileStatCard(
+                          icon: Icons.inventory_2_outlined,
+                          value: '${_resumen?.totalProductos ?? 0}',
+                          label: 'Productos',
+                        ),
+                        ProfileStatCard(
+                          icon: Icons.receipt_long_outlined,
+                          value: '${_resumen?.totalFiados ?? 0}',
+                          label: 'Fiados totales',
+                        ),
+                        ProfileStatCard(
+                          icon: Icons.attach_money_rounded,
+                          value: 'S/ ${(_resumen?.porCobrar ?? 0).toStringAsFixed(2)}',
+                          label: 'Por cobrar',
+                        ),
+                      ],
+                    ),
             ),
             const SizedBox(height: 24),
 

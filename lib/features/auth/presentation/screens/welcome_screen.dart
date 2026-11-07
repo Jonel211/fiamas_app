@@ -154,8 +154,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 }
 
-
-/// Foto de fondo con zoom animado y degradado superior.
 class _Photo extends StatelessWidget {
   const _Photo({
     required this.path,
@@ -206,7 +204,6 @@ class _Photo extends StatelessWidget {
   }
 }
 
-/// Logo a la izquierda y botón de WhatsApp a la derecha.
 class _TopBar extends StatelessWidget {
   const _TopBar({required this.logoPath, required this.showWhatsapp});
 
@@ -287,7 +284,6 @@ class _TopBar extends StatelessWidget {
   }
 }
 
-/// Panel teal, botón de inicio de sesión y registro.
 class _BottomPanel extends StatelessWidget {
   const _BottomPanel({
     super.key,
@@ -390,7 +386,6 @@ class _BottomPanel extends StatelessWidget {
   }
 }
 
-/// Opción circular para elegir cómo registrarse.
 class _RoleOption extends StatelessWidget {
   const _RoleOption({
     required this.label,
@@ -444,7 +439,6 @@ class _RoleOption extends StatelessWidget {
     );
   }
 }
-
 
 class _SheetPanel extends StatefulWidget {
   const _SheetPanel({
