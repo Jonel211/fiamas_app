@@ -48,30 +48,36 @@ import 'features/debts/presentation/screens/finalizar_fiado_screen.dart';
 import 'features/reports/presentation/screens/reports_screen.dart';
 import 'features/dashboard/presentation/screens/whatsapp_collection_screen.dart';
 
+// Modo offline
+import 'core/offline/services/connectivity_service.dart';
+import 'core/offline/services/sync_service.dart';
+
 import 'firebase_options.dart';
 
-/// Permite navegar sin contexto (por ejemplo, al vencer la sesión).
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-
-// Observador global de rutas para detectar cuando se regresa a una pantalla
-final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
 
 Future<void> main() async {
-  // Si el servidor rechaza el token, se cierra la sesión y se va al login.
   DioClient.onUnauthorized = _cerrarSesionPorTokenVencido;
-
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Inicializar servicios offline
+  await ConnectivityService().init();
+  await SyncService().init();
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => TiendaProvider()),
-        ChangeNotifierProxyProvider2<AuthProvider, TiendaProvider, InventoryProvider>(
+        ChangeNotifierProxyProvider2<
+          AuthProvider,
+          TiendaProvider,
+          InventoryProvider
+        >(
           create: (_) => InventoryProvider(),
           update: (_, auth, tienda, inventory) {
             final inv = inventory ?? InventoryProvider();
@@ -112,7 +118,9 @@ Future<void> _cerrarSesionPorTokenVencido() async {
     arguments: 'login',
   );
 
-  final messenger = ScaffoldMessenger.maybeOf(navigatorKey.currentContext ?? context);
+  final messenger = ScaffoldMessenger.maybeOf(
+    navigatorKey.currentContext ?? context,
+  );
   messenger?.showSnackBar(
     const SnackBar(content: Text('Tu sesión venció. Inicia sesión de nuevo.')),
   );
@@ -127,6 +135,7 @@ class AppRoutes {
   static const welcome = '/welcome';
   static const verification = '/verification';
   static const changePassword = '/change-password';
+  // Eliminadas: forgotPassword, resetCode, newPassword (ahora son bottom sheets)
 
   static const menu = '/menu';
   static const profile = '/profile';
@@ -176,7 +185,6 @@ class AppRoutes {
 
 class FiamasApp extends StatelessWidget {
   const FiamasApp({super.key});
-
   static final AppHeaderObserver _headerObserver = AppHeaderObserver();
 
   @override
@@ -187,19 +195,20 @@ class FiamasApp extends StatelessWidget {
       theme: AppTheme.light,
       navigatorKey: navigatorKey,
       initialRoute: AppRoutes.splash,
-      navigatorObservers: [_headerObserver, routeObserver], // Agregamos el routeObserver a la lista 
+      navigatorObservers: [_headerObserver, routeObserver],
       builder: (context, child) {
         final content = child ?? const SizedBox.shrink();
-
         return Consumer<AppBarController>(
           builder: (context, controller, _) {
             final config = controller.activeConfig;
             final showHeader = config != null && config.visible;
-
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (showHeader) _buildHeader(config) else const SizedBox.shrink(),
+                if (showHeader)
+                  _buildHeader(config)
+                else
+                  const SizedBox.shrink(),
                 Expanded(
                   child: MediaQuery.removePadding(
                     context: context,
@@ -217,7 +226,8 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.welcome: (_) => const WelcomeScreen(),
         AppRoutes.verification: (_) => const VerificationScreen(),
         AppRoutes.changePassword: (_) => const ChangePasswordScreen(),
-        
+        // Eliminadas las rutas antiguas de forgot password
+
         AppRoutes.menu: (_) => const MenuScreen(),
         AppRoutes.profile: (_) => const ProfileScreen(),
         AppRoutes.editProfile: (_) => const EditProfileScreen(),
@@ -230,7 +240,8 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.categories: (_) => const CategoriesScreen(),
         AppRoutes.newCategory: (_) => const NewCategoryScreen(),
         AppRoutes.editStore: (context) {
-          final tienda = ModalRoute.of(context)!.settings.arguments as TiendaModel;
+          final tienda =
+              ModalRoute.of(context)!.settings.arguments as TiendaModel;
           return EditStoreScreen(tienda: tienda);
         },
         AppRoutes.debts: (_) => const MainShellScreen(initialIndex: 2),
@@ -242,7 +253,9 @@ class FiamasApp extends StatelessWidget {
           );
         },
         AppRoutes.debtHistory: (context) {
-          final customer = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          final customer =
+              ModalRoute.of(context)!.settings.arguments
+                  as Map<String, dynamic>;
           return DebtHistoryScreen(customer: customer);
         },
         AppRoutes.registroFiado: (_) => const RegistroFiadoScreen(),
@@ -252,7 +265,8 @@ class FiamasApp extends StatelessWidget {
         },
         AppRoutes.newClientQr: (_) => const NuevoClienteQrScreen(),
         AppRoutes.scannerView: (context) {
-          final cliente = ModalRoute.of(context)!.settings.arguments as ClienteModel;
+          final cliente =
+              ModalRoute.of(context)!.settings.arguments as ClienteModel;
           return ScannerViewScreen(cliente: cliente);
         },
         AppRoutes.finalizarFiado: (_) => const FinalizarFiadoScreen(),
@@ -262,7 +276,8 @@ class FiamasApp extends StatelessWidget {
         AppRoutes.privacy: (_) => const PrivacyScreen(),
         AppRoutes.customers: (_) => const MainShellScreen(initialIndex: 3),
         AppRoutes.customerProfile: (context) {
-          final cliente = ModalRoute.of(context)!.settings.arguments as ClienteModel;
+          final cliente =
+              ModalRoute.of(context)!.settings.arguments as ClienteModel;
           return CustomerProfileScreen(customer: cliente);
         },
         AppRoutes.scoringHistory: (context) {

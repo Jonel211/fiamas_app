@@ -59,6 +59,13 @@ dependencies:
   firebase_auth: ^7.0.1
   pin_code_fields: ^10.1.1
 
+   #NUEVAS DEPENDENCIAS PARA MODO OFFLINE
+  connectivity_plus: ^6.0.3       # Para detectar si hay internet o no
+  sqflite: ^2.3.3                 # Base de datos local SQLite
+  path: ^1.9.0                    # Para manejar rutas de archivos
+  uuid: ^4.5.1                    # Para generar IDs únicos (UUID) para los registros locales
+  internet_connection_checker: ^3.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

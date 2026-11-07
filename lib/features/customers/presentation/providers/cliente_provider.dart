@@ -1,12 +1,18 @@
-import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 
 import '../../../../core/network/dio_client.dart';
-import '../../data/models/cliente_model.dart';
+import '../../../../core/offline/database/database_helper.dart';
+import '../../../../core/offline/models/sync_operation.dart';
+import '../../../../core/offline/services/connectivity_service.dart';
+import '../../../../core/offline/services/sync_service.dart';
 import '../../../debts/domain/debt.dart';
+import '../../data/models/cliente_model.dart';
 
 class ClienteProvider extends ChangeNotifier {
   final Dio _dio = DioClient.create();
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  final ConnectivityService _connectivity = ConnectivityService();
 
   List<ClienteModel> _clientes = [];
   List<ClienteModel> _clientesConDeuda = [];
@@ -21,8 +27,6 @@ class ClienteProvider extends ChangeNotifier {
   String? _errorConDeuda;
   String? _errorFiados;
 
-  // Última tienda pedida: evita que una respuesta tardía de otra tienda
-  // reemplace la lista actual.
   String? _tiendaClientesId;
   String? _tiendaConDeudaId;
 
@@ -64,7 +68,6 @@ class ClienteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ───────────── Utilidades ─────────────
   static double _toDouble(dynamic v, [double fallback = 0.0]) {
     if (v == null) return fallback;
     if (v is num) return v.toDouble();
@@ -77,7 +80,6 @@ class ClienteProvider extends ChangeNotifier {
     return porDefecto;
   }
 
-  // ───────────── Clientes ─────────────
   Future<void> cargarClientes(String tiendaId) async {
     if (_tiendaIdCargada != tiendaId) {
       _clientes = [];
@@ -87,38 +89,98 @@ class ClienteProvider extends ChangeNotifier {
     _tiendaIdCargada = tiendaId;
     _isLoading = true;
     _error = null;
-    notifyListeners();
+
+    Future.microtask(() {
+      if (_tiendaClientesId == tiendaId) notifyListeners();
+    });
 
     try {
-      final response = await _dio.get(
-        '/clientes',
-        queryParameters: {'tienda_id': tiendaId},
-      );
+      final isConnected = await _connectivity.isConnected();
+      if (isConnected) {
+        final response = await _dio.get(
+          '/clientes',
+          queryParameters: {'tienda_id': tiendaId},
+        );
+        if (_tiendaClientesId != tiendaId) return;
 
-      // Si mientras tanto se pidió otra tienda, ignora esta respuesta
-      if (_tiendaClientesId != tiendaId) return;
+        if (response.data['clientes'] != null) {
+          final List<dynamic> data = response.data['clientes'];
+          _clientes = data.map((json) => ClienteModel.fromJson(json)).toList();
 
-      if (response.data['clientes'] != null) {
-        final List<dynamic> data = response.data['clientes'];
-        _clientes = data.map((json) => ClienteModel.fromJson(json)).toList();
+          await _dbHelper.saveClientes(
+            tiendaId,
+            _clientes
+                .map((c) => {
+                      'id': c.id,
+                      'tienda_id': tiendaId,
+                      'telefono': c.telefono,
+                      'nombres': c.nombres,
+                      'apellidos': c.apellidos,
+                      'direccion': c.direccion ?? '',
+                      'foto_perfil_url': c.fotoPerfilUrl ?? '',
+                      'creado_en': c.creadoEn?.toIso8601String() ??
+                          DateTime.now().toIso8601String(),
+                      'limite_credito': c.vinculacion.limiteCredito,
+                      'saldo_actual': c.vinculacion.saldoActual,
+                    })
+                .toList(),
+          );
+        } else {
+          _clientes = [];
+        }
       } else {
-        _clientes = [];
+        await _cargarDesdeCache(tiendaId);
       }
     } on DioException catch (e) {
       if (_tiendaClientesId == tiendaId) {
-        _error = _mensajeError(e, 'Error al cargar los clientes');
-        _clientes = [];
+        await _cargarDesdeCache(tiendaId);
+        if (_clientes.isEmpty) {
+          _error = _mensajeError(e, 'Error de conexión.');
+        }
       }
     } catch (e) {
       if (_tiendaClientesId == tiendaId) {
-        _error = 'Error desconocido: $e';
-        _clientes = [];
+        await _cargarDesdeCache(tiendaId);
+        if (_clientes.isEmpty) {
+          _error = 'Error: $e';
+        }
       }
     } finally {
       if (_tiendaClientesId == tiendaId) {
         _isLoading = false;
         notifyListeners();
       }
+    }
+  }
+
+  Future<void> _cargarDesdeCache(String tiendaId) async {
+    try {
+      final cached = await _dbHelper.getClientes(tiendaId);
+      _clientes = cached
+          .map(
+            (c) => ClienteModel(
+              id: c['id'],
+              telefono: c['telefono'],
+              nombres: c['nombres'],
+              apellidos: c['apellidos'],
+              direccion: c['direccion'],
+              fotoPerfilUrl: c['foto_perfil_url'],
+              creadoEn: DateTime.tryParse(c['creado_en']),
+              vinculacion: VinculacionModel(
+                id: c['id'],
+                limiteCredito: c['limite_credito'] ?? 500.0,
+                saldoActual: c['saldo_actual'] ?? 0.0,
+                scorePagador: 100,
+                categoriaPagador: 'nuevo',
+                totalFiados: 0,
+                totalPagos: 0,
+                cantidadFiadosMora: 0,
+              ),
+            ),
+          )
+          .toList();
+    } catch (_) {
+      _clientes = [];
     }
   }
 
@@ -144,9 +206,8 @@ class ClienteProvider extends ChangeNotifier {
       if (_tiendaConDeudaId != tiendaId) return;
 
       final List<dynamic> data = response.data['clientes'] ?? [];
-      _clientesConDeuda = data
-          .map((json) => ClienteModel.fromJson(json))
-          .toList();
+      _clientesConDeuda =
+          data.map((json) => ClienteModel.fromJson(json)).toList();
     } on DioException catch (e) {
       if (_tiendaConDeudaId == tiendaId) {
         _errorConDeuda = _mensajeError(
@@ -170,15 +231,15 @@ class ClienteProvider extends ChangeNotifier {
 
   Future<void> cargarRecientes(String tiendaId, {int limit = 4}) async {
     _isLoadingRecientes = true;
-    notifyListeners();
-
+    Future.microtask(() => notifyListeners());
     try {
       final response = await _dio.get(
         '/clientes/recientes',
         queryParameters: {'tienda_id': tiendaId, 'limit': limit},
       );
-      final List<dynamic> data = response.data['clientes'] ?? [];
-      _recientes = data.map((json) => ClienteModel.fromJson(json)).toList();
+      _recientes = (response.data['clientes'] ?? [])
+          .map<ClienteModel>((json) => ClienteModel.fromJson(json))
+          .toList();
     } catch (_) {
       _recientes = [];
     } finally {
@@ -200,30 +261,135 @@ class ClienteProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _dio.post(
-        '/clientes',
-        data: {
-          'nombres': nombres,
-          'apellidos': apellidos,
-          'telefono': telefono,
-          'limite_credito': limiteCredito,
-          'tienda_id': tiendaId,
-          'direccion': direccion,
-        },
-      );
+      final isConnected = await _connectivity.isConnected();
 
-      await cargarClientes(tiendaId);
-      await cargarRecientes(tiendaId);
-      return true;
-    } on DioException catch (e) {
-      _error = _mensajeError(e, 'Error al crear el cliente');
-      return false;
+      if (isConnected) {
+        try {
+          await _dio.post(
+            '/clientes',
+            data: {
+              'nombres': nombres,
+              'apellidos': apellidos,
+              'telefono': telefono,
+              'limite_credito': limiteCredito,
+              'tienda_id': tiendaId,
+              'direccion': direccion,
+            },
+          );
+          await cargarClientes(tiendaId);
+          await cargarRecientes(tiendaId);
+          _isCreating = false;
+          notifyListeners();
+          return true;
+        } catch (_) {
+          // Si falla la red, caemos a offline
+          return await _crearClienteOffline(
+            nombres,
+            apellidos,
+            telefono,
+            limiteCredito,
+            tiendaId,
+            direccion,
+          );
+        }
+      } else {
+        return await _crearClienteOffline(
+          nombres,
+          apellidos,
+          telefono,
+          limiteCredito,
+          tiendaId,
+          direccion,
+        );
+      }
     } catch (e) {
-      _error = 'Error desconocido: $e';
-      return false;
-    } finally {
+      _error = 'Error: $e';
       _isCreating = false;
       notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> _crearClienteOffline(
+    String nombres,
+    String apellidos,
+    String telefono,
+    double limiteCredito,
+    String tiendaId,
+    String? direccion,
+  ) async {
+    try {
+      final tempId = 'temp_cli_${DateTime.now().millisecondsSinceEpoch}';
+
+      final nuevoCliente = ClienteModel(
+        id: tempId,
+        telefono: telefono,
+        nombres: nombres,
+        apellidos: apellidos,
+        direccion: direccion,
+        fotoPerfilUrl: null,
+        creadoEn: DateTime.now(),
+        vinculacion: VinculacionModel(
+          id: tempId,
+          limiteCredito: limiteCredito,
+          saldoActual: 0.0,
+          scorePagador: 100,
+          categoriaPagador: 'nuevo',
+          totalFiados: 0,
+          totalPagos: 0,
+          cantidadFiadosMora: 0,
+        ),
+      );
+
+      _clientes.add(nuevoCliente);
+
+      try {
+        await _dbHelper.saveClientes(
+          tiendaId,
+          _clientes
+              .map((c) => {
+                    'id': c.id,
+                    'tienda_id': tiendaId,
+                    'telefono': c.telefono,
+                    'nombres': c.nombres,
+                    'apellidos': c.apellidos,
+                    'direccion': c.direccion ?? '',
+                    'foto_perfil_url': c.fotoPerfilUrl ?? '',
+                    'creado_en': c.creadoEn?.toIso8601String() ??
+                        DateTime.now().toIso8601String(),
+                    'limite_credito': c.vinculacion.limiteCredito,
+                    'saldo_actual': c.vinculacion.saldoActual,
+                  })
+              .toList(),
+        );
+      } catch (_) {}
+
+      try {
+        await SyncService().addToQueue(
+          SyncOperation(
+            type: 'create_client',
+            entity: 'cliente',
+            entityId: tempId,
+            payload: {
+              'nombres': nombres,
+              'apellidos': apellidos,
+              'telefono': telefono,
+              'limite_credito': limiteCredito,
+              'tienda_id': tiendaId,
+              'direccion': direccion,
+            },
+          ),
+        );
+      } catch (_) {}
+
+      _isCreating = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = 'Error al crear cliente local: $e';
+      _isCreating = false;
+      notifyListeners();
+      return false;
     }
   }
 
@@ -231,14 +397,13 @@ class ClienteProvider extends ChangeNotifier {
     _isLoadingResumen = true;
     _resumenCliente = null;
     notifyListeners();
-
     try {
       final response = await _dio.get(
         '/clientes/$clienteId/resumen',
         queryParameters: {'tienda_id': tiendaId},
       );
       _resumenCliente = response.data;
-    } catch (e) {
+    } catch (_) {
       _resumenCliente = null;
     } finally {
       _isLoadingResumen = false;
@@ -246,7 +411,6 @@ class ClienteProvider extends ChangeNotifier {
     }
   }
 
-  // ───────────── Fiados del cliente ─────────────
   Future<void> cargarFiadosCliente(
     String clienteId,
     String tiendaId, {
@@ -258,68 +422,110 @@ class ClienteProvider extends ChangeNotifier {
 
     _isLoadingFiados = true;
     _errorFiados = null;
-    _fiadosCliente = [];
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
 
     try {
-      final response = await _dio.get(
-        '/clientes/$clienteId/fiados',
-        queryParameters: {'tienda_id': tiendaId},
-      );
+      // Primero intentamos cargar desde cache (offline-first)
+      await _cargarFiadosDesdeCache(clienteId);
 
-      debugPrint(
-        '>>> FIADOS cliente=$clienteId tienda=$tiendaId total=${response.data['total']}',
-      );
+      final isConnected = await _connectivity.isConnected();
+      if (isConnected) {
+        try {
+          final response = await _dio.get(
+            '/clientes/$clienteId/fiados',
+            queryParameters: {'tienda_id': tiendaId},
+          );
+          final data = response.data['fiados'] ?? [];
 
-      final List<dynamic> data = response.data['fiados'] ?? [];
-
-      _fiadosCliente = data.map<Debt>((json) {
-        final estadoString = json['estado']?.toString() ?? 'pendiente';
-        DebtStatus estadoEnum = DebtStatus.pendiente;
-        if (estadoString == 'pagado') {
-          estadoEnum = DebtStatus.pagado;
-        } else if (estadoString == 'parcial') {
-          estadoEnum = DebtStatus.parcial;
+          if (data.isNotEmpty) {
+            _parseAndSetFiados(data);
+          }
+        } catch (_) {
+          // Si falla la red, nos quedamos con lo que había en cache
         }
-
-        final fecha = json['fecha_creacion']?.toString();
-        final fechaLabel = (fecha != null && fecha.length >= 10)
-            ? 'Creado: ${fecha.substring(0, 10)}'
-            : 'Sin fecha';
-
-        final detalles = (json['detalles'] as List?) ?? [];
-
-        return Debt(
-          id: (json['id'] ?? '').toString(),
-          customerName: _fiadosNombre,
-          phone: _fiadosTelefono,
-          amount: _toDouble(json['monto_total']),
-          paidAmount: _toDouble(json['monto_pagado']),
-          status: estadoEnum,
-          dateLabel: fechaLabel,
-          items: detalles.map<DebtItem>((d) {
-            return DebtItem(
-              productName: (d['producto']?['nombre'] ?? 'Producto').toString(),
-              quantity: _toDouble(d['cantidad'], 1.0),
-              unitPrice: _toDouble(d['precio_unitario']),
-            );
-          }).toList(),
-        );
-      }).toList();
-    } on DioException catch (e) {
-      debugPrint(
-        'ERROR AL CARGAR FIADOS: status=${e.response?.statusCode} body=${e.response?.data}',
-      );
-      _errorFiados = _mensajeError(e, 'No se pudieron cargar los fiados.');
-      _fiadosCliente = [];
+      }
     } catch (e) {
-      debugPrint('ERROR AL CARGAR FIADOS (parseo): $e');
-      _errorFiados = 'Error al leer los fiados: $e';
-      _fiadosCliente = [];
+      _errorFiados = 'Error al cargar los fiados: $e';
     } finally {
       _isLoadingFiados = false;
       notifyListeners();
     }
+  }
+
+  Future<void> _cargarFiadosDesdeCache(String clienteId) async {
+    try {
+      final cached = await _dbHelper.getFiados();
+      final misFiados =
+          cached.where((f) => f['cliente_id'] == clienteId).toList();
+
+      if (misFiados.isNotEmpty) {
+        _fiadosCliente = misFiados.map<Debt>((json) {
+          final estadoString = json['estado']?.toString() ?? 'pendiente';
+          final DebtStatus estadoEnum = estadoString == 'pagado'
+              ? DebtStatus.pagado
+              : (estadoString == 'parcial'
+                  ? DebtStatus.parcial
+                  : DebtStatus.pendiente);
+          final fecha =
+              json['fecha_fiado']?.toString() ?? json['creado_en']?.toString();
+          final fechaLabel = (fecha != null && fecha.length >= 10)
+              ? 'Creado: ${fecha.substring(0, 10)}'
+              : 'Sin fecha';
+
+          return Debt(
+            id: (json['id'] ?? '').toString(),
+            customerName: _fiadosNombre,
+            phone: _fiadosTelefono,
+            amount: _toDouble(json['monto_total']),
+            paidAmount: _toDouble(json['monto_pagado']),
+            status: estadoEnum,
+            dateLabel: fechaLabel,
+            items: const [],
+          );
+        }).toList();
+      } else {
+        _fiadosCliente = [];
+      }
+    } catch (_) {
+      _fiadosCliente = [];
+    }
+  }
+
+  void _parseAndSetFiados(List<dynamic> data) {
+    _fiadosCliente = data.map<Debt>((json) {
+      final estadoString = json['estado']?.toString() ?? 'pendiente';
+      final DebtStatus estadoEnum = estadoString == 'pagado'
+          ? DebtStatus.pagado
+          : (estadoString == 'parcial'
+              ? DebtStatus.parcial
+              : DebtStatus.pendiente);
+      final fecha =
+          json['fecha_creacion']?.toString() ?? json['fecha_fiado']?.toString();
+      final fechaLabel = (fecha != null && fecha.length >= 10)
+          ? 'Creado: ${fecha.substring(0, 10)}'
+          : 'Sin fecha';
+      final detalles = (json['detalles'] as List?) ?? [];
+
+      return Debt(
+        id: (json['id'] ?? '').toString(),
+        customerName: _fiadosNombre,
+        phone: _fiadosTelefono,
+        amount: _toDouble(json['monto_total']),
+        paidAmount: _toDouble(json['monto_pagado']),
+        status: estadoEnum,
+        dateLabel: fechaLabel,
+        items: detalles
+            .map<DebtItem>(
+              (d) => DebtItem(
+                productName:
+                    (d['producto']?['nombre'] ?? 'Producto').toString(),
+                quantity: _toDouble(d['cantidad'], 1.0),
+                unitPrice: _toDouble(d['precio_unitario']),
+              ),
+            )
+            .toList(),
+      );
+    }).toList();
   }
 
   Future<bool> actualizarLimiteCredito(
@@ -337,7 +543,7 @@ class ClienteProvider extends ChangeNotifier {
         await cargarResumenCliente(clienteId, tiendaId);
       }
       return true;
-    } catch (e) {
+    } catch (_) {
       return false;
     }
   }
@@ -357,24 +563,17 @@ class ClienteProvider extends ChangeNotifier {
           'fiado_id': fiadoId,
           'monto': monto,
           'metodo_pago': metodoPago,
-          'referencia': (referencia == null || referencia.trim().isEmpty)
-              ? null
-              : referencia,
+          'referencia':
+              (referencia == null || referencia.trim().isEmpty) ? null : referencia,
         },
       );
-
       await cargarFiadosCliente(clienteId, tiendaId);
       await cargarResumenCliente(clienteId, tiendaId);
       await cargarClientes(tiendaId);
-
       return true;
-    } on DioException catch (e) {
-      debugPrint(
-        'ERROR AL REGISTRAR PAGO: status=${e.response?.statusCode} body=${e.response?.data}',
-      );
+    } on DioException {
       return false;
-    } catch (e) {
-      debugPrint('ERROR AL REGISTRAR PAGO: $e');
+    } catch (_) {
       return false;
     }
   }
@@ -382,10 +581,12 @@ class ClienteProvider extends ChangeNotifier {
   List<ClienteModel> buscarClienteLocal(String query) {
     if (query.isEmpty) return _clientes;
     final queryLower = query.toLowerCase();
-    return _clientes.where((cliente) {
-      final nombreCompleto = cliente.nombreCompleto.toLowerCase();
-      return nombreCompleto.contains(queryLower) ||
-          cliente.telefono.contains(query);
-    }).toList();
+    return _clientes
+        .where(
+          (cliente) =>
+              cliente.nombreCompleto.toLowerCase().contains(queryLower) ||
+              cliente.telefono.contains(query),
+        )
+        .toList();
   }
 }

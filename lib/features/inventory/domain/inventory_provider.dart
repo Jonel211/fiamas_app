@@ -1,12 +1,19 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:io';
-import '../data/services/product_service.dart';
-import '../data/services/category_service.dart';
+
+import '../../../core/offline/database/database_helper.dart';
+import '../../../core/offline/models/sync_operation.dart';
+import '../../../core/offline/services/connectivity_service.dart';
+import '../../../core/offline/services/sync_service.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
 import '../../auth/presentation/providers/tienda_provider.dart';
-import 'product.dart';
+import '../data/services/category_service.dart';
+import '../data/services/product_service.dart';
 import 'category.dart' as inventory_category;
+import 'product.dart';
 
 class InventoryProvider extends ChangeNotifier {
   List<Product> _products = [];
@@ -16,7 +23,7 @@ class InventoryProvider extends ChangeNotifier {
 
   List<Product> get products => _products;
   List<Product> get activeProducts =>
-      _products.where((p) => p.activo == true).toList(growable: false);
+      _products.where((p) => p.activo).toList(growable: false);
   List<inventory_category.Category> get categories => _categories;
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -27,6 +34,9 @@ class InventoryProvider extends ChangeNotifier {
   String? _token;
   bool _disposed = false;
 
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  final ConnectivityService _connectivity = ConnectivityService();
+
   String? get tiendaId => _tiendaId;
 
   @override
@@ -35,17 +45,13 @@ class InventoryProvider extends ChangeNotifier {
     super.dispose();
   }
 
-  /// Notifica fuera del ciclo de build (evita "setState during build"
-  /// cuando lo dispara un ProxyProvider).
   void _notifySoon() {
     Future.microtask(() {
       if (!_disposed) notifyListeners();
     });
   }
 
-  /// Vacía todo (cierre de sesión o sin tienda seleccionada).
   void reset() {
-    if (_tiendaId == null && _token == null) return;
     _tiendaId = null;
     _token = null;
     _products = [];
@@ -57,7 +63,6 @@ class InventoryProvider extends ChangeNotifier {
     _notifySoon();
   }
 
-  /// Cambia de tienda: descarta los datos de la anterior.
   void updateTiendaContext(String token, String nuevaTiendaId) {
     if (_tiendaId != nuevaTiendaId || _token != token) {
       _tiendaId = nuevaTiendaId;
@@ -72,25 +77,16 @@ class InventoryProvider extends ChangeNotifier {
     }
   }
 
-  /// Respaldo: normalmente el ProxyProvider de main.dart ya mantiene el
-  /// contexto al día. Solo usa la tienda SELECCIONADA, nunca la del login.
   void ensureInitialized(BuildContext context) {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final tiendaProvider = Provider.of<TiendaProvider>(
-        context,
-        listen: false,
-      );
-
+      final tiendaProvider = Provider.of<TiendaProvider>(context, listen: false);
       final token = authProvider.token;
       final tiendaId = tiendaProvider.tiendaSeleccionadaId;
-
       if (token != null && tiendaId != null) {
         updateTiendaContext(token, tiendaId);
       }
-    } catch (e) {
-      // Ignorar error silenciosamente
-    }
+    } catch (_) {}
   }
 
   void clearError() {
@@ -98,22 +94,59 @@ class InventoryProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ─── Categorías ──────────────────────────────────────────
-
+  // ─── Categorías ───────────────────────────────────────────────────────────
   Future<void> loadCategories() async {
-    if (_categoryService == null || _tiendaId == null) return;
+    if (_tiendaId == null) {
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
     final requestedId = _tiendaId!;
     _isLoading = true;
     _error = null;
     notifyListeners();
+
     try {
-      final result = await _categoryService!.getCategories(requestedId);
-      if (_tiendaId != requestedId) return; // la tienda cambió: descartar
-      _categories = result;
+      final cached = await _dbHelper.getCategorias(requestedId);
+      if (cached.isNotEmpty && _tiendaId == requestedId && !_disposed) {
+        _categories = cached
+            .map((c) => inventory_category.Category.fromMap(c))
+            .toList();
+        _isLoading = false;
+        notifyListeners();
+      }
+
+      final isConnected = await _connectivity.isConnected();
+      if (isConnected &&
+          _categoryService != null &&
+          _tiendaId == requestedId &&
+          !_disposed) {
+        try {
+          final result = await _categoryService!
+              .getCategories(requestedId)
+              .timeout(
+                const Duration(seconds: 10),
+                onTimeout: () => throw TimeoutException('Timeout en categorías'),
+              );
+
+          if (_tiendaId == requestedId && !_disposed) {
+            _categories = result;
+            unawaited(
+              _dbHelper.saveCategorias(
+                requestedId,
+                _categories.map((c) => c.toMap()).toList(),
+              ),
+            );
+          }
+        } catch (_) {}
+      }
     } catch (e) {
-      if (_tiendaId == requestedId) _error = e.toString();
+      if (_tiendaId == requestedId && !_disposed) {
+        _error = 'Error: $e';
+      }
     } finally {
-      if (_tiendaId == requestedId) {
+      if (_tiendaId == requestedId && !_disposed) {
         _isLoading = false;
         notifyListeners();
       }
@@ -121,20 +154,23 @@ class InventoryProvider extends ChangeNotifier {
   }
 
   Future<void> createCategory(inventory_category.Category category) async {
-    if (_categoryService == null) return;
-    final storeId = _tiendaId;
+    if (_categoryService == null || _tiendaId == null) return;
     _isLoading = true;
-    _error = null;
     notifyListeners();
     try {
       final newCategory = await _categoryService!.createCategory(category);
-      if (_tiendaId == storeId) _categories.add(newCategory);
-      _error = null;
+      _categories.add(newCategory);
+      unawaited(
+        _dbHelper.saveCategorias(
+          _tiendaId!,
+          _categories.map((c) => c.toMap()).toList(),
+        ),
+      );
     } catch (e) {
-      if (_tiendaId == storeId) _error = e.toString();
+      _error = e.toString();
       rethrow;
     } finally {
-      if (_tiendaId == storeId) _isLoading = false;
+      _isLoading = false;
       notifyListeners();
     }
   }
@@ -143,62 +179,105 @@ class InventoryProvider extends ChangeNotifier {
     String id,
     inventory_category.Category category,
   ) async {
-    if (_categoryService == null) return;
-    final storeId = _tiendaId;
+    if (_categoryService == null || _tiendaId == null) return;
     _isLoading = true;
-    _error = null;
     notifyListeners();
     try {
       final updated = await _categoryService!.updateCategory(id, category);
-      if (_tiendaId == storeId) {
-        final index = _categories.indexWhere((c) => c.id == id);
-        if (index != -1) _categories[index] = updated;
+      final index = _categories.indexWhere((c) => c.id == id);
+      if (index != -1) {
+        _categories[index] = updated;
+        unawaited(
+          _dbHelper.saveCategorias(
+            _tiendaId!,
+            _categories.map((c) => c.toMap()).toList(),
+          ),
+        );
       }
-      _error = null;
     } catch (e) {
-      if (_tiendaId == storeId) _error = e.toString();
+      _error = e.toString();
       rethrow;
     } finally {
-      if (_tiendaId == storeId) _isLoading = false;
+      _isLoading = false;
       notifyListeners();
     }
   }
 
   Future<void> deleteCategory(String id) async {
-    if (_categoryService == null) return;
-    final storeId = _tiendaId;
+    if (_categoryService == null || _tiendaId == null) return;
     _isLoading = true;
-    _error = null;
     notifyListeners();
     try {
       await _categoryService!.deleteCategory(id);
-      if (_tiendaId == storeId) _categories.removeWhere((c) => c.id == id);
-      _error = null;
+      _categories.removeWhere((c) => c.id == id);
+      unawaited(
+        _dbHelper.saveCategorias(
+          _tiendaId!,
+          _categories.map((c) => c.toMap()).toList(),
+        ),
+      );
     } catch (e) {
-      if (_tiendaId == storeId) _error = e.toString();
+      _error = e.toString();
       rethrow;
     } finally {
-      if (_tiendaId == storeId) _isLoading = false;
+      _isLoading = false;
       notifyListeners();
     }
   }
 
-  // ─── Productos ───────────────────────────────────────────
-
+  // ─── Productos ────────────────────────────────────────────────────────────
   Future<void> loadProducts() async {
-    if (_productService == null || _tiendaId == null) return;
+    if (_tiendaId == null) {
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
     final requestedId = _tiendaId!;
     _isLoading = true;
     _error = null;
     notifyListeners();
+
     try {
-      final result = await _productService!.getProductsByStore(requestedId);
-      if (_tiendaId != requestedId) return; // la tienda cambió: descartar
-      _products = result;
+      final cached = await _dbHelper.getProductos(requestedId);
+      if (cached.isNotEmpty && _tiendaId == requestedId && !_disposed) {
+        _products = cached.map((p) => Product.fromMap(p)).toList();
+        _isLoading = false;
+        notifyListeners();
+      }
+
+      final isConnected = await _connectivity.isConnected();
+      if (isConnected &&
+          _productService != null &&
+          _tiendaId == requestedId &&
+          !_disposed) {
+        try {
+          final result = await _productService!
+              .getProductsByStore(requestedId)
+              .timeout(
+                const Duration(seconds: 10),
+                onTimeout: () => throw TimeoutException('Timeout en productos'),
+              );
+
+          if (_tiendaId == requestedId && !_disposed) {
+            _products = result;
+            if (_products.isNotEmpty) {
+              unawaited(
+                _dbHelper.saveProductos(
+                  requestedId,
+                  _products.map((p) => p.toMap()).toList(),
+                ),
+              );
+            }
+          }
+        } catch (_) {}
+      }
     } catch (e) {
-      if (_tiendaId == requestedId) _error = e.toString();
+      if (_tiendaId == requestedId && !_disposed) {
+        _error = 'Error: $e';
+      }
     } finally {
-      if (_tiendaId == requestedId) {
+      if (_tiendaId == requestedId && !_disposed) {
         _isLoading = false;
         notifyListeners();
       }
@@ -206,25 +285,99 @@ class InventoryProvider extends ChangeNotifier {
   }
 
   Future<Product?> createProduct(Product product, {File? imagenFile}) async {
-    if (_productService == null) return null;
-    final storeId = _tiendaId;
     _isLoading = true;
     _error = null;
     notifyListeners();
+
     try {
-      final newProduct = await _productService!.createProduct(
-        product,
-        imagenFile: imagenFile,
-      );
-      if (_tiendaId == storeId) _products.add(newProduct);
-      _error = null;
-      return newProduct;
+      if (_tiendaId == null) {
+        _error = 'No hay tienda seleccionada';
+        _isLoading = false;
+        notifyListeners();
+        return null;
+      }
+
+      final isConnected = await _connectivity.isConnected();
+
+      if (isConnected && _productService != null) {
+        try {
+          final newProduct = await _productService!.createProduct(
+            product,
+            imagenFile: imagenFile,
+          );
+          _products.add(newProduct);
+          unawaited(
+            _dbHelper.saveProductos(
+              _tiendaId!,
+              _products.map((p) => p.toMap()).toList(),
+            ),
+          );
+          _isLoading = false;
+          notifyListeners();
+          return newProduct;
+        } catch (_) {
+          return await _createProductOffline(product, imagenFile);
+        }
+      } else {
+        return await _createProductOffline(product, imagenFile);
+      }
     } catch (e) {
-      if (_tiendaId == storeId) _error = e.toString();
-      rethrow;
-    } finally {
-      if (_tiendaId == storeId) _isLoading = false;
+      _error = 'Error: $e';
+      _isLoading = false;
       notifyListeners();
+      return null;
+    }
+  }
+
+  Future<Product?> _createProductOffline(
+    Product product,
+    File? imagenFile,
+  ) async {
+    try {
+      final tempId = 'temp_prod_${DateTime.now().millisecondsSinceEpoch}';
+
+      final localProduct = Product(
+        id: tempId,
+        tiendaId: _tiendaId!,
+        categoriaId: product.categoriaId,
+        nombre: product.nombre,
+        descripcion: product.descripcion,
+        codigoBarras: product.codigoBarras,
+        tipoVenta: product.tipoVenta,
+        unidadMedida: product.unidadMedida,
+        precioVenta: product.precioVenta,
+        activo: product.activo,
+        imagenUrl: product.imagenUrl,
+        stockActual: product.stockActual,
+      );
+
+      _products.add(localProduct);
+
+      try {
+        final allProductsMap = _products.map((p) => p.toMap()).toList();
+        await _dbHelper.saveProductos(_tiendaId!, allProductsMap);
+      } catch (_) {}
+
+      try {
+        final payload = {...localProduct.toJson(), 'tienda_id': _tiendaId};
+        await SyncService().addToQueue(
+          SyncOperation(
+            type: 'create_product',
+            entity: 'producto',
+            entityId: tempId,
+            payload: payload,
+          ),
+        );
+      } catch (_) {}
+
+      _isLoading = false;
+      notifyListeners();
+      return localProduct;
+    } catch (e) {
+      _error = 'Error al crear producto local: $e';
+      _isLoading = false;
+      notifyListeners();
+      return null;
     }
   }
 
@@ -233,10 +386,8 @@ class InventoryProvider extends ChangeNotifier {
     Product product, {
     File? imagenFile,
   }) async {
-    if (_productService == null) return null;
-    final storeId = _tiendaId;
+    if (_productService == null || _tiendaId == null) return null;
     _isLoading = true;
-    _error = null;
     notifyListeners();
     try {
       final updated = await _productService!.updateProduct(
@@ -244,68 +395,77 @@ class InventoryProvider extends ChangeNotifier {
         product,
         imagenFile: imagenFile,
       );
-      if (_tiendaId == storeId) {
-        final index = _products.indexWhere((p) => p.id == id);
-        if (index != -1) _products[index] = updated;
+      final index = _products.indexWhere((p) => p.id == id);
+      if (index != -1) {
+        _products[index] = updated;
+        unawaited(
+          _dbHelper.saveProductos(
+            _tiendaId!,
+            _products.map((p) => p.toMap()).toList(),
+          ),
+        );
       }
-      _error = null;
+      _isLoading = false;
+      notifyListeners();
       return updated;
     } catch (e) {
-      if (_tiendaId == storeId) _error = e.toString();
-      rethrow;
-    } finally {
-      if (_tiendaId == storeId) _isLoading = false;
+      _error = e.toString();
+      _isLoading = false;
       notifyListeners();
+      rethrow;
     }
   }
 
-  /// Activar/desactivar producto con un solo clic.
   Future<void> toggleProductActive(String productId, bool nuevoEstado) async {
-    if (_productService == null) return;
-    final storeId = _tiendaId;
-
+    if (_productService == null || _tiendaId == null) return;
     final index = _products.indexWhere((p) => p.id == productId);
     if (index == -1) return;
 
-    final productoActual = _products[index];
-
+    final p = _products[index];
     final productoActualizado = Product(
-      id: productoActual.id,
-      tiendaId: productoActual.tiendaId,
-      categoriaId: productoActual.categoriaId,
-      nombre: productoActual.nombre,
-      descripcion: productoActual.descripcion,
-      codigoBarras: productoActual.codigoBarras,
-      tipoVenta: productoActual.tipoVenta,
-      unidadMedida: productoActual.unidadMedida,
-      precioVenta: productoActual.precioVenta,
+      id: p.id,
+      tiendaId: p.tiendaId,
+      categoriaId: p.categoriaId,
+      nombre: p.nombre,
+      descripcion: p.descripcion,
+      codigoBarras: p.codigoBarras,
+      tipoVenta: p.tipoVenta,
+      unidadMedida: p.unidadMedida,
+      precioVenta: p.precioVenta,
       activo: nuevoEstado,
-      imagenUrl: productoActual.imagenUrl,
-      categoria: productoActual.categoria,
+      imagenUrl: p.imagenUrl,
+      categoria: p.categoria,
+      stockActual: p.stockActual,
     );
 
     await _productService!.updateProduct(productId, productoActualizado);
-    if (_tiendaId != storeId) return;
-    final i = _products.indexWhere((p) => p.id == productId);
-    if (i != -1) _products[i] = productoActualizado;
+    _products[index] = productoActualizado;
+    unawaited(
+      _dbHelper.saveProductos(
+        _tiendaId!,
+        _products.map((p) => p.toMap()).toList(),
+      ),
+    );
     notifyListeners();
   }
 
   Future<void> deleteProduct(String id) async {
-    if (_productService == null) return;
-    final storeId = _tiendaId;
+    if (_productService == null || _tiendaId == null) return;
     _isLoading = true;
-    _error = null;
     notifyListeners();
     try {
       await _productService!.deleteProduct(id);
-      if (_tiendaId == storeId) _products.removeWhere((p) => p.id == id);
-      _error = null;
+      _products.removeWhere((p) => p.id == id);
+      unawaited(
+        _dbHelper.saveProductos(
+          _tiendaId!,
+          _products.map((p) => p.toMap()).toList(),
+        ),
+      );
     } catch (e) {
-      if (_tiendaId == storeId) _error = e.toString();
-      rethrow;
+      _error = e.toString();
     } finally {
-      if (_tiendaId == storeId) _isLoading = false;
+      _isLoading = false;
       notifyListeners();
     }
   }

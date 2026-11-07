@@ -44,9 +44,8 @@ class AuthProvider with ChangeNotifier {
         _token = savedToken;
         _user = savedUser;
 
-        // Opcional: Cargar el perfil en segundo plano sin bloquear el inicio
-        cargarPerfil();
-
+        // ✅ IMPORTANTE: Ya NO llamamos a cargarPerfil() aquí.
+        // Solo notificamos que hay sesión para que el splash pueda avanzar.
         notifyListeners();
         return true;
       }
