@@ -40,7 +40,7 @@ class AuthFlowLayout extends StatelessWidget {
                     child: Image.asset(
                       'assets/images/tendero.jpg',
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(),
+                      errorBuilder: (_, _, _) => Container(),
                     ),
                   ),
                   // Gradiente azul sobre la imagen
@@ -50,8 +50,8 @@ class AuthFlowLayout extends StatelessWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          AppColors.skyBlue.withOpacity(0.9),
-                          AppColors.skyBlue.withOpacity(0.7),
+                          AppColors.skyBlue.withValues(alpha: 0.9),
+                          AppColors.skyBlue.withValues(alpha: 0.7),
                         ],
                       ),
                     ),
@@ -64,7 +64,7 @@ class AuthFlowLayout extends StatelessWidget {
                         Image.asset(
                           'assets/images/logo-os.png', // Logo blanco/oscuro
                           height: _logoHeight,
-                          errorBuilder: (_, __, ___) => const Text(
+                          errorBuilder: (_, _, _) => const Text(
                             'FIAMAS',
                             style: TextStyle(
                               fontSize: 36,

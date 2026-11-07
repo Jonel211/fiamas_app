@@ -278,7 +278,7 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                decoration: BoxDecoration(color: AppColors.teal.withOpacity(0.3), borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(color: AppColors.teal.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(10)),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [

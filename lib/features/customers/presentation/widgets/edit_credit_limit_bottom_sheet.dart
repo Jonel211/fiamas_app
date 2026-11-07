@@ -120,7 +120,7 @@ class _EditCreditLimitBottomSheetState extends State<EditCreditLimitBottomSheet>
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         decoration: BoxDecoration(
-                          color: isSelected ? AppColors.teal.withOpacity(0.1) : Colors.white,
+                          color: isSelected ? AppColors.teal.withValues(alpha: 0.1) : Colors.white,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(color: isSelected ? AppColors.teal : AppColors.mist, width: isSelected ? 2 : 1),
                         ),
@@ -138,9 +138,9 @@ class _EditCreditLimitBottomSheetState extends State<EditCreditLimitBottomSheet>
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.gold.withOpacity(0.15), 
+                color: AppColors.gold.withValues(alpha: 0.15), 
                 borderRadius: BorderRadius.circular(12), 
-                border: Border.all(color: AppColors.gold.withOpacity(0.3))
+                border: Border.all(color: AppColors.gold.withValues(alpha: 0.3))
               ),
               child: Row(
                 children: [
@@ -164,7 +164,7 @@ class _EditCreditLimitBottomSheetState extends State<EditCreditLimitBottomSheet>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.teal,
                   foregroundColor: Colors.white,
-                  disabledBackgroundColor: AppColors.teal.withOpacity(0.5),
+                  disabledBackgroundColor: AppColors.teal.withValues(alpha: 0.5),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),

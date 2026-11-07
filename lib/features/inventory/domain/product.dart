@@ -29,15 +29,23 @@ class Product {
   factory Product.fromJson(Map<String, dynamic> json) {
     double precioParseado = 0.0;
     final precioRaw = json['precio_venta'];
-    if (precioRaw is double) precioParseado = precioRaw;
-    else if (precioRaw is int) precioParseado = precioRaw.toDouble();
-    else if (precioRaw is String) precioParseado = double.tryParse(precioRaw) ?? 0.0;
+    if (precioRaw is double) {
+      precioParseado = precioRaw;
+    } else if (precioRaw is int) {
+      precioParseado = precioRaw.toDouble();
+    } else if (precioRaw is String) {
+      precioParseado = double.tryParse(precioRaw) ?? 0.0;
+    }
 
     int? stockParseado;
     final stockRaw = json['stock_actual'];
-    if (stockRaw is int) stockParseado = stockRaw;
-    else if (stockRaw is double) stockParseado = stockRaw.toInt();
-    else if (stockRaw is String) stockParseado = int.tryParse(stockRaw);
+    if (stockRaw is int) {
+      stockParseado = stockRaw;
+    } else if (stockRaw is double) {
+      stockParseado = stockRaw.toInt();
+    } else if (stockRaw is String) {
+      stockParseado = int.tryParse(stockRaw);
+    }
 
     return Product(
       id: json['id']?.toString() ?? '', tiendaId: json['tienda_id']?.toString() ?? '',

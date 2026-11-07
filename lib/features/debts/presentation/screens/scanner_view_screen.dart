@@ -121,7 +121,7 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
                   Expanded(
                     child: Container(
                       height: 44,
-                      decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white, borderRadius: BorderRadius.circular(22), border: isDark ? null : Border.all(color: AppColors.mist)),
+                      decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white, borderRadius: BorderRadius.circular(22), border: isDark ? null : Border.all(color: AppColors.mist)),
                       child: Row(children: [_buildTopTab('Escanear', 0, isDark), _buildTopTab('Productos', 1, isDark)]),
                     ),
                   ),

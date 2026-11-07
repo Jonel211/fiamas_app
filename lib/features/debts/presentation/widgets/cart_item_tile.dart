@@ -38,7 +38,7 @@ class CartItemTile extends StatelessWidget {
           children: [
             Container(
               width: 44, height: 44,
-              decoration: BoxDecoration(color: AppColors.mist.withOpacity(0.3), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(color: AppColors.mist.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(8)),
               child: imageUrl != null
                   ? ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(imageUrl!, fit: BoxFit.cover))
                   : const Icon(Icons.inventory_2_outlined, color: AppColors.inkMuted, size: 20),
@@ -71,7 +71,7 @@ class CartItemTile extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: Colors.redAccent.withOpacity(0.1),
+                          color: Colors.redAccent.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
@@ -101,7 +101,7 @@ class CartItemTile extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(color: AppColors.mist.withOpacity(0.5), shape: BoxShape.circle),
+        decoration: BoxDecoration(color: AppColors.mist.withValues(alpha: 0.5), shape: BoxShape.circle),
         child: Icon(icon, size: 16, color: AppColors.ink),
       ),
     );

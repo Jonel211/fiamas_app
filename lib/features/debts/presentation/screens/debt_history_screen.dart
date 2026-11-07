@@ -135,7 +135,7 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
+                        color: Colors.black.withValues(alpha: 0.04),
                         blurRadius: 8,
                         offset: const Offset(0, 2))
                   ],
@@ -146,7 +146,7 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                       radius: 28,
                       backgroundColor: AppColors.teal,
                       backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
-                      onBackgroundImageError: hasPhoto ? (_, __) {} : null,
+                      onBackgroundImageError: hasPhoto ? (_, _) {} : null,
                       child: hasPhoto
                           ? null
                           : Text(initial, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
@@ -175,7 +175,7 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                              color: AppColors.gold.withOpacity(0.15),
+                              color: AppColors.gold.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(12)),
                           child: Text('Score $score',
                               style: const TextStyle(
@@ -403,7 +403,7 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 8,
                 offset: const Offset(0, 2))
           ],
@@ -423,7 +423,7 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.15),
+                    color: color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(

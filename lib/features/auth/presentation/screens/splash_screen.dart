@@ -51,7 +51,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _precache(String path) {
-    return precacheImage(AssetImage(path), context, onError: (_, __) {});
+    return precacheImage(AssetImage(path), context, onError: (_, _) {});
   }
 
   Future<void> _runSequence() async {
@@ -81,7 +81,7 @@ class _SplashScreenState extends State<SplashScreen>
     } catch (e) {
       // Si hay un error (ej. sin internet y algo falló), asumimos que NO hay sesión válida
       // o que debe ir al login para reintentar.
-      print('⚠️ Error en checkAuthStatus: $e');
+      debugPrint('⚠️ Error en checkAuthStatus: $e');
       isLoggedIn = false;
     }
 
@@ -100,8 +100,8 @@ class _SplashScreenState extends State<SplashScreen>
       PageRouteBuilder(
         settings: const RouteSettings(name: '/summary'),
         transitionDuration: const Duration(milliseconds: 500),
-        pageBuilder: (_, __, ___) => const MainShellScreen(),
-        transitionsBuilder: (_, animation, __, child) =>
+        pageBuilder: (_, _, _) => const MainShellScreen(),
+        transitionsBuilder: (_, animation, _, child) =>
             FadeTransition(opacity: animation, child: child),
       ),
     );
@@ -112,8 +112,8 @@ class _SplashScreenState extends State<SplashScreen>
       PageRouteBuilder(
         settings: const RouteSettings(name: '/welcome'),
         transitionDuration: const Duration(milliseconds: 500),
-        pageBuilder: (_, __, ___) => const WelcomeScreen(),
-        transitionsBuilder: (_, animation, __, child) =>
+        pageBuilder: (_, _, _) => const WelcomeScreen(),
+        transitionsBuilder: (_, animation, _, child) =>
             FadeTransition(opacity: animation, child: child),
       ),
     );
@@ -190,7 +190,7 @@ class _DottedSpinnerPainter extends CustomPainter {
       // Opacidad progresiva para dar el efecto de estela de carga
       final double opacity = (i + 1) / count;
       final paint = Paint()
-        ..color = color.withOpacity(opacity)
+        ..color = color.withValues(alpha: opacity)
         ..style = PaintingStyle.fill;
 
       canvas.drawCircle(dotCenter, dotRadius, paint);

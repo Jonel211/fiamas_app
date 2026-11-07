@@ -28,7 +28,7 @@ class ProfileInfoTile extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: AppColors.skyBlue.withOpacity(0.3), shape: BoxShape.circle),
+            decoration: BoxDecoration(color: AppColors.skyBlue.withValues(alpha: 0.3), shape: BoxShape.circle),
             child: Icon(icon, size: 18, color: AppColors.teal),
           ),
           const SizedBox(width: 12),
@@ -78,7 +78,7 @@ class ProfileSwitchTile extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: AppColors.skyBlue.withOpacity(0.3), shape: BoxShape.circle),
+            decoration: BoxDecoration(color: AppColors.skyBlue.withValues(alpha: 0.3), shape: BoxShape.circle),
             child: Icon(icon, size: 18, color: AppColors.teal),
           ),
           const SizedBox(width: 12),
@@ -88,7 +88,7 @@ class ProfileSwitchTile extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppColors.teal,
+            activeThumbColor: AppColors.teal,
           ),
         ],
       ),

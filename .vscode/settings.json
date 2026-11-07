@@ -1,0 +1,5 @@
+{
+  "java.project.importOnFirstTimeStartup": "disabled",
+  "java.autobuild.enabled": false,
+  "java.import.gradle.enabled": false
+}

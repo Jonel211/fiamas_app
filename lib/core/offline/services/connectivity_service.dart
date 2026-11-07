@@ -21,9 +21,9 @@ class ConnectivityService {
     _isInitialized = true;
     _connectionStatusController.add(_lastKnownStatus);
 
-    _connectivity.onConnectivityChanged.listen((List<ConnectivityResult> results) async {
-      final result = results.first;
-      _lastKnownStatus = (result != ConnectivityResult.none);
+    _connectivity.onConnectivityChanged.listen((List<ConnectivityResult> results) {
+
+      _lastKnownStatus = results.any((r) => r != ConnectivityResult.none);
       _connectionStatusController.add(_lastKnownStatus);
     });
   }
@@ -35,7 +35,7 @@ class ConnectivityService {
   Future<bool> _hasConnection() async {
     try {
       final results = await _connectivity.checkConnectivity();
-      return results != ConnectivityResult.none;
+      return results.any((r) => r != ConnectivityResult.none);
     } catch (e) {
       dev.log('Error verificando conexión: $e', name: 'CONNECTIVITY');
       return false;

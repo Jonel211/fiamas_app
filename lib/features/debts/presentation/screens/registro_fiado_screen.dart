@@ -102,7 +102,7 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
                         decoration: InputDecoration(
                           hintText: 'Busca por nombre o teléfono',
                           hintStyle: TextStyle(
-                            color: AppColors.inkMuted.withOpacity(0.7),
+                            color: AppColors.inkMuted.withValues(alpha: 0.7),
                             fontSize: 14,
                           ),
                           prefixIcon: const Icon(

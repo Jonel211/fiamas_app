@@ -30,7 +30,7 @@ class StoreProfileHeader extends StatelessWidget {
       width: _logoSize,
       height: _logoSize,
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => _fallbackIcon(),
+      errorBuilder: (_, _, _) => _fallbackIcon(),
     );
   }
 

@@ -46,7 +46,7 @@ class CustomerCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -63,7 +63,7 @@ class CustomerCard extends StatelessWidget {
                 radius: 28,
                 backgroundColor: _getAvatarColor(),
                 backgroundImage: (imageUrl != null && imageUrl!.isNotEmpty) ? NetworkImage(imageUrl!) : null,
-                onBackgroundImageError: (imageUrl != null && imageUrl!.isNotEmpty) ? (_, __) {} : null,
+                onBackgroundImageError: (imageUrl != null && imageUrl!.isNotEmpty) ? (_, _) {} : null,
                 child: (imageUrl != null && imageUrl!.isNotEmpty)
                     ? null
                     : Text(

@@ -125,7 +125,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         switchOutCurve: Curves.easeInCubic,
                         layoutBuilder: (current, previous) => Stack(
                           alignment: Alignment.bottomCenter,
-                          children: [...previous, if (current != null) current],
+                          children: [...previous, ?current],
                         ),
                         transitionBuilder: (child, animation) {
                           final slide = Tween<Offset>(

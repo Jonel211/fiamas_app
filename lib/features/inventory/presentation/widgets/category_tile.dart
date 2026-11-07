@@ -31,7 +31,7 @@ class CategoryTile extends StatelessWidget {
     return Opacity(
       opacity: c.activo ? 1 : 0.5,
       child: Material(
-        color: parsedColor.withOpacity(0.15),
+        color: parsedColor.withValues(alpha: 0.15),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: selected

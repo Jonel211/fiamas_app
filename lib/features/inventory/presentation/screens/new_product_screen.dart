@@ -479,7 +479,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                     Switch(
                       value: _active,
                       onChanged: (v) => setState(() => _active = v),
-                      activeColor: AppColors.teal,
+                      activeThumbColor: AppColors.teal,
                     ),
                   ],
                 ),

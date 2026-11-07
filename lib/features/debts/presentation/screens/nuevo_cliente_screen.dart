@@ -186,7 +186,7 @@ class _NuevoClienteScreenState extends State<NuevoClienteScreen> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.skyBlue.withOpacity(0.3),
+                              color: AppColors.skyBlue.withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Text(

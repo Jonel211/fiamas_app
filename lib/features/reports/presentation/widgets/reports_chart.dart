@@ -96,8 +96,8 @@ class ReportsChart extends StatelessWidget {
                       show: true,
                       gradient: LinearGradient(
                         colors: [
-                          AppColors.teal.withOpacity(0.3),
-                          AppColors.teal.withOpacity(0.0),
+                          AppColors.teal.withValues(alpha: 0.3),
+                          AppColors.teal.withValues(alpha: 0.0),
                         ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,

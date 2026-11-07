@@ -29,7 +29,7 @@ class _TermsScreenState extends State<TermsScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.teal.withOpacity(0.45)),
+                    border: Border.all(color: AppColors.teal.withValues(alpha: 0.45)),
                   ),
                   padding: const EdgeInsets.all(20),
                   child: Column(

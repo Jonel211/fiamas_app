@@ -35,7 +35,7 @@ class StoreListItem extends StatelessWidget {
       width: _circleSize,
       height: _circleSize,
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => _fallbackIcon(),
+      errorBuilder: (_, _, _) => _fallbackIcon(),
     );
   }
 

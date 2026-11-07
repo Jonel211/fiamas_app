@@ -230,7 +230,7 @@ class _ProductsScreenState extends State<ProductsScreen> with WidgetsBindingObse
                             height: 32,
                             child: ListView.separated(
                               scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 20),
-                              itemCount: categoriasActivas.length + 1, separatorBuilder: (_, __) => const SizedBox(width: 8),
+                              itemCount: categoriasActivas.length + 1, separatorBuilder: (_, _) => const SizedBox(width: 8),
                               itemBuilder: (context, i) {
                                 if (i == 0) return _CategoryChip(label: 'Todos', selected: _selectedCategory == null, onTap: () => setState(() => _selectedCategory = null));
                                 final c = categoriasActivas[i - 1];

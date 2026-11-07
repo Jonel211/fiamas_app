@@ -207,7 +207,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.12),
+                    color: Colors.orange.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Text(
@@ -271,7 +271,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                     amount: '',
                                     icon: Icons.shopping_cart_outlined,
                                     iconColor: AppColors.teal,
-                                    iconBg: AppColors.teal.withOpacity(0.1),
+                                    iconBg: AppColors.teal.withValues(alpha: 0.1),
                                     statusColor: Colors.green,
                                     onExportPdf: () => _exportarPdf(TipoReporte.fiados),
                                   ),
@@ -283,7 +283,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                     amount: '',
                                     icon: Icons.pan_tool_outlined,
                                     iconColor: Colors.orange,
-                                    iconBg: Colors.orange.withOpacity(0.1),
+                                    iconBg: Colors.orange.withValues(alpha: 0.1),
                                     statusColor: Colors.orange,
                                     onExportPdf: () =>
                                         _exportarPdf(TipoReporte.fiadosPorCobrar),
@@ -296,7 +296,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                     amount: '',
                                     icon: Icons.mark_email_read_outlined,
                                     iconColor: Colors.green,
-                                    iconBg: Colors.green.withOpacity(0.1),
+                                    iconBg: Colors.green.withValues(alpha: 0.1),
                                     statusColor: Colors.green,
                                     onExportPdf: () => _exportarPdf(TipoReporte.cobros),
                                   ),
@@ -307,7 +307,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                     amount: '',
                                     icon: Icons.inventory_2_outlined,
                                     iconColor: Colors.indigo,
-                                    iconBg: Colors.indigo.withOpacity(0.1),
+                                    iconBg: Colors.indigo.withValues(alpha: 0.1),
                                     statusColor: Colors.indigo,
                                     onExportPdf: () =>
                                         _exportarPdf(TipoReporte.productos),

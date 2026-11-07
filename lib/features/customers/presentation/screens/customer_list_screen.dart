@@ -130,8 +130,8 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                   boxShadow: [
                     BoxShadow(
                       color: _isSearchFocused
-                          ? AppColors.teal.withOpacity(0.15)
-                          : Colors.black.withOpacity(0.04),
+                          ? AppColors.teal.withValues(alpha: 0.15)
+                          : Colors.black.withValues(alpha: 0.04),
                       blurRadius: _isSearchFocused ? 12 : 8,
                       offset: const Offset(0, 2),
                     ),

@@ -118,7 +118,7 @@ class _ScoringHistoryScreenState extends State<ScoringHistoryScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.history_rounded, size: 60, color: AppColors.inkMuted.withOpacity(0.3)),
+                  Icon(Icons.history_rounded, size: 60, color: AppColors.inkMuted.withValues(alpha: 0.3)),
                   const SizedBox(height: 16),
                   const Text(
                     'Aún no hay historial de scoring.',

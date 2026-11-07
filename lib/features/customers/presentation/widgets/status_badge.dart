@@ -22,13 +22,13 @@ class StatusBadge extends StatelessWidget {
   Color _getBackgroundColor() {
     switch (status) {
       case 'Al día':
-        return AppColors.success.withOpacity(0.15);
+        return AppColors.success.withValues(alpha: 0.15);
       case 'Con deuda':
-        return AppColors.gold.withOpacity(0.15);
+        return AppColors.gold.withValues(alpha: 0.15);
       case 'Vencido':
-        return AppColors.danger.withOpacity(0.15);
+        return AppColors.danger.withValues(alpha: 0.15);
       default:
-        return AppColors.inkMuted.withOpacity(0.15);
+        return AppColors.inkMuted.withValues(alpha: 0.15);
     }
   }
 

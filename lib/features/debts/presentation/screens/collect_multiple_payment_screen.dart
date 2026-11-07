@@ -143,7 +143,7 @@ class _CollectMultiplePaymentScreenState
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.mist.withOpacity(0.3),
+                    color: AppColors.mist.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppColors.mist),
                   ),
@@ -372,7 +372,7 @@ class _CollectMultiplePaymentScreenState
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.skyBlue.withOpacity(0.5) : Colors.white,
+          color: isSelected ? AppColors.skyBlue.withValues(alpha: 0.5) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppColors.teal : AppColors.mist,

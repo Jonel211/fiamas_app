@@ -16,7 +16,7 @@ class FeatureCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.teal.withOpacity(0.45)),
+        border: Border.all(color: AppColors.teal.withValues(alpha: 0.45)),
       ),
       child: Text(
         label,

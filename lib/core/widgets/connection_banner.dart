@@ -48,26 +48,25 @@ class _ConnectionBannerState extends State<ConnectionBanner> {
     
     final syncService = SyncService();
     await syncService.forceSync();
+    final pendingCount = await syncService.getPendingCount();
     
-    if (mounted) {
-      setState(() => _isSyncing = false);
-      
-      final pendingCount = await syncService.getPendingCount();
-      if (pendingCount == 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Todos los datos sincronizados'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('⚠️ Quedan $pendingCount operaciones pendientes'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
+    if (!mounted) return;
+    setState(() => _isSyncing = false);
+    
+    if (pendingCount == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Todos los datos sincronizados'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('⚠️ Quedan $pendingCount operaciones pendientes'),
+          backgroundColor: Colors.orange,
+        ),
+      );
     }
   }
 
