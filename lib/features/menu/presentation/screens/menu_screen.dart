@@ -8,10 +8,15 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_header_config.dart';
 import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../data/plan_repository.dart';
+import '../../data/sync_preferences.dart';
+import '../../data/sync_service.dart';
 import '../widgets/user_card.dart';
 import '../widgets/menu_section.dart';
 import '../widgets/menu_item.dart';
 import '../widgets/logout_button.dart';
+
+const String _kSoporteWhatsApp = '910491787';
 
 class MenuScreen extends StatefulWidget {
   const MenuScreen({super.key});
@@ -21,7 +26,13 @@ class MenuScreen extends StatefulWidget {
 }
 
 class _MenuScreenState extends State<MenuScreen> {
-  bool _autoBackup = true;
+  final SyncPreferences _syncPreferences = SyncPreferences();
+  final SyncService _syncService = SyncService();
+
+  bool _syncActiva = false;
+  bool _isSyncing = false;
+  bool _cargandoSync = true;
+  DateTime? _ultimaSincronizacion;
 
   @override
   void initState() {
@@ -29,6 +40,199 @@ class _MenuScreenState extends State<MenuScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AuthProvider>().cargarPerfil();
     });
+    _cargarPreferenciasSync();
+  }
+
+  Future<void> _cargarPreferenciasSync() async {
+    final activa = await _syncPreferences.isSyncActiva();
+    final ultima = await _syncPreferences.getUltimaSincronizacion();
+    if (!mounted) return;
+    setState(() {
+      _syncActiva = activa;
+      _ultimaSincronizacion = ultima;
+      _cargandoSync = false;
+    });
+  }
+
+  Future<void> _cambiarSync(bool activa) async {
+    setState(() => _syncActiva = activa);
+    await _syncPreferences.setSyncActiva(activa);
+  }
+
+  Future<void> _sincronizarAhora() async {
+    if (!_syncActiva || _isSyncing) return;
+
+    final tiendaProvider = context.read<TiendaProvider>();
+    final auth = context.read<AuthProvider>();
+    final tiendaId = tiendaProvider.tiendaSeleccionadaId ?? auth.tiendaId;
+
+    if (tiendaId == null) {
+      _mostrarSnack('No hay una tienda seleccionada');
+      return;
+    }
+
+    setState(() => _isSyncing = true);
+    final exito = await _syncService.sincronizar(tiendaId);
+    final ultima = await _syncPreferences.getUltimaSincronizacion();
+
+    if (!mounted) return;
+
+    setState(() {
+      _isSyncing = false;
+      _ultimaSincronizacion = ultima;
+    });
+
+    _mostrarSnack(
+      exito ? 'Sincronización completada' : 'No se pudo sincronizar',
+      error: !exito,
+    );
+  }
+
+  void _mostrarSnack(String mensaje, {bool error = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          mensaje,
+          style: TextStyle(color: error ? AppColors.danger : AppColors.onBrand),
+        ),
+        backgroundColor: error ? AppColors.dangerSoft : AppColors.success,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  String _formatearFecha(DateTime fecha) {
+    final dia = fecha.day.toString().padLeft(2, '0');
+    final mes = fecha.month.toString().padLeft(2, '0');
+    final anio = fecha.year.toString();
+    final hora = fecha.hour.toString().padLeft(2, '0');
+    final minuto = fecha.minute.toString().padLeft(2, '0');
+    return '$dia/$mes/$anio $hora:$minuto';
+  }
+
+  void _mostrarDialogoPremium(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return Dialog(
+          backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(
+                    color: AppColors.warningSoft,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.workspace_premium_rounded,
+                    color: AppColors.gold,
+                    size: 34,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Función Premium',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'La sincronización de datos en la nube es una función '
+                  'Premium. Escríbenos por WhatsApp y te daremos más '
+                  'información.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.4,
+                    color: AppColors.inkMuted,
+                  ),
+                ),
+                const SizedBox(height: 22),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.teal,
+                      foregroundColor: AppColors.onBrand,
+                      elevation: 0,
+                      minimumSize: const Size.fromHeight(48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _contactarSoporte();
+                    },
+                    child: const Text(
+                      'Contactar a soporte',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text(
+                    'Ahora no',
+                    style: TextStyle(
+                      color: AppColors.inkMuted,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _contactarSoporte() async {
+    final auth = context.read<AuthProvider>();
+    final perfil = auth.perfil;
+    final tienda = context.read<TiendaProvider>().tiendaSeleccionada;
+
+    final nombre = (perfil?.fullName.isNotEmpty ?? false)
+        ? perfil!.fullName
+        : (auth.user?.nombre ?? 'Tendero');
+    final telefono = perfil?.telefono ?? '';
+    final nombreTienda = (tienda?.nombre.isNotEmpty ?? false)
+        ? tienda!.nombre
+        : 'Mi tienda';
+
+    final mensaje =
+        'Hola, quiero más información sobre la Sincronización de datos en '
+        'la nube (Premium) de Fiamas. Tendero: $nombre, teléfono: $telefono. '
+        'Tienda: $nombreTienda.';
+    final uri = Uri.parse(
+      'https://wa.me/$_kSoporteWhatsApp?text=${Uri.encodeComponent(mensaje)}',
+    );
+
+    var abierto = false;
+    try {
+      abierto = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      abierto = false;
+    }
+
+    if (!mounted) return;
+
+    if (!abierto) {
+      _mostrarSnack('No se pudo abrir WhatsApp', error: true);
+    }
   }
 
   @override
@@ -38,7 +242,7 @@ class _MenuScreenState extends State<MenuScreen> {
       showBack: true,
       centerTitle: true,
       child: Scaffold(
-        backgroundColor: AppColors.ivory,
+        backgroundColor: AppColors.background,
         body: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
           child: Consumer<AuthProvider>(
@@ -51,6 +255,7 @@ class _MenuScreenState extends State<MenuScreen> {
                   (perfil?.telefono != null && perfil!.telefono.isNotEmpty)
                   ? '+51 ${perfil.telefono}'
                   : 'Sin teléfono';
+              final isPremium = PlanRepository(perfil).isPremium;
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -66,15 +271,100 @@ class _MenuScreenState extends State<MenuScreen> {
                     title: 'Datos y respaldo',
                     children: [
                       MenuItem(
-                        icon: Icons.sync_rounded,
-                        title: 'Respaldo automático',
+                        icon: Icons.workspace_premium_rounded,
+                        iconColor: AppColors.gold,
+                        iconBackgroundColor: AppColors.warningSoft,
+                        title: 'Sincronización de datos en la nube',
+                        titleTrailing: const _PremiumBadge(),
                         showChevron: false,
-                        trailing: Switch(
-                          value: _autoBackup,
-                          activeThumbColor: AppColors.teal,
-                          onChanged: (v) => setState(() => _autoBackup = v),
-                        ),
+                        onTap: isPremium
+                            ? null
+                            : () => _mostrarDialogoPremium(context),
+                        trailing: isPremium
+                            ? Switch(
+                                value: _syncActiva,
+                                activeThumbColor: AppColors.teal,
+                                onChanged: _cambiarSync,
+                              )
+                            : GestureDetector(
+                                onTap: () => _mostrarDialogoPremium(context),
+                                child: const IgnorePointer(
+                                  child: Switch(
+                                    value: false,
+                                    onChanged: null,
+                                    thumbColor: WidgetStatePropertyAll(
+                                      AppColors.surface,
+                                    ),
+                                    trackColor: WidgetStatePropertyAll(
+                                      AppColors.surfaceMuted,
+                                    ),
+                                    trackOutlineColor: WidgetStatePropertyAll(
+                                      AppColors.mist,
+                                    ),
+                                  ),
+                                ),
+                              ),
                       ),
+                      if (isPremium)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _cargandoSync
+                                    ? 'Cargando estado de sincronización...'
+                                    : _ultimaSincronizacion == null
+                                    ? 'Aún no sincronizado'
+                                    : 'Última sincronización: '
+                                          '${_formatearFecha(_ultimaSincronizacion!)}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.inkMuted,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.teal,
+                                    foregroundColor: AppColors.onBrand,
+                                    elevation: 0,
+                                    minimumSize: const Size.fromHeight(44),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  onPressed: _syncActiva && !_isSyncing
+                                      ? _sincronizarAhora
+                                      : null,
+                                  icon: _isSyncing
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: AppColors.onBrand,
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.cloud_sync_rounded,
+                                          size: 20,
+                                        ),
+                                  label: Text(
+                                    _isSyncing
+                                        ? 'Sincronizando...'
+                                        : 'Sincronizar ahora',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -92,8 +382,9 @@ class _MenuScreenState extends State<MenuScreen> {
                       MenuItem(
                         icon: Icons.lock_outline_rounded,
                         title: 'Cambiar contraseña',
-                        onTap: () => Navigator.of(context)
-                            .pushNamed(AppRoutes.changePassword),
+                        onTap: () =>
+                            Navigator.of(context)
+                                .pushNamed(AppRoutes.changePassword),
                       ),
                       MenuItem(
                         icon: Icons.share_outlined,
@@ -164,7 +455,7 @@ class _MenuScreenState extends State<MenuScreen> {
       builder: (ctx) {
         return Container(
           decoration: const BoxDecoration(
-            color: Colors.white,
+            color: AppColors.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           padding: EdgeInsets.fromLTRB(
@@ -183,7 +474,7 @@ class _MenuScreenState extends State<MenuScreen> {
                   width: 44,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: AppColors.mist,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -197,7 +488,7 @@ class _MenuScreenState extends State<MenuScreen> {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: AppColors.teal.withOpacity(0.12),
+                      color: AppColors.tealSoft,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -240,7 +531,10 @@ class _MenuScreenState extends State<MenuScreen> {
 
               // Caja con el enlace
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.background,
                   borderRadius: BorderRadius.circular(14),
@@ -248,7 +542,11 @@ class _MenuScreenState extends State<MenuScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.link_rounded, color: AppColors.teal, size: 22),
+                    const Icon(
+                      Icons.link_rounded,
+                      color: AppColors.teal,
+                      size: 22,
+                    ),
                     const SizedBox(width: 10),
                     const Expanded(
                       child: Text(
@@ -275,7 +573,10 @@ class _MenuScreenState extends State<MenuScreen> {
                         Navigator.pop(ctx);
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('¡Enlace copiado al portapapeles!'),
+                            content: Text(
+                              '¡Enlace copiado al portapapeles!',
+                              style: TextStyle(color: AppColors.onBrand),
+                            ),
                             backgroundColor: AppColors.teal,
                             behavior: SnackBarBehavior.floating,
                           ),
@@ -293,15 +594,18 @@ class _MenuScreenState extends State<MenuScreen> {
                   Expanded(
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF25D366),
-                        foregroundColor: Colors.white,
+                        backgroundColor: AppColors.whatsapp,
+                        foregroundColor: AppColors.onBrand,
                         minimumSize: const Size.fromHeight(48),
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      icon: const Icon(Icons.chat_bubble_outline_rounded, size: 20),
+                      icon: const Icon(
+                        Icons.chat_bubble_outline_rounded,
+                        size: 20,
+                      ),
                       label: const Text(
                         'WhatsApp',
                         style: TextStyle(fontWeight: FontWeight.w700),
@@ -312,11 +616,20 @@ class _MenuScreenState extends State<MenuScreen> {
                           'https://wa.me/?text=${Uri.encodeComponent(shareMessage)}',
                         );
                         try {
-                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          );
                         } catch (_) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('No se pudo abrir WhatsApp')),
+                              const SnackBar(
+                                content: Text(
+                                  'No se pudo abrir WhatsApp',
+                                  style: TextStyle(color: AppColors.danger),
+                                ),
+                                backgroundColor: AppColors.dangerSoft,
+                              ),
                             );
                           }
                         }
@@ -349,7 +662,13 @@ class _MenuScreenState extends State<MenuScreen> {
                         } catch (_) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('No se pudo abrir la app de mensajes')),
+                              const SnackBar(
+                                content: Text(
+                                  'No se pudo abrir la app de mensajes',
+                                  style: TextStyle(color: AppColors.danger),
+                                ),
+                                backgroundColor: AppColors.dangerSoft,
+                              ),
                             );
                           }
                         }
@@ -362,6 +681,30 @@ class _MenuScreenState extends State<MenuScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _PremiumBadge extends StatelessWidget {
+  const _PremiumBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.warningSoft,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Text(
+        'PREMIUM',
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.4,
+          color: AppColors.gold,
+        ),
+      ),
     );
   }
 }

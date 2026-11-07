@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/constants/app_colors.dart';
 
 /// Item individual del menú.
@@ -9,17 +10,23 @@ class MenuItem extends StatelessWidget {
     required this.icon,
     required this.title,
     this.subtitle,
+    this.titleTrailing,
     this.trailing,
     this.onTap,
     this.showChevron = true,
+    this.iconColor = AppColors.teal,
+    this.iconBackgroundColor,
   });
 
   final IconData icon;
   final String title;
   final String? subtitle;
+  final Widget? titleTrailing;
   final Widget? trailing;
   final VoidCallback? onTap;
   final bool showChevron;
+  final Color iconColor;
+  final Color? iconBackgroundColor;
 
   @override
   Widget build(BuildContext context) {
@@ -34,10 +41,12 @@ class MenuItem extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.skyBlue.withOpacity(0.35),
+                color:
+                    iconBackgroundColor ??
+                    AppColors.skyBlue.withValues(alpha: 0.35),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: AppColors.teal, size: 20),
+              child: Icon(icon, color: iconColor, size: 20),
             ),
             const SizedBox(width: 14),
             // Título + subtítulo
@@ -46,13 +55,23 @@ class MenuItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.ink,
-                    ),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.ink,
+                          ),
+                        ),
+                      ),
+                      if (titleTrailing != null) ...[
+                        const SizedBox(width: 8),
+                        titleTrailing!,
+                      ],
+                    ],
                   ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 2),
@@ -71,8 +90,11 @@ class MenuItem extends StatelessWidget {
             if (trailing != null)
               trailing!
             else if (showChevron)
-              const Icon(Icons.chevron_right_rounded,
-                  color: AppColors.inkMuted, size: 22),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.inkMuted,
+                size: 22,
+              ),
           ],
         ),
       ),

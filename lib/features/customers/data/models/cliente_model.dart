@@ -26,9 +26,15 @@ class ClienteModel {
       nombres: json['nombres'] ?? '',
       apellidos: json['apellidos'] ?? '',
       direccion: json['direccion'],
-      fotoPerfilUrl: json['foto_perfil_url'] ?? json['foto_url'] ?? json['foto'] ?? json['avatar_url'],
+      fotoPerfilUrl:
+          json['foto_perfil_url'] ??
+          json['foto_url'] ??
+          json['foto'] ??
+          json['avatar_url'],
       // Intentamos parsear la fecha (por si el backend la envía)
-      creadoEn: json['creado_en'] != null ? DateTime.tryParse(json['creado_en'].toString()) : null,
+      creadoEn: json['creado_en'] != null
+          ? DateTime.tryParse(json['creado_en'].toString())
+          : null,
       vinculacion: VinculacionModel.fromJson(json['vinculacion'] ?? {}),
     );
   }
@@ -60,13 +66,17 @@ class VinculacionModel {
   factory VinculacionModel.fromJson(Map<String, dynamic> json) {
     return VinculacionModel(
       id: json['id'] ?? '',
-      limiteCredito: double.tryParse(json['limite_credito']?.toString() ?? '') ?? 500.0,
-      saldoActual: double.tryParse(json['saldo_actual']?.toString() ?? '') ?? 0.0,
-      scorePagador: int.tryParse(json['score_pagador']?.toString() ?? '') ?? 100,
+      limiteCredito:
+          double.tryParse(json['limite_credito']?.toString() ?? '') ?? 500.0,
+      saldoActual:
+          double.tryParse(json['saldo_actual']?.toString() ?? '') ?? 0.0,
+      scorePagador:
+          int.tryParse(json['score_pagador']?.toString() ?? '') ?? 100,
       categoriaPagador: json['categoria_pagador'] ?? 'nuevo',
       totalFiados: int.tryParse(json['total_fiados']?.toString() ?? '') ?? 0,
       totalPagos: int.tryParse(json['total_pagos']?.toString() ?? '') ?? 0,
-      cantidadFiadosMora: int.tryParse(json['cantidad_fiados_mora']?.toString() ?? '') ?? 0,
+      cantidadFiadosMora:
+          int.tryParse(json['cantidad_fiados_mora']?.toString() ?? '') ?? 0,
     );
   }
 }

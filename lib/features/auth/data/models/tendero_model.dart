@@ -8,6 +8,7 @@ class TenderoModel {
   final String telefono;
   final String? fotoUrl;
   final List<TiendaModel> tiendas;
+  final bool isPremium;
 
   TenderoModel({
     required this.id,
@@ -17,6 +18,7 @@ class TenderoModel {
     required this.telefono,
     this.fotoUrl,
     required this.tiendas,
+    this.isPremium = false,
   });
 
   String get fullName => '$nombres $apellidos'.trim();
@@ -37,6 +39,7 @@ class TenderoModel {
       telefono: json['telefono'] ?? '',
       fotoUrl: json['foto_perfil_url'],
       tiendas: tiendasList,
+      isPremium: json['es_premium'] == true,
     );
   }
 }
