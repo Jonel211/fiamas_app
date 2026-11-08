@@ -151,7 +151,7 @@ class _MyStoresScreenState extends State<MyStoresScreen> {
                             await context.read<TiendaProvider>().seleccionarTienda(tienda.id);
 
                             // 2. Navegar a la pantalla principal solo si el widget sigue montado
-                            if (mounted) {
+                            if (context.mounted) {
                               Navigator.pushNamed(
                                 context,
                                 AppRoutes.summary,

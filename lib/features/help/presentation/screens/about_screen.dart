@@ -38,7 +38,7 @@ class _AboutScreenState extends State<AboutScreen> {
                       child: Image.asset(
                         _logo,
                         height: 90,
-                        errorBuilder: (_, __, ___) => const Text(
+                        errorBuilder: (_, _, _) => const Text(
                           'FIAMAS',
                           style: TextStyle(
                             fontSize: 28,
@@ -79,7 +79,7 @@ class _AboutScreenState extends State<AboutScreen> {
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: AppColors.teal.withOpacity(0.45),
+                          color: AppColors.teal.withValues(alpha: 0.45),
                         ),
                       ),
                       child: const Text(

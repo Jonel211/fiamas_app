@@ -41,7 +41,7 @@ class StorePhotoPicker extends StatelessWidget {
         width: _circleSize,
         height: _circleSize,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _placeholder(),
+        errorBuilder: (_, _, _) => _placeholder(),
       );
     }
     return _placeholder();

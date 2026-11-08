@@ -61,11 +61,11 @@ class DebtDetailMultipleScreen extends StatelessWidget {
   Color _getStatusBgColor(DebtStatus status) {
     switch (status) {
       case DebtStatus.pendiente:
-        return AppColors.gold.withOpacity(0.15);
+        return AppColors.gold.withValues(alpha: 0.15);
       case DebtStatus.parcial:
-        return AppColors.skyBlue.withOpacity(0.15);
+        return AppColors.skyBlue.withValues(alpha: 0.15);
       case DebtStatus.pagado:
-        return AppColors.success.withOpacity(0.15);
+        return AppColors.success.withValues(alpha: 0.15);
     }
   }
 
@@ -295,7 +295,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                           : null,
                       onBackgroundImageError:
                           (photoUrl != null && photoUrl.isNotEmpty)
-                          ? (_, __) {}
+                          ? (_, _) {}
                           : null,
 
                       child: (photoUrl != null && photoUrl.isNotEmpty)
@@ -341,7 +341,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: (allPaid ? AppColors.success : AppColors.gold)
-                            .withOpacity(0.15),
+                            .withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
@@ -519,7 +519,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.skyBlue.withOpacity(0.5),
+                  color: AppColors.skyBlue.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.teal, width: 2),
                 ),

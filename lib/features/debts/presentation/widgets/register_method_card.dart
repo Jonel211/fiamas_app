@@ -25,7 +25,7 @@ class RegisterMethodCard extends StatelessWidget {
     final bgColor = isTealBackground ? AppColors.teal : AppColors.surface;
     final textColor = isTealBackground ? Colors.white : AppColors.teal;
     final subtitleColor = isTealBackground
-        ? Colors.white.withOpacity(0.8)
+        ? Colors.white.withValues(alpha: 0.8)
         : AppColors.inkMuted;
 
     return GestureDetector(
@@ -46,7 +46,7 @@ class RegisterMethodCard extends StatelessWidget {
           boxShadow: [
             if (isSelected && !isTealBackground)
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               )
@@ -60,8 +60,8 @@ class RegisterMethodCard extends StatelessWidget {
               height: 48,
               decoration: BoxDecoration(
                 color: isTealBackground
-                    ? Colors.white.withOpacity(0.15)
-                    : AppColors.skyBlue.withOpacity(0.4),
+                    ? Colors.white.withValues(alpha: 0.15)
+                    : AppColors.skyBlue.withValues(alpha: 0.4),
                 shape: BoxShape.circle,
               ),
               child: Icon(

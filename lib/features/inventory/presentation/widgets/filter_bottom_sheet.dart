@@ -378,7 +378,7 @@ class _SortOption extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
           color: selected
-              ? AppColors.teal.withOpacity(0.1)
+              ? AppColors.teal.withValues(alpha: 0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(

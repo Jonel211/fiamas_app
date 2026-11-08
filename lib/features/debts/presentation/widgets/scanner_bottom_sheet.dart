@@ -69,7 +69,7 @@ class ScannerBottomSheet extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppColors.teal.withOpacity(0.1),
+                            color: AppColors.teal.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
@@ -116,7 +116,7 @@ class ScannerBottomSheet extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
             decoration: BoxDecoration(
               color: Colors.white,
-              border: Border(top: BorderSide(color: AppColors.mist.withOpacity(0.5))),
+              border: Border(top: BorderSide(color: AppColors.mist.withValues(alpha: 0.5))),
             ),
             child: SizedBox(
               width: double.infinity,

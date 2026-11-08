@@ -47,7 +47,7 @@ class StepIndicator extends StatelessWidget {
                 child: Icon(
                   Icons.arrow_forward,
                   size: 16,
-                  color: AppColors.inkMuted.withOpacity(0.3),
+                  color: AppColors.inkMuted.withValues(alpha: 0.3),
                 ),
               ),
           ],

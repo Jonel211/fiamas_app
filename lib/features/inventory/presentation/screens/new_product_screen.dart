@@ -418,11 +418,11 @@ class _NewProductScreenState extends State<NewProductScreen> {
                             ),
                           );
                           
-                          if (scannedCode != null && mounted) {
+                          if (scannedCode != null && context.mounted) {
                             setState(() {
                               _barcode.text = scannedCode;
                             });
-                            
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Código escaneado exitosamente'),
@@ -479,7 +479,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                     Switch(
                       value: _active,
                       onChanged: (v) => setState(() => _active = v),
-                      activeColor: AppColors.teal,
+                      activeThumbColor: AppColors.teal,
                     ),
                   ],
                 ),

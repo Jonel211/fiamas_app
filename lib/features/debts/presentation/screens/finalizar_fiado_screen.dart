@@ -125,7 +125,10 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
       });
 
       if (mounted) {
-        try { await context.read<ClienteProvider>().cargarResumenCliente(_cliente.id, tiendaId); } catch (_) {}
+        try {
+          await context.read<ClienteProvider>().cargarResumenCliente(_cliente.id, tiendaId);
+        } catch (_) {}
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fiado registrado exitosamente'), backgroundColor: Colors.green));
         Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.summary, (route) => false);
       }
@@ -139,7 +142,8 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
         await _registrarOffline(tiendaId, tenderoId, fechaFormateada, productosParaBackend);
       }
     } catch (e) {
-      debugPrint(' Falló online, guardando offline: $e');
+      debugPrint('Falló online, guardando offline: $e');
+      if (!mounted) return;
       final tenderoId = context.read<AuthProvider>().user?.id ?? 'unknown';
       await _registrarOffline(tiendaId, tenderoId, fechaFormateada, productosParaBackend);
     }
@@ -278,7 +282,7 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                decoration: BoxDecoration(color: AppColors.teal.withOpacity(0.3), borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(color: AppColors.teal.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(10)),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [

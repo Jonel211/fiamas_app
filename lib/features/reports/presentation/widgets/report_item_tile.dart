@@ -63,7 +63,7 @@ class ReportItemTile extends StatelessWidget {
             child: ElevatedButton(
               onPressed: onExportPdf, // Se conecta la acción aquí
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange.withOpacity(0.1),
+                backgroundColor: Colors.orange.withValues(alpha: 0.1),
                 foregroundColor: Colors.orange,
                 elevation: 0,
                 padding: EdgeInsets.zero,

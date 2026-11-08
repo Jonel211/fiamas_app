@@ -173,7 +173,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(24, 4, 24, 100),
                     itemCount: _filteredDebts.length,
-                    separatorBuilder: (_, __) =>
+                    separatorBuilder: (_, _) =>
                         const Divider(height: 1, color: AppColors.mist),
                     itemBuilder: (context, index) {
                       final debt = _filteredDebts[index];

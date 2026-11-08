@@ -103,11 +103,11 @@ class _ScannerTabState extends State<ScannerTab> {
                 width: 280, 
                 height: 180,
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.teal.withOpacity(0.7), width: 3),
+                  border: Border.all(color: AppColors.teal.withValues(alpha: 0.7), width: 3),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 10,
                       spreadRadius: 2,
                     )

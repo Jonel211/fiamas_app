@@ -29,8 +29,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   @override
   void dispose() {
-    for (final c in _controllers) c.dispose();
-    for (final f in _focusNodes) f.dispose();
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    for (final f in _focusNodes) {
+      f.dispose();
+    }
     super.dispose();
   }
 
@@ -108,6 +112,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
         Navigator.of(context).pop(true); 
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _showError = true;
         _isLoading = false;
@@ -119,7 +124,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
   }
 
   void _handleResend() {
-    for (final c in _controllers) c.clear();
+    for (final c in _controllers) {
+      c.clear();
+    }
     _focusNodes.first.requestFocus();
     _sendOtp(); // ✅ Reenvía el código
   }

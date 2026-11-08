@@ -31,9 +31,9 @@ class TiendaService {
         '/tiendas',
         data: {
           'nombre': nombre,
-          if (direccion != null) 'direccion': direccion,
-          if (ruc != null) 'ruc': ruc,
-          if (telefono != null) 'telefono': telefono,
+          'direccion': ?direccion,
+          'ruc': ?ruc,
+          'telefono': ?telefono,
         },
       );
       return TiendaModel.fromJson(response.data['tienda']);

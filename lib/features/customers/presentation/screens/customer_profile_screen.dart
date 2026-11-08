@@ -146,7 +146,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
                           ),
                           child: Column(
                             children: [
@@ -154,7 +154,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                                 radius: 45,
                                 backgroundColor: AppColors.teal,
                                 backgroundImage: (photoUrl != null && photoUrl.isNotEmpty) ? NetworkImage(photoUrl) : null,
-                                onBackgroundImageError: (photoUrl != null && photoUrl.isNotEmpty) ? (_, __) {} : null,
+                                onBackgroundImageError: (photoUrl != null && photoUrl.isNotEmpty) ? (_, _) {} : null,
                                 child: (photoUrl != null && photoUrl.isNotEmpty)
                                     ? null
                                     : Text(initial, style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold)),
@@ -225,7 +225,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -297,7 +297,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -321,7 +321,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                                     },
                                     child: Container(
                                       padding: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(color: AppColors.teal.withOpacity(0.1), shape: BoxShape.circle),
+                                      decoration: BoxDecoration(color: AppColors.teal.withValues(alpha: 0.1), shape: BoxShape.circle),
                                       child: const Icon(Icons.edit, color: AppColors.teal, size: 16),
                                     ),
                                   ),
@@ -334,7 +334,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                             borderRadius: BorderRadius.circular(8),
                             child: LinearProgressIndicator(
                               value: usagePercent / 100,
-                              backgroundColor: AppColors.skyBlue.withOpacity(0.3),
+                              backgroundColor: AppColors.skyBlue.withValues(alpha: 0.3),
                               valueColor: const AlwaysStoppedAnimation<Color>(AppColors.gold),
                               minHeight: 10,
                             ),
@@ -380,7 +380,7 @@ class _ActionCircleButton extends StatelessWidget {
           Container(
             width: 56,
             height: 56,
-            decoration: BoxDecoration(color: AppColors.skyBlue.withOpacity(0.4), shape: BoxShape.circle),
+            decoration: BoxDecoration(color: AppColors.skyBlue.withValues(alpha: 0.4), shape: BoxShape.circle),
             child: Icon(icon, color: AppColors.teal, size: 24),
           ),
           const SizedBox(height: 8),
