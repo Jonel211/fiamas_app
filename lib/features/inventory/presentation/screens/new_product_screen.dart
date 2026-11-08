@@ -418,11 +418,11 @@ class _NewProductScreenState extends State<NewProductScreen> {
                             ),
                           );
                           
-                          if (scannedCode != null && mounted) {
+                          if (scannedCode != null && context.mounted) {
                             setState(() {
                               _barcode.text = scannedCode;
                             });
-                            
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Código escaneado exitosamente'),

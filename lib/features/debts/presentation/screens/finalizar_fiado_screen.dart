@@ -125,7 +125,10 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
       });
 
       if (mounted) {
-        try { await context.read<ClienteProvider>().cargarResumenCliente(_cliente.id, tiendaId); } catch (_) {}
+        try {
+          await context.read<ClienteProvider>().cargarResumenCliente(_cliente.id, tiendaId);
+        } catch (_) {}
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fiado registrado exitosamente'), backgroundColor: Colors.green));
         Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.summary, (route) => false);
       }
@@ -139,7 +142,8 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
         await _registrarOffline(tiendaId, tenderoId, fechaFormateada, productosParaBackend);
       }
     } catch (e) {
-      debugPrint(' Falló online, guardando offline: $e');
+      debugPrint('Falló online, guardando offline: $e');
+      if (!mounted) return;
       final tenderoId = context.read<AuthProvider>().user?.id ?? 'unknown';
       await _registrarOffline(tiendaId, tenderoId, fechaFormateada, productosParaBackend);
     }

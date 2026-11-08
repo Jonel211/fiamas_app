@@ -403,14 +403,16 @@ class _CollectMultiplePaymentScreenState
                 ],
               ),
             ),
-            Radio<bool>(
-              value: true,
+            RadioGroup<bool>(
               groupValue: isSelected,
               onChanged: (value) {
                 if (value != null) onTap();
               },
-              activeColor: AppColors.teal,
-            ),
+              child: Radio<bool>(
+                value: true,
+                activeColor: AppColors.teal,
+              ),
+            )
           ],
         ),
       ),
