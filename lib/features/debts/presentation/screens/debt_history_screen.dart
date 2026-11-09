@@ -83,8 +83,7 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
         (widget.customer['name']?.toString() ?? 'Cliente');
     final phone = clienteCompleto?.telefono ??
         (widget.customer['phone']?.toString() ?? '');
-    final debtAmount = clienteCompleto?.vinculacion.saldoActual ??
-        ((widget.customer['debt'] as num?)?.toDouble() ?? 0.0);
+    final debtAmount = provider.saldoPendienteCliente;
     final score = clienteCompleto?.vinculacion.scorePagador ?? 100;
     final categoria = clienteCompleto?.vinculacion.categoriaPagador ?? 'nuevo';
 
@@ -107,9 +106,9 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
       return true;
     }).toList();
 
-    final totalFiado = fiados.fold(0.0, (sum, item) => sum + item.amount);
-    // Incluye abonos parciales, no solo fiados pagados al 100%
-    final totalPagado = fiados.fold(0.0, (sum, item) => sum + item.paidAmount);
+    // Misma lógica compartida con el Perfil del Cliente (excluye cancelados)
+    final totalFiado = provider.totalFiadoCliente;
+    final totalPagado = provider.totalPagadoCliente;
 
     final tieneDeudasPendientes = fiados.any(_esVigente);
 

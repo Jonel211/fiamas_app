@@ -42,6 +42,22 @@ class ClienteProvider extends ChangeNotifier {
   List<ClienteModel> get clientesConDeuda => _clientesConDeuda;
   List<ClienteModel> get recientes => _recientes;
   List<Debt> get fiadosCliente => _fiadosCliente;
+
+  /// Fiados que cuentan para los totales (excluye los cancelados).
+  List<Debt> get fiadosParaTotales =>
+      _fiadosCliente.where((d) => !d.isCancelled).toList();
+
+  /// Suma de `monto_total` de los fiados del cliente en la tienda.
+  double get totalFiadoCliente =>
+      fiadosParaTotales.fold(0.0, (sum, d) => sum + d.amount);
+
+  /// Suma de `monto_pagado` (pagos registrados) de los fiados del cliente.
+  double get totalPagadoCliente =>
+      fiadosParaTotales.fold(0.0, (sum, d) => sum + d.paidAmount);
+
+  /// Saldo pendiente = Total fiado - Total pagado.
+  double get saldoPendienteCliente =>
+      totalFiadoCliente - totalPagadoCliente;
   bool get isLoading => _isLoading;
   bool get isLoadingConDeuda => _isLoadingConDeuda;
   bool get isLoadingRecientes => _isLoadingRecientes;
@@ -481,6 +497,7 @@ class ClienteProvider extends ChangeNotifier {
             status: estadoEnum,
             dateLabel: fechaLabel,
             items: const [],
+            isCancelled: estadoString == 'cancelado',
           );
         }).toList();
       } else {
@@ -524,6 +541,7 @@ class ClienteProvider extends ChangeNotifier {
               ),
             )
             .toList(),
+        isCancelled: estadoString == 'cancelado',
       );
     }).toList();
   }
