@@ -41,15 +41,30 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
     // SALVAVIDAS: Usamos la tienda del provider o, si está vacío, la del auth
     final tiendaProvider = Provider.of<TiendaProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
-    final id = tiendaProvider.tiendaSeleccionadaId ?? authProvider.user?.tiendaId;
+    String? id = tiendaProvider.tiendaSeleccionadaId ?? authProvider.user?.tiendaId;
 
-    if (id != _loadedTiendaId) {
+    if (id == null && tiendaProvider.tiendas.isNotEmpty) {
+      final primera = tiendaProvider.tiendas.firstWhere(
+        (t) => t.activa,
+        orElse: () => tiendaProvider.tiendas.first,
+      );
+      id = primera.id;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) tiendaProvider.seleccionarTienda(primera.id);
+      });
+    } else if (id == null && !tiendaProvider.isLoading && authProvider.isAuthenticated) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) tiendaProvider.cargarMisTiendas();
+      });
+    }
+
+    if (id != null && (id != _loadedTiendaId || (_summary == null && !_loadingSummary))) {
       _loadedTiendaId = id;
       _summary = null; 
       _movimientos = [];
       _summaryError = null;
-      _loadingSummary = id != null;
-      if (id != null) _fetchSummary(id);
+      _loadingSummary = true;
+      _fetchSummary(id);
     }
   }
 
@@ -291,7 +306,7 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
 
               Container(
                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))]),
-                child: _loadingSummary && _movimientos.isEmpty
+                child: (_loadingSummary || tiendaProvider.isLoading) && _movimientos.isEmpty
                     ? const Padding(padding: EdgeInsets.all(24.0), child: Center(child: CircularProgressIndicator()))
                     : _movimientos.isEmpty
                         ? const Padding(padding: EdgeInsets.all(24.0), child: Center(child: Text('Aún no hay movimientos registrados', style: TextStyle(color: AppColors.inkMuted))))

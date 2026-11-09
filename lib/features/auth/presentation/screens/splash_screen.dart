@@ -89,6 +89,10 @@ class _SplashScreenState extends State<SplashScreen>
 
     // 3. Redirección segura
     if (isLoggedIn) {
+      try {
+        await context.read<TiendaProvider>().cargarMisTiendas();
+      } catch (_) {}
+      if (!mounted) return;
       _goToHome();
     } else {
       _goToWelcome();

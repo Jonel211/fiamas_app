@@ -40,7 +40,11 @@ class _LoginFormState extends State<LoginForm> {
 
     if (!mounted) return;
     if (success) {
-      // CAMBIO: Ahora te manda a "Mis Tiendas" para que selecciones la tienda
+      try {
+        await context.read<TiendaProvider>().cargarMisTiendas();
+      } catch (_) {}
+      if (!mounted) return;
+      // Redirigir a "Mis Tiendas" para seleccionar o confirmar la tienda
       Navigator.pushNamedAndRemoveUntil(context, AppRoutes.stores, (route) => false);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.errorMessage ?? 'Error al iniciar sesión'), backgroundColor: AppColors.danger, behavior: SnackBarBehavior.floating));
