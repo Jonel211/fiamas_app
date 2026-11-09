@@ -83,25 +83,24 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
     setState(() { _cartItems.removeAt(index); });
   }
 
-  void _editWeightItem(int index) {
+  Future<void> _editWeightItem(int index) async {
     final item = _cartItems[index];
     final inventory = context.read<InventoryProvider>();
     final product = inventory.products.firstWhere((p) => p.id == item['producto_id']);
 
-    showModalBottomSheet<Map<String, dynamic>>(
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
       builder: (_) => WeightProductBottomSheet(product: product, initialQty: (item['qty'] as num).toDouble()),
-    ).then((result) {
-      if (result != null && mounted) {
-        setState(() {
-          if (result['qty'] <= 0) {
-            _cartItems.removeAt(index);
-          } else {
-            _cartItems[index]['qty'] = result['qty'];
-          }
-        });
-      }
-    });
+    );
+    if (result != null && mounted) {
+      setState(() {
+        if (result['qty'] <= 0) {
+          _cartItems.removeAt(index);
+        } else {
+          _cartItems[index]['qty'] = result['qty'];
+        }
+      });
+    }
   }
 
   @override
@@ -110,6 +109,7 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF1E2025) : AppColors.ivory,
+      resizeToAvoidBottomInset: false,
       body: SafeArea(
         child: Column(
           children: [
