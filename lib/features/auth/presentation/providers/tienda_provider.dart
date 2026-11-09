@@ -104,7 +104,7 @@ class TiendaProvider extends ChangeNotifier {
       // Si no hay tienda seleccionada pero hay tiendas disponibles, auto-seleccionar la primera activa
       if (_tiendaSeleccionadaId == null && _tiendas.isNotEmpty) {
         final tiendaPorDefecto = _tiendas.firstWhere(
-          (t) => t.activa,
+          (t) => t.activo,
           orElse: () => _tiendas.first,
         );
         _tiendaSeleccionadaId = tiendaPorDefecto.id;

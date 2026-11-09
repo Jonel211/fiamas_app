@@ -45,7 +45,7 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
 
     if (id == null && tiendaProvider.tiendas.isNotEmpty) {
       final primera = tiendaProvider.tiendas.firstWhere(
-        (t) => t.activa,
+        (t) => t.activo,
         orElse: () => tiendaProvider.tiendas.first,
       );
       id = primera.id;
