@@ -145,6 +145,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             : 'all';
 
     final servidorViejo = _resumen != null && _resumen!.version == null;
+    final mostrarProductos = _selectedClienteId == 'all';
 
     return AppHeaderConfig(
       title: 'Reportes',
@@ -229,12 +230,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             const SizedBox(height: 24),
                             ReportsChart(chartData: _resumen?.chartData ?? []),
                             const SizedBox(height: 24),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 16),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Column(
+                                  const Column(
                                     mainAxisSize: MainAxisSize.min,
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
@@ -249,8 +250,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                               color: AppColors.inkMuted)),
                                     ],
                                   ),
-                                  Text('4 reportes',
-                                      style: TextStyle(
+                                  Text('${mostrarProductos ? 4 : 3} reportes',
+                                      style: const TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
                                           color: AppColors.teal)),
@@ -300,18 +301,20 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                     statusColor: Colors.green,
                                     onExportPdf: () => _exportarPdf(TipoReporte.cobros),
                                   ),
-                                  ReportItemTile(
-                                    title: 'Productos más vendidos',
-                                    subtitle: _unidadesTop(),
-                                    status: 'Solo filtra por fecha',
-                                    amount: '',
-                                    icon: Icons.inventory_2_outlined,
-                                    iconColor: Colors.indigo,
-                                    iconBg: Colors.indigo.withValues(alpha: 0.1),
-                                    statusColor: Colors.indigo,
-                                    onExportPdf: () =>
-                                        _exportarPdf(TipoReporte.productos),
-                                  ),
+                                  if (mostrarProductos)
+                                    ReportItemTile(
+                                      title: 'Productos más vendidos',
+                                      subtitle: _unidadesTop(),
+                                      status: 'Solo filtra por fecha',
+                                      amount: '',
+                                      icon: Icons.inventory_2_outlined,
+                                      iconColor: Colors.indigo,
+                                      iconBg:
+                                          Colors.indigo.withValues(alpha: 0.1),
+                                      statusColor: Colors.indigo,
+                                      onExportPdf: () =>
+                                          _exportarPdf(TipoReporte.productos),
+                                    ),
                                 ],
                               ),
                             ),
