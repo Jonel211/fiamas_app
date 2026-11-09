@@ -117,211 +117,256 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
       showBack: true,
       child: Scaffold(
         backgroundColor: AppColors.background,
-        body: Column(
-          children: [
-            GestureDetector(
-              onTap: () {
-                if (clienteCompleto != null) {
-                  Navigator.pushNamed(context, AppRoutes.customerProfile,
-                      arguments: clienteCompleto);
-                }
-              },
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2))
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: AppColors.teal,
-                      backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
-                      onBackgroundImageError: hasPhoto ? (_, _) {} : null,
-                      child: hasPhoto
-                          ? null
-                          : Text(initial, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+        body: CustomScrollView(
+          slivers: [
+            // Tarjeta del cliente + tarjeta de saldo (se desplazan)
+            SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      if (clienteCompleto != null) {
+                        Navigator.pushNamed(context, AppRoutes.customerProfile,
+                            arguments: clienteCompleto);
+                      }
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2))
+                        ],
+                      ),
+                      child: Row(
                         children: [
-                          Text(name,
-                              style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.ink)),
-                          const SizedBox(height: 4),
-                          Text(phone,
-                              style: TextStyle(
-                                  fontSize: 13, color: AppColors.inkMuted)),
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundColor: AppColors.teal,
+                            backgroundImage:
+                                hasPhoto ? NetworkImage(photoUrl) : null,
+                            onBackgroundImageError:
+                                hasPhoto ? (_, _) {} : null,
+                            child: hasPhoto
+                                ? null
+                                : Text(initial,
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold)),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(name,
+                                    style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.ink)),
+                                const SizedBox(height: 4),
+                                Text(phone,
+                                    style: TextStyle(
+                                        fontSize: 13,
+                                        color: AppColors.inkMuted)),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                    color: AppColors.gold
+                                        .withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(12)),
+                                child: Text('Score $score',
+                                    style: const TextStyle(
+                                        color: AppColors.gold,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600)),
+                              ),
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                    color: badgeColor,
+                                    borderRadius: BorderRadius.circular(8)),
+                                child: Text(badgeText,
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600)),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                  ),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                        color: AppColors.teal,
+                        borderRadius: BorderRadius.circular(16)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                              color: AppColors.gold.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(12)),
-                          child: Text('Score $score',
-                              style: const TextStyle(
-                                  color: AppColors.gold,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600)),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                              color: badgeColor,
-                              borderRadius: BorderRadius.circular(8)),
-                          child: Text(badgeText,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600)),
+                        const Text('SALDO ACTUAL PENDIENTE',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 1)),
+                        const SizedBox(height: 8),
+                        Text('S/ ${debtAmount.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 16),
+                        const Divider(color: Colors.white24, height: 1),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Total fiado',
+                                      style: TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 12)),
+                                  const SizedBox(height: 4),
+                                  Text('S/ ${totalFiado.toStringAsFixed(2)}',
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Total pagado',
+                                      style: TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 12)),
+                                  const SizedBox(height: 4),
+                                  Text('S/ ${totalPagado.toStringAsFixed(2)}',
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+
+            // Filtros fijos al hacer scroll
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _FilterHeaderDelegate(
+                extent: 56,
+                backgroundColor: AppColors.background,
+                child: SizedBox(
+                  height: 40,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    children: [
+                      _buildFilterChip('Todos', fiados.length,
+                          _selectedFilter == 'Todos'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip(
+                          'Vigentes', fiados.where(_esVigente).length,
+                          _selectedFilter == 'Vigentes'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip(
+                          'Pagados',
+                          fiados
+                              .where((d) => d.status == DebtStatus.pagado)
+                              .length,
+                          _selectedFilter == 'Pagados'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip(
+                          'Vencidos',
+                          fiados
+                              .where((d) =>
+                                  _esVigente(d) &&
+                                  d.dateLabel.contains('Vencido'))
+                              .length,
+                          _selectedFilter == 'Vencidos'),
+                    ],
+                  ),
                 ),
               ),
             ),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                  color: AppColors.teal, borderRadius: BorderRadius.circular(16)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('SALDO ACTUAL PENDIENTE',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 1)),
-                  const SizedBox(height: 8),
-                  Text('S/ ${debtAmount.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 36,
-                          fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
-                  const Divider(color: Colors.white24, height: 1),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Total fiado',
-                                style: TextStyle(
-                                    color: Colors.white70, fontSize: 12)),
-                            const SizedBox(height: 4),
-                            Text('S/ ${totalFiado.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600)),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Total pagado',
-                                style: TextStyle(
-                                    color: Colors.white70, fontSize: 12)),
-                            const SizedBox(height: 4),
-                            Text('S/ ${totalPagado.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600)),
-                          ],
-                        ),
-                      ),
-                    ],
+
+            // Lista de fiados
+            if (provider.isLoadingFiados)
+              const SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (provider.errorFiados != null)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      provider.errorFiados!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.red),
+                    ),
                   ),
-                ],
+                ),
+              )
+            else if (fiadosFiltrados.isEmpty)
+              const SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Text(
+                    'Este cliente no tiene fiados registrados.',
+                    style:
+                        TextStyle(color: AppColors.inkMuted, fontSize: 15),
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) =>
+                        _buildDebtCard(fiadosFiltrados[index]),
+                    childCount: fiadosFiltrados.length,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 40,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                children: [
-                  _buildFilterChip('Todos', fiados.length,
-                      _selectedFilter == 'Todos'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Vigentes', fiados.where(_esVigente).length,
-                      _selectedFilter == 'Vigentes'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(
-                      'Pagados',
-                      fiados.where((d) => d.status == DebtStatus.pagado).length,
-                      _selectedFilter == 'Pagados'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(
-                      'Vencidos',
-                      fiados
-                          .where((d) =>
-                              _esVigente(d) && d.dateLabel.contains('Vencido'))
-                          .length,
-                      _selectedFilter == 'Vencidos'),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: provider.isLoadingFiados
-                  ? const Center(child: CircularProgressIndicator())
-                  : provider.errorFiados != null
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Text(
-                              provider.errorFiados!,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.red),
-                            ),
-                          ),
-                        )
-                      : fiadosFiltrados.isEmpty
-                          ? const Center(
-                              child: Text(
-                                'Este cliente no tiene fiados registrados.',
-                                style: TextStyle(
-                                    color: AppColors.inkMuted, fontSize: 15),
-                              ),
-                            )
-                          : ListView.builder(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 20),
-                              itemCount: fiadosFiltrados.length,
-                              itemBuilder: (context, index) =>
-                                  _buildDebtCard(fiadosFiltrados[index]),
-                            ),
-            ),
           ],
         ),
         floatingActionButton: tieneDeudasPendientes
@@ -464,4 +509,35 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
       ),
     );
   }
+}
+
+class _FilterHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final double extent;
+  final Color backgroundColor;
+  final Widget child;
+
+  const _FilterHeaderDelegate({
+    required this.extent,
+    required this.backgroundColor,
+    required this.child,
+  });
+
+  @override
+  double get minExtent => extent;
+
+  @override
+  double get maxExtent => extent;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      height: extent,
+      color: backgroundColor,
+      child: Center(child: child),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _FilterHeaderDelegate oldDelegate) => true;
 }
