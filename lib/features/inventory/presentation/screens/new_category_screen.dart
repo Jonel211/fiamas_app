@@ -152,8 +152,23 @@ class _NewCategoryScreenState extends State<NewCategoryScreen> {
       }
     } catch (e) {
       if (mounted) {
+        String msg = e.toString()
+            .replaceAll('Exception: ', '')
+            .replaceAll('InventoryException: ', '')
+            .replaceAll('Error: ', '')
+            .trim();
+        if (msg.toLowerCase().contains('existe') ||
+            msg.toLowerCase().contains('duplicad') ||
+            msg.toLowerCase().contains('already exists') ||
+            msg.toLowerCase().contains('unique')) {
+          msg = 'La categoría ya existe. Intenta con otro nombre.';
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     }

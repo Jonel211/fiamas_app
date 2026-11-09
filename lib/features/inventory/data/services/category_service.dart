@@ -41,14 +41,16 @@ class CategoryService {
         return Category.fromJson(data['categoria'] ?? data);
       } else {
         final error = response.data;
-        throw Exception(error['error'] ?? 'Error al crear categoría');
+        final errorMsg = error is Map ? (error['error'] ?? error['message']) : error.toString();
+        throw InventoryException(errorMsg?.toString() ?? 'Error al crear categoría');
       }
     } on DioException catch (e) {
       if (e.response?.data != null) {
         final error = e.response!.data;
-        throw Exception(error['error'] ?? 'Error al crear categoría');
+        final errorMsg = error is Map ? (error['error'] ?? error['message']) : error.toString();
+        throw InventoryException(errorMsg?.toString() ?? 'Error al crear categoría');
       }
-      throw Exception('Error de conexión: ${e.message}');
+      throw InventoryException('Error de conexión: ${e.message}');
     }
   }
 
@@ -64,14 +66,16 @@ class CategoryService {
         return Category.fromJson(data['categoria'] ?? data);
       } else {
         final error = response.data;
-        throw Exception(error['error'] ?? 'Error al actualizar categoría');
+        final errorMsg = error is Map ? (error['error'] ?? error['message']) : error.toString();
+        throw InventoryException(errorMsg?.toString() ?? 'Error al actualizar categoría');
       }
     } on DioException catch (e) {
       if (e.response?.data != null) {
         final error = e.response!.data;
-        throw Exception(error['error'] ?? 'Error al actualizar categoría');
+        final errorMsg = error is Map ? (error['error'] ?? error['message']) : error.toString();
+        throw InventoryException(errorMsg?.toString() ?? 'Error al actualizar categoría');
       }
-      throw Exception('Error de conexión: ${e.message}');
+      throw InventoryException('Error de conexión: ${e.message}');
     }
   }
 
