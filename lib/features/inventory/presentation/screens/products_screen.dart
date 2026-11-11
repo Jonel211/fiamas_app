@@ -27,6 +27,7 @@ class _ProductsScreenState extends State<ProductsScreen> with WidgetsBindingObse
   String _selectedSort = 'nombre_asc';
   double? _minPrice;
   double? _maxPrice;
+  bool _showActive = true;
   
   bool _hasLoadedOnce = false;
 
@@ -146,9 +147,10 @@ class _ProductsScreenState extends State<ProductsScreen> with WidgetsBindingObse
       final categoriaNombre = p.categoria?.nombre ?? '';
       final matchesQuery = q.isEmpty || p.nombre.toLowerCase().contains(q) || categoriaNombre.toLowerCase().contains(q);
       final matchesCategory = _selectedCategory == null || p.categoriaId == _selectedCategory;
+      final matchesTab = _showActive ? p.activo : !p.activo;
       final matchesStatus = _selectedStatus == 'todos' || (_selectedStatus == 'activo' && p.activo) || (_selectedStatus == 'inactivo' && !p.activo);
       final matchesPrice = (_minPrice == null || p.precioVenta >= _minPrice!) && (_maxPrice == null || p.precioVenta <= _maxPrice!);
-      return matchesQuery && matchesCategory && matchesStatus && matchesPrice;
+      return matchesQuery && matchesCategory && matchesTab && matchesStatus && matchesPrice;
     }).toList();
     
     switch (_selectedSort) {
@@ -238,7 +240,44 @@ class _ProductsScreenState extends State<ProductsScreen> with WidgetsBindingObse
                               },
                             ),
                           ),
-                          const Padding(padding: EdgeInsets.fromLTRB(20, 16, 20, 0), child: Text('Productos', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink))),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                            child: Row(
+                              children: [
+                                const Text(
+                                  'Productos',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.ink,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  padding: const EdgeInsets.all(2),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      _ProductTabChip(
+                                        label: 'Activos',
+                                        isSelected: _showActive,
+                                        onTap: () => setState(() => _showActive = true),
+                                      ),
+                                      _ProductTabChip(
+                                        label: 'Desactivados',
+                                        isSelected: !_showActive,
+                                        onTap: () => setState(() => _showActive = false),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -250,7 +289,12 @@ class _ProductsScreenState extends State<ProductsScreen> with WidgetsBindingObse
                               padding: const EdgeInsets.only(top: 40),
                               child: Column(
                                 children: [
-                                  Text('No se encontraron productos', style: Theme.of(context).textTheme.bodyMedium),
+                                  Text(
+                                    _showActive
+                                        ? 'No hay productos activos'
+                                        : 'No hay productos desactivados',
+                                    style: Theme.of(context).textTheme.bodyMedium,
+                                  ),
                                   const SizedBox(height: 12),
                                   OutlinedButton.icon(onPressed: _clearFilters, icon: const Icon(Icons.filter_alt_off), label: const Text('Limpiar filtros')),
                                 ],
@@ -290,6 +334,50 @@ class _CategoryChip extends StatelessWidget {
         alignment: Alignment.center, padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(color: selected ? AppColors.ink : AppColors.teal, borderRadius: BorderRadius.circular(16)),
         child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
+      ),
+    );
+  }
+}
+
+class _ProductTabChip extends StatelessWidget {
+  const _ProductTabChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.teal : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.teal.withValues(alpha: 0.25),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+            color: isSelected ? Colors.white : AppColors.inkMuted,
+          ),
+        ),
       ),
     );
   }

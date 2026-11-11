@@ -100,6 +100,17 @@ class TiendaProvider extends ChangeNotifier {
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove(_prefsKey);
       }
+
+      // Si no hay tienda seleccionada pero hay tiendas disponibles, auto-seleccionar la primera activa
+      if (_tiendaSeleccionadaId == null && _tiendas.isNotEmpty) {
+        final tiendaPorDefecto = _tiendas.firstWhere(
+          (t) => t.activo,
+          orElse: () => _tiendas.first,
+        );
+        _tiendaSeleccionadaId = tiendaPorDefecto.id;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_prefsKey, tiendaPorDefecto.id);
+      }
     } on DioException catch (e) {
       _error = _msg(e, 'Error al cargar tiendas');
     } catch (e) {

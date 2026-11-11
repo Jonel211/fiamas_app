@@ -45,6 +45,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   Future<void> _addCategory() async {
     final created = await Navigator.of(context)
         .pushNamed(AppRoutes.newCategory);
+    if (mounted) context.read<InventoryProvider>().clearError();
     if (created is Category && mounted) _loadDataForCurrentStore();
   }
 
@@ -121,12 +122,13 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             if (provider.isLoading) {
               return const Center(child: CircularProgressIndicator());
             }
-            if (provider.error != null) {
+            if (provider.error != null && provider.categories.isEmpty) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text('Error: ${provider.error}'),
+                    const SizedBox(height: 12),
                     ElevatedButton(
                       onPressed: () {
                         provider.clearError();

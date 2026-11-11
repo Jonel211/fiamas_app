@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/main_shell.dart';
 import '../providers/auth_provider.dart';
+import '../providers/tienda_provider.dart';
 import 'welcome_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -89,6 +90,10 @@ class _SplashScreenState extends State<SplashScreen>
 
     // 3. Redirección segura
     if (isLoggedIn) {
+      try {
+        await context.read<TiendaProvider>().cargarMisTiendas();
+      } catch (_) {}
+      if (!mounted) return;
       _goToHome();
     } else {
       _goToWelcome();

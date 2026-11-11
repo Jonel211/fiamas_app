@@ -167,7 +167,6 @@ class InventoryProvider extends ChangeNotifier {
         ),
       );
     } catch (e) {
-      _error = e.toString();
       rethrow;
     } finally {
       _isLoading = false;
@@ -195,7 +194,6 @@ class InventoryProvider extends ChangeNotifier {
         );
       }
     } catch (e) {
-      _error = e.toString();
       rethrow;
     } finally {
       _isLoading = false;
@@ -217,7 +215,6 @@ class InventoryProvider extends ChangeNotifier {
         ),
       );
     } catch (e) {
-      _error = e.toString();
       rethrow;
     } finally {
       _isLoading = false;

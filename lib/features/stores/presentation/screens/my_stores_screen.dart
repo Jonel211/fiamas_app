@@ -152,9 +152,10 @@ class _MyStoresScreenState extends State<MyStoresScreen> {
 
                             // 2. Navegar a la pantalla principal solo si el widget sigue montado
                             if (context.mounted) {
-                              Navigator.pushNamed(
+                              Navigator.pushNamedAndRemoveUntil(
                                 context,
                                 AppRoutes.summary,
+                                (route) => false,
                                 arguments: {'tienda': tienda},
                               );
                             }

@@ -41,6 +41,13 @@ class AuthProvider with ChangeNotifier {
       final savedUser = await _repository.getSavedUser();
 
       if (savedToken != null && savedToken.isNotEmpty && savedUser != null) {
+        if (!savedUser.isTendero) {
+          await _repository.logout();
+          _token = null;
+          _user = null;
+          return false;
+        }
+
         _token = savedToken;
         _user = savedUser;
 
@@ -64,17 +71,29 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _user = await _repository.login(
+      final user = await _repository.login(
         identificador: identificador,
         password: password,
       );
+
+      if (!user.isTendero) {
+        await _repository.logout();
+        _user = null;
+        _token = null;
+        _errorMessage = 'Esta cuenta pertenece a un cliente. Esta aplicación es exclusiva para tenderos.';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      _user = user;
       _token = await _repository.getToken();
 
       _isLoading = false;
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = e.toString().replaceAll('Exception: ', '').trim();
       _isLoading = false;
       notifyListeners();
       return false;
