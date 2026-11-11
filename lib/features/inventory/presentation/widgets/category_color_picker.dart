@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'category_style.dart';
 
-/// Parrilla de círculos de colores. El elegido muestra un check.
-/// Usa Wrap para soportar muchos colores en varias filas.
+/// Fila de círculos de colores. El elegido muestra un check.
 class CategoryColorPicker extends StatelessWidget {
   const CategoryColorPicker({super.key, required this.selected, required this.onChanged});
 
@@ -11,9 +10,8 @@ class CategoryColorPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         for (final color in CategoryStyle.colors)
           Material(

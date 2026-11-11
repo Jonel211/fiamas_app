@@ -53,6 +53,20 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     return 'Cliente desde $month ${date.year}';
   }
 
+  String _getBadgeText(int score, String categoria) {
+    if (categoria.toLowerCase() == 'nuevo') return 'Nuevo';
+    if (score >= 80) return 'Bueno';
+    if (score >= 50) return 'Regular';
+    return 'Malo';
+  }
+
+  Color _getBadgeColor(int score, String categoria) {
+    if (categoria.toLowerCase() == 'nuevo') return AppColors.skyBlue;
+    if (score >= 80) return AppColors.teal;
+    if (score >= 50) return AppColors.gold;
+    return AppColors.danger;
+  }
+
   Future<void> _launchCall(String phone) async {
     final Uri url = Uri.parse('tel:$phone');
     if (!await launchUrl(url)) {
@@ -102,9 +116,8 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     final score = int.tryParse(detalleTienda?['score_pagador']?.toString() ?? '') ?? widget.customer.vinculacion.scorePagador;
     final categoria = (detalleTienda?['categoria_pagador'] as String?) ?? widget.customer.vinculacion.categoriaPagador;
 
-    final nivel = nivelScore(score, categoria);
-    final badgeText = nivel.etiqueta;
-    final badgeColor = nivel.color;
+    final badgeText = _getBadgeText(score, categoria);
+    final badgeColor = _getBadgeColor(score, categoria);
     final fechaTexto = _getFormattedDate(widget.customer.creadoEn);
     final photoUrl = widget.customer.fotoPerfilUrl ??
         (resumen?['cliente'] != null
@@ -130,7 +143,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    // TARJETA SUPERIOR: Avatar + Nombre + Score + Badge
+                    // TARJETA SUPERIOR: Avatar + Nombre + Score + Badge "Bueno"
                     Stack(
                       clipBehavior: Clip.none,
                       children: [
@@ -212,7 +225,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // TARJETA DE TELÉFONO
+                    // NUEVA TARJETA DE TELÉFONO
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),

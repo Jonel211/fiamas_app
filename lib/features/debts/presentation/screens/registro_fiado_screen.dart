@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/phone_or_name_input_formatter.dart';
 import '../../../../core/widgets/app_header_config.dart';
-import '../../../../main.dart';
+import '../../../../main.dart'; // Para usar AppRoutes
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
@@ -21,6 +21,7 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
+  // Un teléfono válido son exactamente 9 dígitos
   static final _telefonoValido = RegExp(r'^\d{9}$');
 
   @override
@@ -34,8 +35,8 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
         context.read<AuthProvider>().user?.tiendaId;
     if (tiendaId != null && tiendaId.isNotEmpty) {
       final provider = context.read<ClienteProvider>();
-      await provider.cargarClientes(tiendaId);
-      await provider.cargarRecientes(tiendaId, limit: 4);
+      await provider.cargarClientes(tiendaId); // para el buscador
+      await provider.cargarRecientes(tiendaId, limit: 4); // para "Recientes"
       
       if (mounted) setState(() {});
     }
@@ -88,6 +89,7 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
                     ),
                     const SizedBox(height: 8),
 
+                    // BUSCADOR
                     Container(
                       decoration: BoxDecoration(
                         color: AppColors.skyBlue,
@@ -117,6 +119,7 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
 
                     Consumer<ClienteProvider>(
                       builder: (context, provider, _) {
+                        // 1. Mostrar carga solo si la lista está completamente vacía
                         if (provider.isLoading && provider.clientes.isEmpty) {
                           return const Padding(
                             padding: EdgeInsets.symmetric(vertical: 24),
@@ -124,6 +127,7 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
                           );
                         }
 
+                        //  2. Mostrar error SOLO si hay error Y la lista está vacía (sin caché)
                         if (provider.error != null && provider.clientes.isEmpty) {
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 24),
@@ -146,6 +150,7 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
                           );
                         }
 
+                        //  3. MODO BÚSQUEDA (Funciona con datos de red o caché)
                         if (buscando) {
                           final resultados = provider.buscarClienteLocal(query);
                           final puedeRegistrar =
@@ -184,14 +189,13 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
                                   name: cliente.nombreCompleto,
                                   phone: cliente.telefono,
                                   imageUrl: cliente.fotoPerfilUrl,
-                                  score: cliente.vinculacion.scorePagador,
-                                  categoria: cliente.vinculacion.categoriaPagador,
                                   onTap: () => _irAEscaner(cliente),
                                 ),
                             ],
                           );
                         }
 
+                        //  4. MODO RECIENTES (O fallback a los primeros del caché si no hay recientes)
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
@@ -223,6 +227,7 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
                                 ),
                               )
                             else
+                              // Muestra recientes si existen, si no, muestra los primeros 4 del caché general
                               for (final cliente in provider.recientes.isNotEmpty 
                                   ? provider.recientes 
                                   : provider.clientes.take(4))
@@ -230,8 +235,6 @@ class _RegistroFiadoScreenState extends State<RegistroFiadoScreen> {
                                   name: cliente.nombreCompleto,
                                   phone: cliente.telefono,
                                   imageUrl: cliente.fotoPerfilUrl,
-                                  score: cliente.vinculacion.scorePagador,
-                                  categoria: cliente.vinculacion.categoriaPagador,
                                   onTap: () => _irAEscaner(cliente),
                                 ),
                           ],

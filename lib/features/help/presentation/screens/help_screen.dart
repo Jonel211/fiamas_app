@@ -10,64 +10,26 @@ class HelpScreen extends StatelessWidget {
     (
       q: '¿Cómo registro un nuevo fiado?',
       a:
-          'Ve a la sección Fiados y toca "Nuevo fiado". Busca al cliente por '
-          'nombre o teléfono (o elígelo de tus recientes), agrega los '
-          'productos escaneando su código de barras o desde el catálogo, '
-          'elige la fecha límite de pago y confirma.',
+          'Entra a la tienda, abre Fiados y toca "Nuevo fiado". Elige al '
+          'cliente, agrega los productos y guarda.',
     ),
     (
-      q: '¿Cómo registro un abono o cobro?',
+      q: '¿Cómo cobrar una deuda?',
       a:
-          'En Fiados, selecciona la deuda del cliente y toca "Registrar '
-          'abono". Ingresa el monto recibido, el tipo de pago (efectivo, '
-          'Yape, Plin, transferencia o tarjeta) y confirma. El saldo se '
-          'actualiza al instante.',
+          'En Fiados abre la deuda del cliente y toca "Registrar abono". '
+          'Escribe el monto recibido y confirma.',
     ),
     (
-      q: '¿Qué es el límite de crédito?',
+      q: '¿El cliente puede ver su cuenta?',
       a:
-          'Cada cliente tiene un límite de crédito por tienda (S/ 500 por '
-          'defecto). Si un fiado lo supera, la app te lo advertirá y podrás '
-          'aumentarlo desde el perfil del cliente.',
-    ),
-    (
-      q: '¿Qué significa el score de pagador?',
-      a:
-          'Es un puntaje de 0 a 100 que refleja el comportamiento de pago '
-          'del cliente (nuevo, bueno, regular o malo). Te ayuda a decidir '
-          'con confianza a quién fiar.',
-    ),
-    (
-      q: '¿Puedo usar la app sin internet?',
-      a:
-          'Sí. Fiamas funciona en modo offline: los fiados y abonos se '
-          'guardan en tu dispositivo y se sincronizan automáticamente '
-          'cuando vuelva la conexión.',
-    ),
-    (
-      q: '¿Cómo vinculo a un cliente con el QR de mi tienda?',
-      a:
-          'Cada tienda tiene un código QR único. Tu cliente lo escanea '
-          'desde su app y se vincula a tu tienda automáticamente, sin '
-          'registro manual.',
-    ),
-    (
-      q: '¿Cómo genero reportes de mis ventas y cobros?',
-      a:
-          'En la sección Reportes elige el periodo que quieras analizar y '
-          'descarga el resumen en formato PDF para compartirlo o archivarlo.',
+          'Sí. El cliente crea su cuenta desde la app y ve sus deudas y '
+          'pagos de cada tienda.',
     ),
     (
       q: '¿Cómo agrego más tiendas?',
       a:
           'En "Mis tiendas" toca "Nueva tienda" y completa los datos del '
-          'negocio. Puedes administrar varias tiendas con la misma cuenta.',
-    ),
-    (
-      q: '¿El cliente puede ver su cuenta?',
-      a:
-          'Sí. El cliente entra a su app con su número de teléfono y puede '
-          'consultar sus deudas, pagos y límites de crédito en tu tienda.',
+          'negocio.',
     ),
   ];
 

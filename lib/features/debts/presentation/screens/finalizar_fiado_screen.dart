@@ -125,14 +125,9 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
       });
 
       if (mounted) {
-        final clienteProvider = context.read<ClienteProvider>();
         try {
-          await clienteProvider.cargarResumenCliente(_cliente.id, tiendaId);
-          // AUTO-RECARGA: Forzamos la actualización de clientes y recientes
-          await clienteProvider.cargarClientes(tiendaId);
-          await clienteProvider.cargarRecientes(tiendaId);
+          await context.read<ClienteProvider>().cargarResumenCliente(_cliente.id, tiendaId);
         } catch (_) {}
-        
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fiado registrado exitosamente'), backgroundColor: Colors.green));
         Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.summary, (route) => false);
@@ -168,6 +163,7 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
       (sum, item) => sum + (item['price'] * item['qty']),
     );
 
+    //  IDs REALES, NUNCA 'pendiente'
     await _dbHelper.saveFiado({
       'id': localFiadoId,
       'cliente_id': _cliente.id,
@@ -212,12 +208,15 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('✓ Fiado guardado localmente. Se sincronizará al tener internet.'),
+          content: Text(
+            '✓ Fiado guardado localmente. Se sincronizará al tener internet.',
+          ),
           backgroundColor: Colors.orange,
           duration: Duration(seconds: 3),
         ),
       );
-      Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.summary, (route) => false);
+      Navigator.of(context)
+          .pushNamedAndRemoveUntil(AppRoutes.summary, (route) => false);
     }
   }
 

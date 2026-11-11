@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:fiamas_app/core/constants/app_colors.dart';
-import '../../../../main.dart'; 
+import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/data/models/cliente_model.dart';
@@ -16,12 +16,11 @@ class CustomerListScreen extends StatefulWidget {
   State<CustomerListScreen> createState() => _CustomerListScreenState();
 }
 
-class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware {
+class _CustomerListScreenState extends State<CustomerListScreen> {
   String _selectedFilter = 'Todos';
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchFocused = false;
-  bool _subscribed = false;
 
   @override
   void initState() {
@@ -31,32 +30,16 @@ class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware
         _isSearchFocused = _searchFocusNode.hasFocus;
       });
     });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _cargarClientesTiendaActual();
+      _cargarClientesTiendaActual();
     });
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_subscribed) {
-      _subscribed = true;
-      final route = ModalRoute.of(context);
-      if (route != null) routeObserver.subscribe(this, route);
-    }
-  }
-
-  @override
-  void dispose() {
-    routeObserver.unsubscribe(this); 
-    _searchController.dispose();
-    _searchFocusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didPopNext() {
-    _onRefresh();
+    _cargarClientesTiendaActual();
   }
 
   void _cargarClientesTiendaActual() {
@@ -64,8 +47,9 @@ class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware
         context.read<AuthProvider>().user?.tiendaId;
     if (tiendaId != null && mounted) {
       final provider = context.read<ClienteProvider>();
-      // FORZAMOS LA CARGA
-      provider.cargarClientes(tiendaId);
+      if (provider.tiendaIdCargada != tiendaId) {
+        provider.cargarClientes(tiendaId);
+      }
     }
   }
 
@@ -75,6 +59,13 @@ class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware
     if (tiendaId != null) {
       await context.read<ClienteProvider>().cargarClientes(tiendaId);
     }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
   }
 
   String _getStatus(ClienteModel c) {
@@ -223,7 +214,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware
                         color: Colors.red, fontWeight: FontWeight.bold),
                   ),
                 )
-              else if (provider.isLoading && provider.clientes.isEmpty)
+              else if (provider.isLoading)
                 const Center(child: CircularProgressIndicator())
               else if (filtrados.isEmpty)
                 const Center(

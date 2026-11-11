@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_header_config.dart';
@@ -18,19 +17,6 @@ class AboutScreen extends StatefulWidget {
 
 class _AboutScreenState extends State<AboutScreen> {
   static const String _logo = 'assets/images/fiamas-vertical.png';
-  static const String _sitioWebUrl = 'https://fiamas.onrender.com';
-  static const String _playStoreUrl =
-      'https://play.google.com/store/apps/details?id=com.example.fiamas_app';
-
-  Future<void> _abrirEnlace(String url) async {
-    final uri = Uri.parse(url);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo abrir el enlace')),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -142,29 +128,34 @@ class _AboutScreenState extends State<AboutScreen> {
                     ContactLink(
                       icon: Icons.public_rounded,
                       label: 'Sitio web',
-                      onTap: () => _abrirEnlace(_sitioWebUrl),
+                      onTap: () {
+                        // TODO: abrir URL del sitio
+                      },
                     ),
                     const SizedBox(height: 10),
                     ContactLink(
                       icon: Icons.star_outline_rounded,
                       label: 'Calificar la app',
-                      onTap: () => _abrirEnlace(_playStoreUrl),
+                      onTap: () {
+                        // TODO: abrir Play Store
+                      },
                     ),
                     const SizedBox(height: 32),
 
+                    
                     // ── Copyright ─────────────────────────
                     const Text(
                       '© 2026 Fiamas',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 12, color: AppColors.inkMuted),
                     ),
-                  ],
-                ),
-              ),
-            ),
+                  ], 
+                ), 
+              ), 
+            ), 
           ],
-        ),
-      ),
-    );
+        ), 
+      ), 
+    ); 
   }
 }
