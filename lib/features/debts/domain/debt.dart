@@ -10,6 +10,7 @@ class Debt {
     required this.status,
     required this.dateLabel,
     this.items = const [],
+    this.isCancelled = false,
   });
 
   final String id;
@@ -18,6 +19,9 @@ class Debt {
   final double amount; // Monto total original
   final double paidAmount; // ✅ NUEVO: Monto pagado hasta ahora
   final DebtStatus status;
+
+  /// Indica si el fiado fue cancelado (no se cuenta en los totales).
+  final bool isCancelled;
 
   /// Fecha ya formateada para mostrar (ej: "Hoy, 10:30 AM").
   final String dateLabel;

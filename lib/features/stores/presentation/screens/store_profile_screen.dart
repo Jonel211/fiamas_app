@@ -24,10 +24,6 @@ class StoreProfileScreen extends StatefulWidget {
 }
 
 class _StoreProfileScreenState extends State<StoreProfileScreen> {
-  bool _notifications = true;
-  bool _reminders = true;
-  bool _whatsapp = true;
-
   // Variables para los datos reales
   final _reporteService = ReporteService();
   ReporteResumenModel? _resumen;
@@ -65,6 +61,17 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
     }
   }
 
+  Future<void> _editarTienda(TiendaModel? tienda) async {
+    if (tienda == null) return;
+    await Navigator.of(context).pushNamed(
+      AppRoutes.editStore,
+      arguments: tienda,
+    );
+    if (mounted) {
+      context.read<TiendaProvider>().cargarMisTiendas();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final routeArg = ModalRoute.of(context)?.settings.arguments;
@@ -87,15 +94,7 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
         if (tienda != null)
           AppHeaderIconAction(
             icon: Icons.edit_outlined,
-            onTap: () async {
-              await Navigator.of(context).pushNamed(
-                AppRoutes.editStore,
-                arguments: tienda,
-              );
-              if (context.mounted) {
-                context.read<TiendaProvider>().cargarMisTiendas();
-              }
-            },
+            onTap: () => _editarTienda(tienda),
           ),
       ],
       child: Scaffold(
@@ -103,12 +102,7 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
         body: ListView(
           children: [
             StoreProfileHeader(
-              storeName: tienda?.nombre ?? 'Mi Tienda',
-              status: 'Activa',
               logoUrl: tienda?.logoUrl,
-              subtitle: (tienda?.direccion != null && tienda!.direccion!.isNotEmpty)
-                  ? tienda.direccion!
-                  : 'Tienda registrada en Fiamas',
             ),
 
             // 1. INFORMACIÓN DEL NEGOCIO
@@ -121,6 +115,7 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
                     icon: Icons.storefront_outlined,
                     label: 'Nombre',
                     value: tienda?.nombre ?? 'Sin nombre',
+                    onTap: () => _editarTienda(tienda),
                   ),
                   ProfileInfoTile(
                     icon: Icons.badge_outlined,
@@ -128,6 +123,7 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
                     value: (tienda?.ruc != null && tienda!.ruc!.isNotEmpty)
                         ? tienda.ruc!
                         : 'No registrado',
+                    onTap: () => _editarTienda(tienda),
                   ),
                   ProfileInfoTile(
                     icon: Icons.phone_outlined,
@@ -135,6 +131,7 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
                     value: (tienda?.telefono != null && tienda!.telefono!.isNotEmpty)
                         ? tienda.telefono!
                         : 'No registrado',
+                    onTap: () => _editarTienda(tienda),
                   ),
                   ProfileInfoTile(
                     icon: Icons.location_on_outlined,
@@ -142,42 +139,14 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
                     value: (tienda?.direccion != null && tienda!.direccion!.isNotEmpty)
                         ? tienda.direccion!
                         : 'Sin dirección',
+                    onTap: () => _editarTienda(tienda),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 16),
 
-            // 2. PREFERENCIAS
-            _buildSectionTitle('PREFERENCIAS'),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  ProfileSwitchTile(
-                    icon: Icons.notifications_none_rounded,
-                    label: 'Notificaciones de la tienda',
-                    value: _notifications,
-                    onChanged: (v) => setState(() => _notifications = v),
-                  ),
-                  ProfileSwitchTile(
-                    icon: Icons.history_rounded,
-                    label: 'Recordatorios automáticos',
-                    value: _reminders,
-                    onChanged: (v) => setState(() => _reminders = v),
-                  ),
-                  ProfileSwitchTile(
-                    icon: Icons.chat_bubble_outline_rounded,
-                    label: 'Enviar cobros por WhatsApp',
-                    value: _whatsapp,
-                    onChanged: (v) => setState(() => _whatsapp = v),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // 3. ESTADÍSTICAS (CONECTADAS AL BACKEND)
+            // 2. ESTADÍSTICAS (CONECTADAS AL BACKEND)
             _buildSectionTitle('ESTADÍSTICAS'),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),

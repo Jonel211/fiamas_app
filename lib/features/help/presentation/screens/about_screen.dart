@@ -103,10 +103,22 @@ class _AboutScreenState extends State<AboutScreen> {
                       crossAxisSpacing: 12,
                       childAspectRatio: 1.25,
                       children: const [
-                        FeatureCard(label: 'Fiados y\nabonos'),
-                        FeatureCard(label: 'Límites de\ncrédito'),
-                        FeatureCard(label: 'Escaner de\nproductos'),
-                        FeatureCard(label: 'Historial'),
+                        FeatureCard(
+                          label: 'Fiados y\nabonos',
+                          icon: Icons.receipt_long_outlined,
+                        ),
+                        FeatureCard(
+                          label: 'Límites de\ncrédito',
+                          icon: Icons.credit_score_outlined,
+                        ),
+                        FeatureCard(
+                          label: 'Escaner de\nproductos',
+                          icon: Icons.qr_code_scanner,
+                        ),
+                        FeatureCard(
+                          label: 'Historial',
+                          icon: Icons.history,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 24),

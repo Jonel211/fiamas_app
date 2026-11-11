@@ -27,6 +27,12 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
           context.read<AuthProvider>().user?.tiendaId;
       if (tiendaId != null) {
         context.read<ClienteProvider>().cargarResumenCliente(widget.customer.id, tiendaId);
+        context.read<ClienteProvider>().cargarFiadosCliente(
+          widget.customer.id,
+          tiendaId,
+          nombre: widget.customer.nombreCompleto,
+          telefono: widget.customer.telefono,
+        );
       }
     });
   }
@@ -102,10 +108,11 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         ? resumen['detalle_por_tienda'][0] as Map<String, dynamic>
         : null;
 
-    final debt = double.tryParse(detalleTienda?['saldo_actual']?.toString() ?? '') ?? widget.customer.vinculacion.saldoActual;
     final creditLimit = double.tryParse(detalleTienda?['limite_credito']?.toString() ?? '') ?? widget.customer.vinculacion.limiteCredito;
-    final totalFiado = double.tryParse(detalleTienda?['monto_pendiente_real']?.toString() ?? '') ?? 0.0;
-    final totalPagado = double.tryParse(detalleTienda?['total_pagos']?.toString() ?? '') ?? 0.0;
+    // Misma fuente y lógica que el Historial de Cliente (suma de fiados/pagos)
+    final totalFiado = provider.totalFiadoCliente;
+    final totalPagado = provider.totalPagadoCliente;
+    final debt = provider.saldoPendienteCliente;
     final score = int.tryParse(detalleTienda?['score_pagador']?.toString() ?? '') ?? widget.customer.vinculacion.scorePagador;
     final categoria = (detalleTienda?['categoria_pagador'] as String?) ?? widget.customer.vinculacion.categoriaPagador;
 
