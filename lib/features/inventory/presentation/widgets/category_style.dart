@@ -18,6 +18,12 @@ class CategoryStyle {
     Color(0xFFF59E0B),
     Color(0xFFEF4444),
     Color(0xFFA855F7),
+    Color(0xFFEC4899),
+    Color(0xFF06B6D4),
+    Color(0xFF84CC16),
+    Color(0xFFF97316),
+    Color(0xFF6366F1),
+    Color(0xFF64748B),
   ];
 
   /// Clave antigua -> clave nueva de [CategoryIcons].

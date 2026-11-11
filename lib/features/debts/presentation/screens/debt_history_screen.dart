@@ -49,20 +49,6 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
     }
   }
 
-  String _getBadgeText(int score, String categoria) {
-    if (categoria.toLowerCase() == 'nuevo') return 'Nuevo';
-    if (score >= 80) return 'Bueno';
-    if (score >= 50) return 'Regular';
-    return 'Malo';
-  }
-
-  Color _getBadgeColor(int score, String categoria) {
-    if (categoria.toLowerCase() == 'nuevo') return AppColors.skyBlue;
-    if (score >= 80) return AppColors.teal;
-    if (score >= 50) return AppColors.gold;
-    return AppColors.danger;
-  }
-
   bool _esVigente(Debt d) => d.status != DebtStatus.pagado;
 
   @override
@@ -89,8 +75,9 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
 
     final initial =
         name.trim().isNotEmpty ? name.trim().split(' ').last[0].toUpperCase() : 'C';
-    final badgeText = _getBadgeText(score, categoria);
-    final badgeColor = _getBadgeColor(score, categoria);
+    final nivel = nivelScore(score, categoria);
+    final badgeText = nivel.etiqueta;
+    final badgeColor = nivel.color;
     final photoUrl = clienteCompleto?.fotoPerfilUrl ?? (widget.customer['imageUrl'] as String?);
     final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
 

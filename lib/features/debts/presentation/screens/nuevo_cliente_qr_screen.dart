@@ -3,19 +3,93 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_header_config.dart';
+import '../../../auth/data/models/tienda_model.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
 
-class NuevoClienteQrScreen extends StatelessWidget {
+class NuevoClienteQrScreen extends StatefulWidget {
   const NuevoClienteQrScreen({super.key});
 
   @override
+  State<NuevoClienteQrScreen> createState() => _NuevoClienteQrScreenState();
+}
+
+class _NuevoClienteQrScreenState extends State<NuevoClienteQrScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // La lista de tiendas solo se llena al abrir "Mis Tiendas"; si está vacía, se carga aquí.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final tp = context.read<TiendaProvider>();
+      if (tp.tiendas.isEmpty) tp.cargarMisTiendas();
+    });
+  }
+
+  /// Misma regla que el resto de la app: tienda elegida o, si no, la del login.
+  TiendaModel? _tiendaActual(TiendaProvider tp, String? idLogin) {
+    final id = tp.tiendaSeleccionadaId ?? idLogin;
+    if (id == null) return null;
+    final index = tp.tiendas.indexWhere((t) => t.id == id);
+    return index == -1 ? null : tp.tiendas[index];
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Obtenemos la tienda seleccionada o la primera disponible
     final tiendaProvider = context.watch<TiendaProvider>();
-    final tiendaActual = tiendaProvider.tiendaSeleccionada ??
-        (tiendaProvider.tiendas.isNotEmpty ? tiendaProvider.tiendas.first : null);
+    final idLogin = context.watch<AuthProvider>().user?.tiendaId;
+
+    final tiendaActual = _tiendaActual(tiendaProvider, idLogin);
     final qrToken = tiendaActual?.qrToken;
     final nombreTienda = tiendaActual?.nombre ?? 'tu tienda';
+    final tieneQr = qrToken != null && qrToken.isNotEmpty;
+
+    Widget contenidoQr;
+    if (tieneQr) {
+      // Siempre el mismo token guardado de la tienda: no se genera uno nuevo.
+      contenidoQr = QrImageView(
+        data: qrToken,
+        version: QrVersions.auto,
+        size: 200.0,
+        backgroundColor: Colors.white,
+        eyeStyle: const QrEyeStyle(
+          eyeShape: QrEyeShape.square,
+          color: AppColors.ink,
+        ),
+        dataModuleStyle: const QrDataModuleStyle(
+          dataModuleShape: QrDataModuleShape.square,
+          color: AppColors.ink,
+        ),
+      );
+    } else if (tiendaProvider.isLoading || (tiendaProvider.tiendas.isEmpty && tiendaProvider.error == null)) {
+      contenidoQr = const SizedBox(
+        width: 200,
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    } else {
+      contenidoQr = SizedBox(
+        width: 200,
+        height: 200,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                tiendaProvider.error ?? 'Esta tienda no tiene un código QR disponible.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppColors.inkMuted, fontSize: 13),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => context.read<TiendaProvider>().cargarMisTiendas(),
+                child: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return AppHeaderConfig(
       title: 'Código QR de la tienda',
@@ -40,7 +114,6 @@ class NuevoClienteQrScreen extends StatelessWidget {
               ),
               const SizedBox(height: 40),
 
-              // QR REAL
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
@@ -54,28 +127,9 @@ class NuevoClienteQrScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: (qrToken == null || qrToken.isEmpty)
-                    ? const SizedBox(
-                        width: 200,
-                        height: 200,
-                        child: Center(child: Text('Cargando QR...', style: TextStyle(color: Colors.grey))),
-                      )
-                    : QrImageView(
-                        data: qrToken,
-                        version: QrVersions.auto,
-                        size: 200.0,
-                        backgroundColor: Colors.white,
-                        eyeStyle: const QrEyeStyle(
-                          eyeShape: QrEyeShape.square,
-                          color: AppColors.ink,
-                        ),
-                        dataModuleStyle: const QrDataModuleStyle(
-                          dataModuleShape: QrDataModuleShape.square,
-                          color: AppColors.ink,
-                        ),
-                      ),
+                child: contenidoQr,
               ),
-              
+
               const SizedBox(height: 40),
 
               Container(

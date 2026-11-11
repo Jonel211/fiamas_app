@@ -16,6 +16,9 @@ class TermsText {
     'Registrar fiados, productos y control de inventario.',
     'Llevar el registro de fiados, deudas y cobros de clientes.',
     'Visualizar reportes financieros y exportar resúmenes en formato PDF.',
+    'Vincular clientes automáticamente con el código QR de tu tienda.',
+    'Evaluar el comportamiento de pago de tus clientes con el score de pagador.',
+    'Trabajar sin internet con sincronización automática de datos.',
   ];
 
   static const String responsibility =

@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+import '../../../../core/constants/app_colors.dart';
+
 class ClienteModel {
   final String id;
   final String telefono;
@@ -5,7 +8,7 @@ class ClienteModel {
   final String apellidos;
   final String? direccion;
   final String? fotoPerfilUrl;
-  final DateTime? creadoEn; // <-- NUEVO CAMPO
+  final DateTime? creadoEn;
   final VinculacionModel vinculacion;
 
   ClienteModel({
@@ -15,7 +18,7 @@ class ClienteModel {
     required this.apellidos,
     this.direccion,
     this.fotoPerfilUrl,
-    this.creadoEn, // <-- NUEVO CAMPO
+    this.creadoEn,
     required this.vinculacion,
   });
 
@@ -31,7 +34,6 @@ class ClienteModel {
           json['foto_url'] ??
           json['foto'] ??
           json['avatar_url'],
-      // Intentamos parsear la fecha (por si el backend la envía)
       creadoEn: json['creado_en'] != null
           ? DateTime.tryParse(json['creado_en'].toString())
           : null,
@@ -78,5 +80,49 @@ class VinculacionModel {
       cantidadFiadosMora:
           int.tryParse(json['cantidad_fiados_mora']?.toString() ?? '') ?? 0,
     );
+  }
+
+  /// Nivel de scoring según lo que calcula el backend.
+  NivelScore get nivel => nivelScore(scorePagador, categoriaPagador);
+}
+
+// ───────────── SCORING: ÚNICA REGLA PARA TODAS LAS PANTALLAS ─────────────
+// Solo usa score_pagador y categoria_pagador que manda el backend.
+// Si el backend cambia cómo calcula el score, las pantallas se actualizan solas.
+
+enum NivelScore { nuevo, bueno, regular, malo }
+
+NivelScore nivelScore(int score, String categoria) {
+  if (categoria.toLowerCase() == 'nuevo') return NivelScore.nuevo;
+  if (score >= 80) return NivelScore.bueno;
+  if (score >= 50) return NivelScore.regular;
+  return NivelScore.malo;
+}
+
+extension NivelScoreX on NivelScore {
+  String get etiqueta {
+    switch (this) {
+      case NivelScore.nuevo:
+        return 'Nuevo';
+      case NivelScore.bueno:
+        return 'Buen pagador';
+      case NivelScore.regular:
+        return 'Regular';
+      case NivelScore.malo:
+        return 'Mal pagador';
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case NivelScore.nuevo:
+        return AppColors.skyBlue;
+      case NivelScore.bueno:
+        return AppColors.teal;
+      case NivelScore.regular:
+        return AppColors.gold;
+      case NivelScore.malo:
+        return AppColors.danger;
+    }
   }
 }

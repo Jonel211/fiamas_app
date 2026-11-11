@@ -1,26 +1,36 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../customers/data/models/cliente_model.dart';
 
-/// Tarjeta de cliente reciente para la pantalla de Registro de Fiado.
-/// Muestra avatar, nombre, teléfono y una etiqueta de calificación.
 class RecentClientCard extends StatelessWidget {
   const RecentClientCard({
     super.key,
     required this.name,
     required this.phone,
     this.imageUrl,
-    this.ratingLabel = 'Buen pagador',
+    required this.score,
+    required this.categoria,
     this.onTap,
   });
 
   final String name;
   final String phone;
   final String? imageUrl;
-  final String ratingLabel;
+  final int score;
+  final String categoria;
   final VoidCallback? onTap;
+
+  String get _initials {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty || parts.first.isEmpty) return 'C';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1)).toUpperCase();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final nivel = nivelScore(score, categoria);
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
@@ -33,10 +43,10 @@ class RecentClientCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Avatar (círculo gris con silueta)
             Container(
               width: 48,
               height: 48,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: AppColors.mist,
                 shape: BoxShape.circle,
@@ -50,11 +60,16 @@ class RecentClientCard extends StatelessWidget {
               ),
               child: (imageUrl != null && imageUrl!.isNotEmpty)
                   ? null
-                  : const Icon(Icons.person, color: AppColors.inkMuted, size: 26),
+                  : Text(
+                      _initials,
+                      style: const TextStyle(
+                        color: AppColors.ink,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
             ),
             const SizedBox(width: 14),
-
-            // Nombre y Teléfono
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,20 +96,18 @@ class RecentClientCard extends StatelessWidget {
                 ],
               ),
             ),
-
-            // Etiqueta "Buen pagador"
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.teal.withValues(alpha: 0.15),
+                color: nivel.color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                ratingLabel,
-                style: const TextStyle(
+                nivel.etiqueta,
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.teal,
+                  color: nivel.color,
                 ),
               ),
             ),

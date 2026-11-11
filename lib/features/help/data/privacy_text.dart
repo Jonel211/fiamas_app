@@ -41,14 +41,16 @@ class PrivacyText {
   ];
 
   static const String balance =
-      'Precisión de Saldos: La app calcula los saldos y reportes en función '
-      'de los datos que ingreses. No nos hacemos responsables por errores '
-      'de digitación o pérdida de información por mal uso del dispositivo.';
+      'Seguridad de los Datos: Protegemos tu información con contraseñas '
+      'cifradas, conexiones seguras y almacenamiento en servidores cloud '
+      'de confianza. Solo tú puedes acceder a los datos de tu negocio '
+      'con tu sesión activa.';
 
   static const String availability =
-      'Disponibilidad: Nos esforzamos por mantener el servicio disponible '
-      '24/7, pero no garantizamos un servicio ininterrumpido en caso de '
-      'mantenimiento o fallas técnicas ajenas a nuestro control.';
+      'Conservación de la Información: Conservamos tus datos mientras tu '
+      'cuenta esté activa. Si decides eliminar tu cuenta, toda la '
+      'información asociada será borrada de forma definitiva de nuestros '
+      'servidores.';
 
   static const String thirdPartiesIntro =
       'No compartimos tus datos personales ni comerciales con terceros, '
