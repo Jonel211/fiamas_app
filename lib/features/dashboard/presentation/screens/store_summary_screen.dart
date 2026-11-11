@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../main.dart'; 
-import '../../../auth/presentation/providers/auth_provider.dart'; // NUEVO IMPORT
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../notifications/data/notification_repository.dart';
 import '../../data/dashboard_service.dart';
@@ -38,7 +38,6 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
     super.didChangeDependencies();
     routeObserver.subscribe(this, ModalRoute.of(context)!);
 
-    // SALVAVIDAS: Usamos la tienda del provider o, si está vacío, la del auth
     final tiendaProvider = Provider.of<TiendaProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
     final id = tiendaProvider.tiendaSeleccionadaId ?? authProvider.user?.tiendaId;
@@ -137,7 +136,6 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
 
   @override
   Widget build(BuildContext context) {
-    // SALVAVIDAS 2: Para el titulo
     final tiendaProvider = context.watch<TiendaProvider>();
     final summary = _summary;
     final nombre = summary?.nombre.isNotEmpty == true
@@ -221,32 +219,48 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
               ],
               const SizedBox(height: 16),
 
+              // ACCESO RÁPIDO
               Row(
                 children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => Navigator.of(context).pushNamed(AppRoutes.registroFiado),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFE5A93C), foregroundColor: const Color(0xFF2C2208), elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                      icon: const Icon(Icons.add, size: 20),
-                      label: const Text('Anotar Fiado', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => Navigator.of(context).pushNamed(AppRoutes.whatsappCollection),
                       style: OutlinedButton.styleFrom(
-                        backgroundColor: Colors.white, foregroundColor: AppColors.ink,
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.ink,
                         side: const BorderSide(color: Color(0xFFD0D7DE)),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        minimumSize: const Size(0, 50),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
                       icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18, color: AppColors.ink),
-                      label: const Text('Cobro WhatsApp', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.ink)),
+                      label: const Text(
+                        'Cobro WhatsApp',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.ink),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => Navigator.of(context).pushNamed(AppRoutes.newClientQr),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFE5A93C),
+                        foregroundColor: const Color(0xFF2C2208),
+                        elevation: 0,
+                        minimumSize: const Size(0, 50),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      icon: const Icon(Icons.qr_code_2_rounded, size: 20, color: Color(0xFF2C2208)),
+                      label: const Text(
+                        'QR tienda',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF2C2208)),
+                      ),
                     ),
                   ),
                 ],
