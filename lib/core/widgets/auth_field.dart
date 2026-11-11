@@ -1,104 +1,110 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../constants/app_colors.dart';
+import '../../../../core/constants/app_colors.dart';
 
-/// Campo de texto con la etiqueta arriba y borde redondeado.
-/// Con `onDark: true` se adapta a paneles de color (etiqueta blanca,
-/// campo blanco).
 class AuthField extends StatelessWidget {
-  const AuthField({
-    super.key,
-    required this.label,
-    required this.controller,
-    this.validator,
-    this.keyboardType,
-    this.obscureText = false,
-    this.prefixIcon,
-    this.suffixIcon,
-    this.maxLength,
-    this.digitsOnly = false,
-    this.enabled = true,
-    this.onDark = false,
-    this.textCapitalization = TextCapitalization.none,
-    this.bottomSpacing = 16,
-  });
-
   final String label;
   final TextEditingController controller;
-  final String? Function(String?)? validator;
-  final TextInputType? keyboardType;
   final bool obscureText;
   final Widget? prefixIcon;
   final Widget? suffixIcon;
+  final String? Function(String?)? validator;
+  final TextInputType? keyboardType;
   final int? maxLength;
-  final bool digitsOnly;
-  final bool enabled;
-  final bool onDark;
   final TextCapitalization textCapitalization;
-  final double bottomSpacing;
+  
+  // ✅ NUEVOS PARÁMETROS AGREGADOS (Fase 1)
+  final List<TextInputFormatter>? inputFormatters;
+  final ValueChanged<String>? onChanged;
+  
+  // ✅ PARÁMETROS RESTAURADOS PARA COMPATIBILIDAD
+  final bool enabled;
+  final bool digitsOnly;
+  final double? bottomSpacing;
+  final bool? onDark;
 
-  OutlineInputBorder _border(Color color, [double width = 1]) =>
-      OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: color, width: width),
-      );
+  const AuthField({
+    Key? key,
+    required this.label,
+    required this.controller,
+    this.obscureText = false,
+    this.prefixIcon,
+    this.suffixIcon,
+    this.validator,
+    this.keyboardType,
+    this.maxLength,
+    this.textCapitalization = TextCapitalization.none,
+    this.inputFormatters,
+    this.onChanged,
+    this.enabled = true,
+    this.digitsOnly = false,
+    this.bottomSpacing = 16.0,
+    this.onDark,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = onDark ? Colors.transparent : AppColors.mist;
-    final focusColor = onDark ? AppColors.gold : AppColors.teal;
+    // Combinamos los formatters
+    List<TextInputFormatter> formatters = [];
+    if (digitsOnly) {
+      formatters.add(FilteringTextInputFormatter.digitsOnly);
+    }
+    if (inputFormatters != null) {
+      formatters.addAll(inputFormatters!);
+    }
+
+    final isDark = onDark == true;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: bottomSpacing),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: onDark ? Colors.white : AppColors.ink,
-            ),
+      padding: EdgeInsets.only(bottom: bottomSpacing ?? 16.0),
+      child: TextFormField(
+        controller: controller,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+        maxLength: maxLength,
+        textCapitalization: textCapitalization,
+        inputFormatters: formatters.isEmpty ? null : formatters,
+        onChanged: onChanged,
+        validator: validator,
+        enabled: enabled,
+        style: isDark ? const TextStyle(color: Colors.black) : const TextStyle(color: Colors.black),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(
+            color: isDark ? Colors.white70 : AppColors.inkMuted, 
+            fontSize: 14
           ),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: controller,
-            validator: validator,
-            enabled: enabled,
-            keyboardType: keyboardType,
-            obscureText: obscureText,
-            maxLength: maxLength,
-            textCapitalization: textCapitalization,
-            inputFormatters:
-                digitsOnly ? [FilteringTextInputFormatter.digitsOnly] : null,
-            style: TextStyle(
-              fontSize: 15,
-              color: enabled ? AppColors.ink : AppColors.inkMuted,
-            ),
-            decoration: InputDecoration(
-              counterText: '',
-              isDense: true,
-              filled: !enabled || onDark,
-              fillColor: onDark ? Colors.white : null,
-              errorStyle: TextStyle(
-                color: onDark ? AppColors.gold : AppColors.danger,
-                fontWeight: FontWeight.w600,
-              ),
-              prefixIcon: prefixIcon,
-              suffixIcon: suffixIcon,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              border: _border(borderColor),
-              enabledBorder: _border(borderColor),
-              disabledBorder: _border(borderColor),
-              focusedBorder: _border(focusColor, 1.5),
-              errorBorder: _border(onDark ? AppColors.gold : AppColors.danger),
-              focusedErrorBorder:
-                  _border(onDark ? AppColors.gold : AppColors.danger, 1.5),
-            ),
+          prefixIcon: prefixIcon != null 
+              ? IconTheme.merge(
+                  data: IconThemeData(color: AppColors.teal),
+                  child: prefixIcon!,
+                ) 
+              : null,
+          suffixIcon: suffixIcon,
+          filled: true,
+          fillColor: Colors.white, // ✅ FONDO BLANCO SÓLIDO
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: isDark ? Colors.white24 : AppColors.mist),
           ),
-        ],
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: isDark ? Colors.white24 : AppColors.mist),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.teal, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.danger),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.danger, width: 2),
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
       ),
     );
   }

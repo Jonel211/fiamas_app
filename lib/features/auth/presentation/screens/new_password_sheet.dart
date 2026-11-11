@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/auth_field.dart';
@@ -71,22 +72,26 @@ class _NewPasswordSheetState extends State<NewPasswordSheet> {
             key: _formKey,
             child: Column(
               children: [
-                // ✅ NUEVA CONTRASEÑA: Máximo 6 dígitos
                 AuthField(
-                  label: 'Nueva contraseña',
+                  label: 'Nueva contraseña (Máx. 6)',
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  maxLength: 6,
+                  // CORRECCIÓN: Se eliminó 'const' de la lista
+                  inputFormatters: [LengthLimitingTextInputFormatter(6)],
                   prefixIcon: const Icon(Icons.lock_outline, color: AppColors.teal),
                   suffixIcon: _toggle(_obscurePassword, () => setState(() => _obscurePassword = !_obscurePassword)),
-                  validator: (v) => (v == null || v.isEmpty || v.length < 6) ? 'Mínimo 6 caracteres' : null,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Ingresa una contraseña';
+                    if (v.length > 6) return 'Máximo 6 caracteres';
+                    return null;
+                  },
                 ),
-                // ✅ CONFIRMAR CONTRASEÑA: Máximo 6 dígitos
                 AuthField(
                   label: 'Confirmar nueva contraseña',
                   controller: _confirmController,
                   obscureText: _obscureConfirm,
-                  maxLength: 6,
+                  // CORRECCIÓN: Se eliminó 'const' de la lista
+                  inputFormatters: [LengthLimitingTextInputFormatter(6)],
                   prefixIcon: const Icon(Icons.lock_outline, color: AppColors.teal),
                   suffixIcon: _toggle(_obscureConfirm, () => setState(() => _obscureConfirm = !_obscureConfirm)),
                   validator: (v) {
