@@ -137,21 +137,29 @@ class _NewProductScreenState extends State<NewProductScreen> {
     if (realTiendaId == null || realTiendaId.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error: No se encontró la tienda activa.'), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text('Error: No se encontró la tienda activa.'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
       return;
     }
 
-    final precioFinal = double.tryParse(_price.text.replaceAll(',', '.')) ?? 0.0;
+    final precioFinal =
+        double.tryParse(_price.text.replaceAll(',', '.')) ?? 0.0;
 
     final newProduct = Product(
       id: widget.product?.id ?? '',
       tiendaId: realTiendaId,
       categoriaId: _categoriaId ?? widget.product?.categoriaId ?? '',
       nombre: _name.text.trim(),
-      descripcion: _description.text.trim().isEmpty ? null : _description.text.trim(),
-      codigoBarras: (_unit == SaleUnit.kilo || _barcode.text.trim().isEmpty) ? null : _barcode.text.trim(),
+      descripcion: _description.text.trim().isEmpty
+          ? null
+          : _description.text.trim(),
+      codigoBarras: (_unit == SaleUnit.kilo || _barcode.text.trim().isEmpty)
+          ? null
+          : _barcode.text.trim(),
       tipoVenta: _unit,
       unidadMedida: _unit == SaleUnit.unit ? 'unidad' : 'kg',
       precioVenta: precioFinal,
@@ -164,34 +172,55 @@ class _NewProductScreenState extends State<NewProductScreen> {
 
     try {
       Product? productoFinal;
-      
+
       if (widget.isEditing) {
-        productoFinal = await provider.updateProduct(widget.product!.id, newProduct, imagenFile: _imagenFile);
+        productoFinal = await provider.updateProduct(
+          widget.product!.id,
+          newProduct,
+          imagenFile: _imagenFile,
+        );
       } else {
-        productoFinal = await provider.createProduct(newProduct, imagenFile: _imagenFile);
+        productoFinal = await provider.createProduct(
+          newProduct,
+          imagenFile: _imagenFile,
+        );
       }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Producto guardado exitosamente'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Producto guardado exitosamente'),
+            backgroundColor: Colors.green,
+          ),
         );
         Navigator.of(context).pop(productoFinal);
       }
     } catch (e) {
       if (mounted) {
-        // ✅ DETECCIÓN ESPECÍFICA DEL ERROR DE NOMBRE DUPLICADO (Código 409 del backend)
         final errorString = e.toString().toLowerCase();
-        final isDuplicateName = errorString.contains('nombre') || errorString.contains('409') || errorString.contains('existe');
-        
-        final message = isDuplicateName 
-            ? '⚠️ Ya existe un producto con este nombre en esta tienda.' 
-            : (e is InventoryException ? e.message : 'No se pudo guardar el producto. Intenta de nuevo.');
+
+        // Detectar error de duplicado (código 409 o mensajes específicos)
+        final isDuplicateName =
+            errorString.contains('409') ||
+            errorString.contains('nombre') ||
+            errorString.contains('existe') ||
+            errorString.contains('duplicate') ||
+            errorString.contains('ya existe');
+
+        String message;
+        if (isDuplicateName) {
+          message = ' Ya existe un producto con este nombre en esta tienda. Por favor, usa un nombre diferente.';
+        } else if (e is InventoryException) {
+          message = e.message;
+        } else {
+          message = 'No se pudo guardar el producto. Intenta de nuevo.';
+        }
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
             backgroundColor: AppColors.danger,
-            duration: const Duration(seconds: 5),
+            duration: const Duration(seconds: 4),
             behavior: SnackBarBehavior.floating,
           ),
         );
