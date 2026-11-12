@@ -1,9 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:dio/dio.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../../../core/widgets/auth_field.dart';
 import '../../../../core/widgets/main_shell.dart';
-import '../../../../main.dart'; // ✅ Para AppRoutes
+import '../../../../main.dart';
 import '../providers/auth_provider.dart';
 
 class RegisterTenderoForm extends StatefulWidget {
@@ -16,6 +20,7 @@ class RegisterTenderoForm extends StatefulWidget {
 
 class _RegisterTenderoFormState extends State<RegisterTenderoForm> {
   final _formKey = GlobalKey<FormState>();
+  
   final _nameController = TextEditingController();
   final _dniController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -28,6 +33,13 @@ class _RegisterTenderoFormState extends State<RegisterTenderoForm> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
+  Timer? _debounceDni;
+  Timer? _debouncePhone;
+  bool _isCheckingDni = false;
+  bool _isCheckingPhone = false;
+  String? _dniErrorMessage;
+  String? _phoneErrorMessage;
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -38,21 +50,111 @@ class _RegisterTenderoFormState extends State<RegisterTenderoForm> {
     _rucController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _debounceDni?.cancel();
+    _debouncePhone?.cancel();
     super.dispose();
   }
 
+  void _verificarDuplicado(String campo, String valor) {
+    if (campo == 'dni') {
+      _debounceDni?.cancel();
+      if (valor.length != 8) {
+        if (_dniErrorMessage != null) {
+          setState(() => _dniErrorMessage = null);
+        }
+        return;
+      }
+    } else if (campo == 'phone') {
+      _debouncePhone?.cancel();
+      if (valor.length != 9) {
+        if (_phoneErrorMessage != null) {
+          setState(() => _phoneErrorMessage = null);
+        }
+        return;
+      }
+    }
+
+    final timer = Timer(const Duration(milliseconds: 800), () async {
+      if (!mounted) return;
+
+      setState(() {
+        if (campo == 'dni') _isCheckingDni = true;
+        if (campo == 'phone') _isCheckingPhone = true;
+      });
+
+      try {
+        final dio = DioClient.create();
+        final response = await dio.get(
+          '/tenderos/verificar-duplicado',
+          queryParameters: {
+            if (campo == 'dni') 'dni': valor,
+            if (campo == 'phone') 'telefono': valor,
+          },
+        );
+
+        if (!mounted) return;
+
+        setState(() {
+          final existe = response.data['existe'] == true;
+          if (existe) {
+            final mensaje = response.data['mensaje'] ??
+                (campo == 'dni'
+                    ? 'Este DNI ya está registrado'
+                    : 'Este teléfono ya está registrado');
+
+            if (campo == 'dni') _dniErrorMessage = mensaje;
+            if (campo == 'phone') _phoneErrorMessage = mensaje;
+          } else {
+            if (campo == 'dni') _dniErrorMessage = null;
+            if (campo == 'phone') _phoneErrorMessage = null;
+          }
+        });
+      } on DioException {
+        if (!mounted) return;
+        setState(() {
+          if (campo == 'dni') _dniErrorMessage = 'Error de conexión';
+          if (campo == 'phone') _phoneErrorMessage = 'Error de conexión';
+        });
+      } catch (_) {
+        if (!mounted) return;
+        setState(() {
+          if (campo == 'dni') _dniErrorMessage = 'Error al verificar';
+          if (campo == 'phone') _phoneErrorMessage = 'Error al verificar';
+        });
+      } finally {
+        if (mounted) {
+          setState(() {
+            if (campo == 'dni') _isCheckingDni = false;
+            if (campo == 'phone') _isCheckingPhone = false;
+          });
+        }
+      }
+    });
+
+    if (campo == 'dni') _debounceDni = timer;
+    if (campo == 'phone') _debouncePhone = timer;
+  }
+
   Future<void> _handleRegister() async {
+    if (_dniErrorMessage != null || _phoneErrorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Corrige los campos marcados en rojo antes de continuar.'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
+
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final phone = _phoneController.text.trim();
 
-    //  PASO 1: Navegar a la pantalla de verificación OTP
     final isVerified = await Navigator.of(context).pushNamed(
-      AppRoutes.verification, // Asegúrate de que esta ruta apunte a VerificationScreen
+      AppRoutes.verification,
       arguments: phone,
     );
 
-    //  PASO 2: Si la verificación fue exitosa (devolvió true), proceder con el registro
     if (isVerified == true && mounted) {
       final auth = context.read<AuthProvider>();
       final success = await auth.registerTendero(
@@ -84,16 +186,45 @@ class _RegisterTenderoFormState extends State<RegisterTenderoForm> {
     }
   }
 
-  Widget _icon(IconData data) => Icon(data, size: 20, color: AppColors.teal);
+  Widget _buildErrorIconWithTooltip(String mensaje) {
+    return Tooltip(
+      message: mensaje,
+      preferBelow: true,
+      waitDuration: const Duration(milliseconds: 100),
+      showDuration: const Duration(seconds: 3),
+      decoration: BoxDecoration(
+        color: Colors.red.shade700,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      textStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: const Icon(Icons.error, color: Colors.red, size: 20),
+    );
+  }
 
-  Widget _toggle(bool obscured, VoidCallback onPressed) => IconButton(
-        onPressed: onPressed,
-        icon: Icon(
-          obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-          size: 20,
-          color: AppColors.inkMuted,
-        ),
-      );
+  Widget _buildIcon(IconData data) => Icon(data, size: 20, color: AppColors.teal);
+
+  Widget _buildTogglePassword(bool obscured, VoidCallback onPressed) {
+    return IconButton(
+      onPressed: onPressed,
+      icon: Icon(
+        obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+        size: 20,
+        color: AppColors.inkMuted,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,15 +236,21 @@ class _RegisterTenderoFormState extends State<RegisterTenderoForm> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Crear tu cuenta', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.ink)),
+          const Text(
+            'Crear tu cuenta',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.ink),
+          ),
           const SizedBox(height: 6),
-          const Text('Empieza a digitalizar tu tienda hoy', style: TextStyle(fontSize: 14, color: AppColors.inkMuted)),
+          const Text(
+            'Empieza a digitalizar tu tienda hoy',
+            style: TextStyle(fontSize: 14, color: AppColors.inkMuted),
+          ),
           const SizedBox(height: 20),
           AuthField(
             label: 'Nombres completos',
             controller: _nameController,
             textCapitalization: TextCapitalization.words,
-            prefixIcon: _icon(Icons.person_outline_rounded),
+            prefixIcon: _buildIcon(Icons.person_outline_rounded),
             validator: (v) => (v == null || v.trim().isEmpty) ? 'Ingresa tu nombre' : null,
           ),
           AuthField(
@@ -121,11 +258,32 @@ class _RegisterTenderoFormState extends State<RegisterTenderoForm> {
             controller: _dniController,
             keyboardType: TextInputType.number,
             maxLength: 8,
-            digitsOnly: true,
-            prefixIcon: _icon(Icons.badge_outlined),
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(8),
+            ],
+            prefixIcon: _buildIcon(Icons.badge_outlined),
+            suffixIcon: _isCheckingDni
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : (_dniErrorMessage != null
+                    ? _buildErrorIconWithTooltip(_dniErrorMessage!)
+                    : (_dniController.text.length == 8
+                        ? const Icon(Icons.check, color: Colors.green, size: 20)
+                        : null)),
+            onChanged: (val) {
+              _verificarDuplicado('dni', val);
+              if (_dniErrorMessage != null && mounted) {
+                setState(() => _dniErrorMessage = null);
+              }
+            },
             validator: (v) {
               if (v == null || v.isEmpty) return 'Ingresa tu DNI';
               if (v.length != 8) return 'El DNI debe tener 8 dígitos';
+              if (_dniErrorMessage != null) return _dniErrorMessage;
               return null;
             },
           ),
@@ -134,11 +292,32 @@ class _RegisterTenderoFormState extends State<RegisterTenderoForm> {
             controller: _phoneController,
             keyboardType: TextInputType.phone,
             maxLength: 9,
-            digitsOnly: true,
-            prefixIcon: _icon(Icons.phone_outlined),
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(9),
+            ],
+            prefixIcon: _buildIcon(Icons.phone_outlined),
+            suffixIcon: _isCheckingPhone
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : (_phoneErrorMessage != null
+                    ? _buildErrorIconWithTooltip(_phoneErrorMessage!)
+                    : (_phoneController.text.length == 9
+                        ? const Icon(Icons.check, color: Colors.green, size: 20)
+                        : null)),
+            onChanged: (val) {
+              _verificarDuplicado('phone', val);
+              if (_phoneErrorMessage != null && mounted) {
+                setState(() => _phoneErrorMessage = null);
+              }
+            },
             validator: (v) {
               if (v == null || v.isEmpty) return 'Ingresa tu celular';
               if (v.length != 9) return 'El celular debe tener 9 dígitos';
+              if (_phoneErrorMessage != null) return _phoneErrorMessage;
               return null;
             },
           ),
@@ -146,14 +325,14 @@ class _RegisterTenderoFormState extends State<RegisterTenderoForm> {
             label: 'Nombre de la tienda',
             controller: _storeNameController,
             textCapitalization: TextCapitalization.words,
-            prefixIcon: _icon(Icons.storefront_outlined),
+            prefixIcon: _buildIcon(Icons.storefront_outlined),
             validator: (v) => (v == null || v.trim().isEmpty) ? 'Ingresa el nombre de tu tienda' : null,
           ),
           AuthField(
             label: 'Dirección / Ubicación',
             controller: _addressController,
             textCapitalization: TextCapitalization.sentences,
-            prefixIcon: _icon(Icons.location_on_outlined),
+            prefixIcon: _buildIcon(Icons.location_on_outlined),
             validator: (v) => (v == null || v.trim().isEmpty) ? 'Ingresa la dirección' : null,
           ),
           AuthField(
@@ -161,22 +340,29 @@ class _RegisterTenderoFormState extends State<RegisterTenderoForm> {
             controller: _rucController,
             keyboardType: TextInputType.number,
             maxLength: 11,
-            digitsOnly: true,
-            prefixIcon: _icon(Icons.receipt_long_outlined),
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(11),
+            ],
+            prefixIcon: _buildIcon(Icons.receipt_long_outlined),
             validator: (v) {
               if (v != null && v.isNotEmpty && v.length != 11) return 'El RUC debe tener 11 dígitos';
               return null;
             },
           ),
           AuthField(
-            label: 'Crear una contraseña',
+            label: 'Crear una contraseña (4 a 6 car.)',
             controller: _passwordController,
             obscureText: _obscurePassword,
-            prefixIcon: _icon(Icons.lock_outline_rounded),
-            suffixIcon: _toggle(_obscurePassword, () => setState(() => _obscurePassword = !_obscurePassword)),
+            inputFormatters: [LengthLimitingTextInputFormatter(6)],
+            prefixIcon: _buildIcon(Icons.lock_outline_rounded),
+            suffixIcon: _buildTogglePassword(
+              _obscurePassword,
+              () => setState(() => _obscurePassword = !_obscurePassword),
+            ),
             validator: (v) {
               if (v == null || v.isEmpty) return 'Crea una contraseña';
-              if (v.length < 6) return 'Mínimo 6 caracteres';
+              if (v.length < 4 || v.length > 6) return 'Debe tener entre 4 y 6 caracteres';
               return null;
             },
           ),
@@ -184,11 +370,16 @@ class _RegisterTenderoFormState extends State<RegisterTenderoForm> {
             label: 'Confirmar contraseña',
             controller: _confirmPasswordController,
             obscureText: _obscureConfirmPassword,
-            prefixIcon: _icon(Icons.lock_outline_rounded),
-            suffixIcon: _toggle(_obscureConfirmPassword, () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword)),
+            inputFormatters: [LengthLimitingTextInputFormatter(6)],
+            prefixIcon: _buildIcon(Icons.lock_outline_rounded),
+            suffixIcon: _buildTogglePassword(
+              _obscureConfirmPassword,
+              () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+            ),
             validator: (v) {
               if (v == null || v.isEmpty) return 'Confirma tu contraseña';
               if (v != _passwordController.text) return 'Las contraseñas no coinciden';
+              if (v.length < 4 || v.length > 6) return 'Debe tener entre 4 y 6 caracteres';
               return null;
             },
           ),
@@ -203,7 +394,11 @@ class _RegisterTenderoFormState extends State<RegisterTenderoForm> {
             onPressed: isLoading ? null : _handleRegister,
             icon: isLoading ? const SizedBox.shrink() : const Icon(Icons.how_to_reg_rounded, size: 20),
             label: isLoading
-                ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.ink))
+                ? const SizedBox(
+                    height: 22,
+                    width: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.ink),
+                  )
                 : const Text('Registrarme'),
           ),
           const SizedBox(height: 16),

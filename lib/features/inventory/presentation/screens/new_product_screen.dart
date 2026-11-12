@@ -34,7 +34,6 @@ class _NewProductScreenState extends State<NewProductScreen> {
   String? _categoriaId;
   Category? _categoriaObjeto;
   
-  // GESTIÓN DE IMAGEN
   File? _imagenFile;
   final ImagePicker _picker = ImagePicker();
   bool _isUploading = false;
@@ -49,8 +48,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
       _price.text = widget.product!.precioVenta.toStringAsFixed(2);
       _unit = widget.product!.tipoVenta;
       _active = widget.product!.activo;
-      _categoriaId =
-          widget.product!.categoria?.id ?? widget.product!.categoriaId;
+      _categoriaId = widget.product!.categoria?.id ?? widget.product!.categoriaId;
       _categoriaObjeto = widget.product!.categoria;
     }
   }
@@ -133,7 +131,6 @@ class _NewProductScreenState extends State<NewProductScreen> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final provider = context.read<InventoryProvider>();
-
     provider.ensureInitialized(context);
     final realTiendaId = provider.tiendaId;
 
@@ -149,16 +146,20 @@ class _NewProductScreenState extends State<NewProductScreen> {
       return;
     }
 
-    final precioFinal = double.tryParse(_price.text.replaceAll(',', '.')) ?? 0.0;
+    final precioFinal =
+        double.tryParse(_price.text.replaceAll(',', '.')) ?? 0.0;
 
     final newProduct = Product(
       id: widget.product?.id ?? '',
       tiendaId: realTiendaId,
       categoriaId: _categoriaId ?? widget.product?.categoriaId ?? '',
       nombre: _name.text.trim(),
-      descripcion: _description.text.trim().isEmpty ? null : _description.text.trim(),
-      // ✅ Si es por kilo, el código de barras va como nulo
-      codigoBarras: (_unit == SaleUnit.kilo || _barcode.text.trim().isEmpty) ? null : _barcode.text.trim(),
+      descripcion: _description.text.trim().isEmpty
+          ? null
+          : _description.text.trim(),
+      codigoBarras: (_unit == SaleUnit.kilo || _barcode.text.trim().isEmpty)
+          ? null
+          : _barcode.text.trim(),
       tipoVenta: _unit,
       unidadMedida: _unit == SaleUnit.unit ? 'unidad' : 'kg',
       precioVenta: precioFinal,
@@ -171,29 +172,59 @@ class _NewProductScreenState extends State<NewProductScreen> {
 
     try {
       Product? productoFinal;
-      
+
       if (widget.isEditing) {
-        productoFinal = await provider.updateProduct(widget.product!.id, newProduct, imagenFile: _imagenFile);
+        productoFinal = await provider.updateProduct(
+          widget.product!.id,
+          newProduct,
+          imagenFile: _imagenFile,
+        );
       } else {
-        productoFinal = await provider.createProduct(newProduct, imagenFile: _imagenFile);
+        productoFinal = await provider.createProduct(
+          newProduct,
+          imagenFile: _imagenFile,
+        );
       }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Producto guardado exitosamente'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Producto guardado exitosamente'),
+            backgroundColor: Colors.green,
+          ),
         );
         Navigator.of(context).pop(productoFinal);
       }
     } catch (e) {
       if (mounted) {
-        final message = e is InventoryException
-            ? e.message
-            : 'No se pudo guardar el producto. Intenta de nuevo.';
+        final errorString = (e is InventoryException ? e.message : e.toString()).toLowerCase();
+
+        // Diferenciar error de código de barras vs nombre duplicado
+        final isBarcodeDuplicate = errorString.contains('código de barras') ||
+            errorString.contains('codigo de barras') ||
+            errorString.contains('barcode');
+        final isDuplicateName = !isBarcodeDuplicate &&
+            (errorString.contains('nombre') ||
+                errorString.contains('ya existe un producto') ||
+                errorString.contains('duplicate'));
+
+        String message;
+        if (isBarcodeDuplicate) {
+          message = 'Ya existe un producto con ese código de barras en esta tienda.';
+        } else if (isDuplicateName) {
+          message = 'Ya existe un producto con este nombre en esta tienda. Por favor, usa un nombre diferente.';
+        } else if (e is InventoryException) {
+          message = e.message;
+        } else {
+          message = 'No se pudo guardar el producto. Intenta de nuevo.';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
             backgroundColor: AppColors.danger,
-            duration: const Duration(seconds: 5),
+            duration: const Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
@@ -220,15 +251,12 @@ class _NewProductScreenState extends State<NewProductScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  widget.isEditing
-                      ? 'Modifica los datos del artículo'
-                      : 'Agrega un artículo a tu lista',
+                  widget.isEditing ? 'Modifica los datos del artículo' : 'Agrega un artículo a tu lista',
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.black87),
                 ),
                 const SizedBox(height: 24),
                 
-                // SELECTOR DE IMAGEN CIRCULAR
                 GestureDetector(
                   onTap: _showImageSourceDialog,
                   child: Column(
@@ -236,46 +264,21 @@ class _NewProductScreenState extends State<NewProductScreen> {
                       Container(
                         width: 80,
                         height: 80,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
-                          shape: BoxShape.circle,
-                        ),
+                        decoration: BoxDecoration(color: Colors.grey.shade200, shape: BoxShape.circle),
                         child: _imagenFile != null
-                            ? ClipOval(
-                                child: Image.file(
-                                  _imagenFile!,
-                                  fit: BoxFit.cover,
-                                ),
-                              )
+                            ? ClipOval(child: Image.file(_imagenFile!, fit: BoxFit.cover))
                             : widget.product?.imagenUrl != null && _imagenFile == null
-                                ? ClipOval(
-                                    child: Image.network(
-                                      widget.product!.imagenUrl!,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) => const Icon(Icons.camera_alt, size: 40, color: Colors.grey),
-                                    ),
-                                  )
+                                ? ClipOval(child: Image.network(widget.product!.imagenUrl!, fit: BoxFit.cover, errorBuilder: (_, _, _) => const Icon(Icons.camera_alt, size: 40, color: Colors.grey)))
                                 : const Icon(Icons.camera_alt, size: 40, color: Colors.grey),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Añadir imagen',
-                        style: TextStyle(
-                          color: AppColors.teal,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
+                      const Text('Añadir imagen', style: TextStyle(color: AppColors.teal, fontWeight: FontWeight.w600, fontSize: 14)),
                     ],
                   ),
                 ),
                 const SizedBox(height: 32),
 
-                // NOMBRE DEL PRODUCTO
-                const Text(
-                  'Nombre del producto',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
-                ),
+                const Text('Nombre del producto', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal)),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _name,
@@ -285,21 +288,14 @@ class _NewProductScreenState extends State<NewProductScreen> {
                     hintStyle: const TextStyle(fontSize: 14, color: Colors.grey),
                     filled: true,
                     fillColor: Colors.grey.shade50,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   ),
                   validator: (v) => (v == null || v.trim().isEmpty) ? 'Ingresa el nombre del producto' : null,
                 ),
                 const SizedBox(height: 20),
 
-                // ELEGIR CATEGORÍA
-                const Text(
-                  'Elegir categoría',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
-                ),
+                const Text('Elegir categoría', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal)),
                 const SizedBox(height: 8),
                 Consumer<InventoryProvider>(
                   builder: (context, provider, child) {
@@ -314,17 +310,11 @@ class _NewProductScreenState extends State<NewProductScreen> {
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.grey.shade50,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
                       items: categories.map((Category c) {
-                        return DropdownMenuItem(
-                          value: c.id,
-                          child: Text(c.nombre),
-                        );
+                        return DropdownMenuItem(value: c.id, child: Text(c.nombre));
                       }).toList(),
                       onChanged: _onCategoriaChanged,
                       validator: (v) => v == null ? 'Selecciona una categoría' : null,
@@ -333,20 +323,12 @@ class _NewProductScreenState extends State<NewProductScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // SE VENDE POR
-                const Text(
-                  'Se vende por',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
-                ),
+                const Text('Se vende por', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
-                      child: _SaleUnitChip(
-                        label: 'Unidad',
-                        selected: _unit == SaleUnit.unit,
-                        onTap: () => setState(() => _unit = SaleUnit.unit),
-                      ),
+                      child: _SaleUnitChip(label: 'Unidad', selected: _unit == SaleUnit.unit, onTap: () => setState(() => _unit = SaleUnit.unit)),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -356,7 +338,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                         onTap: () {
                           setState(() {
                             _unit = SaleUnit.kilo;
-                            _barcode.clear(); // ✅ Limpiamos el código de barras
+                            _barcode.clear();
                           });
                         },
                       ),
@@ -365,11 +347,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // DESCRIPCIÓN
-                const Text(
-                  'Descripción (Opcional)',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
-                ),
+                const Text('Descripción (Opcional)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal)),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _description,
@@ -381,21 +359,14 @@ class _NewProductScreenState extends State<NewProductScreen> {
                     hintStyle: const TextStyle(fontSize: 14, color: Colors.grey),
                     filled: true,
                     fillColor: Colors.grey.shade50,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                     contentPadding: const EdgeInsets.all(16),
                   ),
                 ),
                 const SizedBox(height: 20),
 
-                // ✅ CÓDIGO DE BARRAS CONDICIONAL (Solo si es por unidad)
                 if (_unit == SaleUnit.unit) ...[
-                  const Text(
-                    'Código de barras',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
-                  ),
+                  const Text('Código de barras', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal)),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _barcode,
@@ -404,31 +375,18 @@ class _NewProductScreenState extends State<NewProductScreen> {
                       hintStyle: const TextStyle(fontSize: 14, color: Colors.grey),
                       filled: true,
                       fillColor: Colors.grey.shade50,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide.none,
-                      ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       suffixIcon: IconButton(
                         icon: const Icon(Icons.qr_code_scanner, color: AppColors.teal, size: 24),
                         onPressed: () async {
                           final scannedCode = await Navigator.of(context).push<String>(
-                            MaterialPageRoute(
-                              builder: (_) => const BarcodeScannerScreen(),
-                            ),
+                            MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
                           );
-                          
                           if (scannedCode != null && context.mounted) {
-                            setState(() {
-                              _barcode.text = scannedCode;
-                            });
-
+                            setState(() { _barcode.text = scannedCode; });
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Código escaneado exitosamente'),
-                                backgroundColor: Colors.green,
-                                duration: Duration(seconds: 2),
-                              ),
+                              const SnackBar(content: Text('Código escaneado exitosamente'), backgroundColor: Colors.green, duration: Duration(seconds: 2)),
                             );
                           }
                         },
@@ -438,11 +396,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                   const SizedBox(height: 20),
                 ],
 
-                // PRECIO VENTA (Cambia dinámicamente el texto)
-                Text(
-                  _unit == SaleUnit.unit ? 'Precio venta' : 'Precio por kilo (kg)',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal),
-                ),
+                Text(_unit == SaleUnit.unit ? 'Precio venta' : 'Precio por kilo (kg)', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.teal)),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _price,
@@ -454,10 +408,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
                     hintStyle: const TextStyle(fontSize: 16, color: Colors.grey),
                     filled: true,
                     fillColor: Colors.grey.shade50,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   ),
                   validator: (v) {
@@ -468,24 +419,15 @@ class _NewProductScreenState extends State<NewProductScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // PRODUCTO ACTIVO
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Producto Activo',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87),
-                    ),
-                    Switch(
-                      value: _active,
-                      onChanged: (v) => setState(() => _active = v),
-                      activeThumbColor: AppColors.teal,
-                    ),
+                    const Text('Producto Activo', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87)),
+                    Switch(value: _active, onChanged: (v) => setState(() => _active = v), activeThumbColor: AppColors.teal),
                   ],
                 ),
                 const SizedBox(height: 24),
 
-                // BOTÓN GUARDAR
                 ElevatedButton(
                   onPressed: _isUploading ? null : _save,
                   style: ElevatedButton.styleFrom(
@@ -494,16 +436,10 @@ class _NewProductScreenState extends State<NewProductScreen> {
                     elevation: 0,
                     minimumSize: const Size.fromHeight(50),
                     textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: _isUploading
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                      )
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                     : const Text('Guardar producto'),
                 ),
               ],
@@ -516,12 +452,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
 }
 
 class _SaleUnitChip extends StatelessWidget {
-  const _SaleUnitChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
+  const _SaleUnitChip({required this.label, required this.selected, required this.onTap});
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -535,18 +466,11 @@ class _SaleUnitChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected ? AppColors.teal.withValues(alpha: 0.2) : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: selected ? AppColors.teal : Colors.grey.shade300,
-            width: 1,
-          ),
+          border: Border.all(color: selected ? AppColors.teal : Colors.grey.shade300, width: 1),
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            color: selected ? AppColors.teal : Colors.black87,
-          ),
+          style: TextStyle(fontSize: 13, fontWeight: selected ? FontWeight.w700 : FontWeight.w500, color: selected ? AppColors.teal : Colors.black87),
         ),
       ),
     );

@@ -3,8 +3,7 @@ import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
 
 /// Campo de texto con la etiqueta arriba y borde redondeado.
-/// Con `onDark: true` se adapta a paneles de color (etiqueta blanca,
-/// campo blanco).
+/// Con `onDark: true` se adapta a paneles de color (etiqueta blanca, campo blanco).
 class AuthField extends StatelessWidget {
   const AuthField({
     super.key,
@@ -17,6 +16,8 @@ class AuthField extends StatelessWidget {
     this.suffixIcon,
     this.maxLength,
     this.digitsOnly = false,
+    this.inputFormatters,
+    this.onChanged,
     this.enabled = true,
     this.onDark = false,
     this.textCapitalization = TextCapitalization.none,
@@ -32,6 +33,8 @@ class AuthField extends StatelessWidget {
   final Widget? suffixIcon;
   final int? maxLength;
   final bool digitsOnly;
+  final List<TextInputFormatter>? inputFormatters;
+  final ValueChanged<String>? onChanged;
   final bool enabled;
   final bool onDark;
   final TextCapitalization textCapitalization;
@@ -47,6 +50,22 @@ class AuthField extends StatelessWidget {
   Widget build(BuildContext context) {
     final borderColor = onDark ? Colors.transparent : AppColors.mist;
     final focusColor = onDark ? AppColors.gold : AppColors.teal;
+
+    // Combina digitsOnly con los formateadores adicionales que se pasen por parámetro
+    final List<TextInputFormatter> formatters = [
+      if (digitsOnly) FilteringTextInputFormatter.digitsOnly,
+      if (inputFormatters != null) ...inputFormatters!,
+    ];
+
+    // Adapta el color del icono frontal según el tema del campo
+    final effectivePrefixIcon = prefixIcon != null
+        ? IconTheme.merge(
+            data: IconThemeData(
+              color: onDark ? Colors.white70 : AppColors.teal,
+            ),
+            child: prefixIcon!,
+          )
+        : null;
 
     return Padding(
       padding: EdgeInsets.only(bottom: bottomSpacing),
@@ -70,8 +89,8 @@ class AuthField extends StatelessWidget {
             obscureText: obscureText,
             maxLength: maxLength,
             textCapitalization: textCapitalization,
-            inputFormatters:
-                digitsOnly ? [FilteringTextInputFormatter.digitsOnly] : null,
+            inputFormatters: formatters.isEmpty ? null : formatters,
+            onChanged: onChanged,
             style: TextStyle(
               fontSize: 15,
               color: enabled ? AppColors.ink : AppColors.inkMuted,
@@ -85,7 +104,7 @@ class AuthField extends StatelessWidget {
                 color: onDark ? AppColors.gold : AppColors.danger,
                 fontWeight: FontWeight.w600,
               ),
-              prefixIcon: prefixIcon,
+              prefixIcon: effectivePrefixIcon,
               suffixIcon: suffixIcon,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 14),

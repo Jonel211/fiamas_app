@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/auth_field.dart';
-import '../../../../main.dart'; // Importante para usar AppRoutes
+import '../../../../main.dart';
 import '../providers/auth_provider.dart';
 import '../providers/tienda_provider.dart';
 import '../screens/forgot_password_sheet.dart';
@@ -23,6 +23,10 @@ class _LoginFormState extends State<LoginForm> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
+  // Contadores reactivos
+  int _phoneLength = 0;
+  int _passwordLength = 0;
+
   @override
   void dispose() {
     _phoneController.dispose();
@@ -33,7 +37,7 @@ class _LoginFormState extends State<LoginForm> {
   Future<void> _handleLogin() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final auth = context.read<AuthProvider>();
-    
+
     final success = await auth.login(
       identificador: _phoneController.text.trim(),
       password: _passwordController.text,
@@ -45,19 +49,34 @@ class _LoginFormState extends State<LoginForm> {
         await context.read<TiendaProvider>().cargarMisTiendas();
       } catch (_) {}
       if (!mounted) return;
-      // Redirigir a "Mis Tiendas" para seleccionar o confirmar la tienda
-      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.stores, (route) => false);
+
+      Navigator.pushNamedAndRemoveUntil(
+          context, AppRoutes.stores, (route) => false);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.errorMessage ?? 'Error al iniciar sesión'), backgroundColor: AppColors.danger, behavior: SnackBarBehavior.floating));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(auth.errorMessage ?? 'Error al iniciar sesión'),
+          backgroundColor: AppColors.danger,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
-  Widget _icon(IconData data) => Icon(data, size: 20, color: AppColors.ink);
+  Widget _icon(IconData data) => Icon(
+        data,
+        size: 20,
+        color: widget.onDark ? Colors.white70 : AppColors.ink,
+      );
 
   Widget _toggle(bool obscured, VoidCallback onPressed) => IconButton(
-    onPressed: onPressed,
-    icon: Icon(obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 20, color: AppColors.inkMuted),
-  );
+        onPressed: onPressed,
+        icon: Icon(
+          obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+          size: 20,
+          color: widget.onDark ? Colors.white70 : AppColors.inkMuted,
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -69,20 +88,44 @@ class _LoginFormState extends State<LoginForm> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Inicia sesión', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: widget.onDark ? Colors.white : AppColors.ink)),
+          Text(
+            'Inicia sesión',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: widget.onDark ? Colors.white : AppColors.ink,
+            ),
+          ),
           const SizedBox(height: 24),
-          
+
+          // Campo Celular
           AuthField(
             label: 'Número de celular',
             controller: _phoneController,
             keyboardType: TextInputType.phone,
-            maxLength: 9, 
+            maxLength: 9,
             digitsOnly: true,
             onDark: widget.onDark,
             prefixIcon: _icon(Icons.phone_outlined),
-            validator: (v) => (v == null || v.isEmpty) ? 'Ingresa tu celular' : (v.length != 9 ? 'Debe tener 9 dígitos' : null),
+            onChanged: (val) => setState(() => _phoneLength = val.length),
+            validator: (v) => (v == null || v.isEmpty)
+                ? 'Ingresa tu celular'
+                : (v.length != 9 ? 'Debe tener 9 dígitos' : null),
           ),
-          
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              '$_phoneLength/9',
+              style: TextStyle(
+                fontSize: 12,
+                color: widget.onDark ? Colors.white70 : AppColors.inkMuted,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Campo Contraseña
           AuthField(
             label: 'Contraseña',
             controller: _passwordController,
@@ -90,34 +133,99 @@ class _LoginFormState extends State<LoginForm> {
             maxLength: 6,
             onDark: widget.onDark,
             prefixIcon: _icon(Icons.lock_outline_rounded),
-            suffixIcon: _toggle(_obscurePassword, () => setState(() => _obscurePassword = !_obscurePassword)),
-            validator: (v) => (v == null || v.isEmpty) ? 'Ingresa tu contraseña' : null,
+            suffixIcon: _toggle(
+              _obscurePassword,
+              () => setState(() => _obscurePassword = !_obscurePassword),
+            ),
+            onChanged: (val) => setState(() => _passwordLength = val.length),
+            validator: (v) =>
+                (v == null || v.isEmpty) ? 'Ingresa tu contraseña' : null,
           ),
-          
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              '$_passwordLength/6',
+              style: TextStyle(
+                fontSize: 12,
+                color: widget.onDark ? Colors.white70 : AppColors.inkMuted,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
           const SizedBox(height: 8),
+
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
-              onPressed: () => showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.transparent, builder: (context) => const ForgotPasswordSheet()),
-              child: Text('¿Olvidaste tu contraseña?', style: TextStyle(color: widget.onDark ? Colors.white70 : AppColors.inkMuted, fontSize: 13, fontWeight: FontWeight.w600)),
+              onPressed: () => showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => const ForgotPasswordSheet(),
+              ),
+              child: Text(
+                '¿Olvidaste tu contraseña?',
+                style: TextStyle(
+                  color: widget.onDark ? Colors.white70 : AppColors.inkMuted,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 16),
+
           ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.gold, foregroundColor: AppColors.ink, minimumSize: const Size.fromHeight(48), textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.gold,
+              foregroundColor: AppColors.ink,
+              minimumSize: const Size.fromHeight(52),
+              textStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
             onPressed: isLoading ? null : _handleLogin,
-            icon: isLoading ? const SizedBox.shrink() : const Icon(Icons.login_rounded, size: 20),
-            label: isLoading ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.ink)) : const Text('Ingresar'),
+            icon: isLoading
+                ? const SizedBox.shrink()
+                : const Icon(Icons.login_rounded, size: 20),
+            label: isLoading
+                ? const SizedBox(
+                    height: 22,
+                    width: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: AppColors.ink,
+                    ),
+                  )
+                : const Text('Ingresar'),
           ),
           const SizedBox(height: 16),
+
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('¿No tienes cuenta? ', style: TextStyle(fontSize: 13, color: widget.onDark ? Colors.white70 : AppColors.inkMuted)),
+              Text(
+                '¿No tienes cuenta? ',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: widget.onDark ? Colors.white70 : AppColors.inkMuted,
+                ),
+              ),
               GestureDetector(
                 onTap: widget.onRegister,
                 behavior: HitTestBehavior.opaque,
-                child: Text('Regístrate', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: widget.onDark ? Colors.white : AppColors.teal)),
+                child: Text(
+                  'Regístrate',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: widget.onDark ? Colors.white : AppColors.teal,
+                  ),
+                ),
               ),
             ],
           ),
