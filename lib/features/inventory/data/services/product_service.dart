@@ -32,8 +32,13 @@ class ProductService {
       final response = await _dio.get('/productos/tienda/$tiendaId');
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data;
-        return data.map((json) => Product.fromJson(json)).toList();
+        final dynamic raw = response.data;
+        final List<dynamic> data = raw is List
+            ? raw
+            : (raw is Map && raw['productos'] is List
+                ? raw['productos'] as List<dynamic>
+                : <dynamic>[]);
+        return data.map((json) => Product.fromJson(json as Map<String, dynamic>)).toList();
       } else {
         throw Exception('Error al cargar productos: ${response.data}');
       }

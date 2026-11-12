@@ -197,19 +197,22 @@ class _NewProductScreenState extends State<NewProductScreen> {
       }
     } catch (e) {
       if (mounted) {
-        final errorString = e.toString().toLowerCase();
+        final errorString = (e is InventoryException ? e.message : e.toString()).toLowerCase();
 
-        // Detectar error de duplicado (código 409 o mensajes específicos)
-        final isDuplicateName =
-            errorString.contains('409') ||
-            errorString.contains('nombre') ||
-            errorString.contains('existe') ||
-            errorString.contains('duplicate') ||
-            errorString.contains('ya existe');
+        // Diferenciar error de código de barras vs nombre duplicado
+        final isBarcodeDuplicate = errorString.contains('código de barras') ||
+            errorString.contains('codigo de barras') ||
+            errorString.contains('barcode');
+        final isDuplicateName = !isBarcodeDuplicate &&
+            (errorString.contains('nombre') ||
+                errorString.contains('ya existe un producto') ||
+                errorString.contains('duplicate'));
 
         String message;
-        if (isDuplicateName) {
-          message = ' Ya existe un producto con este nombre en esta tienda. Por favor, usa un nombre diferente.';
+        if (isBarcodeDuplicate) {
+          message = 'Ya existe un producto con ese código de barras en esta tienda.';
+        } else if (isDuplicateName) {
+          message = 'Ya existe un producto con este nombre en esta tienda. Por favor, usa un nombre diferente.';
         } else if (e is InventoryException) {
           message = e.message;
         } else {

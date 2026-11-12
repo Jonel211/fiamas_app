@@ -58,13 +58,20 @@ class _RegisterTenderoFormState extends State<RegisterTenderoForm> {
   void _verificarDuplicado(String campo, String valor) {
     if (campo == 'dni') {
       _debounceDni?.cancel();
+      if (valor.length != 8) {
+        if (_dniErrorMessage != null) {
+          setState(() => _dniErrorMessage = null);
+        }
+        return;
+      }
     } else if (campo == 'phone') {
       _debouncePhone?.cancel();
-    }
-
-    if ((campo == 'dni' && valor.length != 8) ||
-        (campo == 'phone' && valor.length != 9)) {
-      return;
+      if (valor.length != 9) {
+        if (_phoneErrorMessage != null) {
+          setState(() => _phoneErrorMessage = null);
+        }
+        return;
+      }
     }
 
     final timer = Timer(const Duration(milliseconds: 800), () async {
@@ -344,7 +351,7 @@ class _RegisterTenderoFormState extends State<RegisterTenderoForm> {
             },
           ),
           AuthField(
-            label: 'Crear una contraseña (Máx. 6)',
+            label: 'Crear una contraseña (4 a 6 car.)',
             controller: _passwordController,
             obscureText: _obscurePassword,
             inputFormatters: [LengthLimitingTextInputFormatter(6)],
@@ -355,7 +362,7 @@ class _RegisterTenderoFormState extends State<RegisterTenderoForm> {
             ),
             validator: (v) {
               if (v == null || v.isEmpty) return 'Crea una contraseña';
-              if (v.length > 6) return 'Máximo 6 caracteres';
+              if (v.length < 4 || v.length > 6) return 'Debe tener entre 4 y 6 caracteres';
               return null;
             },
           ),
@@ -372,6 +379,7 @@ class _RegisterTenderoFormState extends State<RegisterTenderoForm> {
             validator: (v) {
               if (v == null || v.isEmpty) return 'Confirma tu contraseña';
               if (v != _passwordController.text) return 'Las contraseñas no coinciden';
+              if (v.length < 4 || v.length > 6) return 'Debe tener entre 4 y 6 caracteres';
               return null;
             },
           ),

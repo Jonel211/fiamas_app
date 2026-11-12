@@ -36,6 +36,8 @@ class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware
     });
   }
 
+  String? _lastLoadedTiendaId;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -43,6 +45,15 @@ class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware
       _subscribed = true;
       final route = ModalRoute.of(context);
       if (route != null) routeObserver.subscribe(this, route);
+    }
+
+    final tiendaId = context.watch<TiendaProvider>().tiendaSeleccionadaId ??
+        context.watch<AuthProvider>().user?.tiendaId;
+    if (tiendaId != null && tiendaId != _lastLoadedTiendaId) {
+      _lastLoadedTiendaId = tiendaId;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _cargarClientesTiendaActual();
+      });
     }
   }
 

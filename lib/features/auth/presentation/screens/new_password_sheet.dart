@@ -73,16 +73,15 @@ class _NewPasswordSheetState extends State<NewPasswordSheet> {
             child: Column(
               children: [
                 AuthField(
-                  label: 'Nueva contraseña (Máx. 6)',
+                  label: 'Nueva contraseña (4 a 6 car.)',
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  // CORRECCIÓN: Se eliminó 'const' de la lista
                   inputFormatters: [LengthLimitingTextInputFormatter(6)],
                   prefixIcon: const Icon(Icons.lock_outline, color: AppColors.teal),
                   suffixIcon: _toggle(_obscurePassword, () => setState(() => _obscurePassword = !_obscurePassword)),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Ingresa una contraseña';
-                    if (v.length > 6) return 'Máximo 6 caracteres';
+                    if (v.length < 4 || v.length > 6) return 'Debe tener entre 4 y 6 caracteres';
                     return null;
                   },
                 ),
@@ -90,13 +89,13 @@ class _NewPasswordSheetState extends State<NewPasswordSheet> {
                   label: 'Confirmar nueva contraseña',
                   controller: _confirmController,
                   obscureText: _obscureConfirm,
-                  // CORRECCIÓN: Se eliminó 'const' de la lista
                   inputFormatters: [LengthLimitingTextInputFormatter(6)],
                   prefixIcon: const Icon(Icons.lock_outline, color: AppColors.teal),
                   suffixIcon: _toggle(_obscureConfirm, () => setState(() => _obscureConfirm = !_obscureConfirm)),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Confirma tu contraseña';
                     if (v != _passwordController.text) return 'Las contraseñas no coinciden';
+                    if (v.length < 4 || v.length > 6) return 'Debe tener entre 4 y 6 caracteres';
                     return null;
                   },
                 ),
