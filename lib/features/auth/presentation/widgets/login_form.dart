@@ -22,9 +22,6 @@ class _LoginFormState extends State<LoginForm> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
-  int _phoneLength = 0;
-  int _passwordLength = 0;
-
   @override
   void dispose() {
     _phoneController.dispose();
@@ -55,11 +52,11 @@ class _LoginFormState extends State<LoginForm> {
     }
   }
 
-  // ✅ ICONO OSCURO Y SIEMPRE VISIBLE (ya no se pierde sobre blanco)
+  // ✅ ICONO OSCURO Y SIEMPRE VISIBLE
   Widget _icon(IconData data) => Icon(
     data,
     size: 22,
-    color: AppColors.ink, // Negro sólido para máximo contraste
+    color: AppColors.ink,
   );
 
   Widget _toggle(bool obscured, VoidCallback onPressed) => IconButton(
@@ -102,7 +99,6 @@ class _LoginFormState extends State<LoginForm> {
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AppColors.danger, width: 2),
       ),
-      // ✅ PADDING REDUCIDO para que el input sea más compacto
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
   }
@@ -117,29 +113,29 @@ class _LoginFormState extends State<LoginForm> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ✅ TÍTULO MÁS PEQUEÑO
+          // TÍTULO
           Text(
             'Inicia sesión',
             style: TextStyle(
-              fontSize: 22, // Reducido de 24 → 22
+              fontSize: 22,
               fontWeight: FontWeight.w800,
               color: widget.onDark ? Colors.white : AppColors.ink,
             ),
           ),
-          const SizedBox(height: 20), // Reducido de 32 → 20
+          const SizedBox(height: 20),
 
-          // ✅ LABEL TELÉFONO
+          // LABEL TELÉFONO
           Text(
             'Número de celular',
             style: TextStyle(
-              fontSize: 13, // Reducido de 14 → 13
+              fontSize: 13,
               fontWeight: FontWeight.w600,
               color: widget.onDark ? Colors.white : AppColors.ink,
             ),
           ),
-          const SizedBox(height: 6), // Reducido de 8 → 6
+          const SizedBox(height: 6),
 
-          // ✅ CAMPO TELÉFONO
+          // CAMPO TELÉFONO
           TextFormField(
             controller: _phoneController,
             keyboardType: TextInputType.phone,
@@ -156,9 +152,6 @@ class _LoginFormState extends State<LoginForm> {
               prefix: _icon(Icons.phone_outlined),
               isDark: widget.onDark,
             ),
-            onChanged: (value) {
-              setState(() => _phoneLength = value.length);
-            },
             validator: (v) {
               if (v == null || v.isEmpty) return 'Ingresa tu celular';
               if (v.length != 9) return 'Debe tener 9 dígitos';
@@ -166,25 +159,9 @@ class _LoginFormState extends State<LoginForm> {
             },
           ),
 
-          // ✅ CONTADOR 0/9 (pegado al input, sin espacio extra)
-          Padding(
-            padding: const EdgeInsets.only(top: 2, right: 4),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                '$_phoneLength/9',
-                style: TextStyle(
-                  fontSize: 11, // Reducido de 12 → 11
-                  color: widget.onDark ? Colors.white70 : AppColors.inkMuted,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
+          const SizedBox(height: 12),
 
-          const SizedBox(height: 12), // Reducido de 16 → 12
-
-          // ✅ LABEL CONTRASEÑA
+          // LABEL CONTRASEÑA
           Text(
             'Contraseña',
             style: TextStyle(
@@ -195,7 +172,7 @@ class _LoginFormState extends State<LoginForm> {
           ),
           const SizedBox(height: 6),
 
-          // ✅ CAMPO CONTRASEÑA
+          // CAMPO CONTRASEÑA
           TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,
@@ -212,34 +189,15 @@ class _LoginFormState extends State<LoginForm> {
               suffix: _toggle(_obscurePassword, () => setState(() => _obscurePassword = !_obscurePassword)),
               isDark: widget.onDark,
             ),
-            onChanged: (value) {
-              setState(() => _passwordLength = value.length);
-            },
             validator: (v) {
               if (v == null || v.isEmpty) return 'Ingresa tu contraseña';
               return null;
             },
           ),
 
-          // ✅ CONTADOR 0/6
-          Padding(
-            padding: const EdgeInsets.only(top: 2, right: 4),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                '$_passwordLength/6',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: widget.onDark ? Colors.white70 : AppColors.inkMuted,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
+          const SizedBox(height: 8),
 
-          const SizedBox(height: 8), // Reducido de 16 → 8
-
-          // ✅ LINK OLVIDASTE CONTRASEÑA
+          // LINK OLVIDASTE CONTRASEÑA
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
@@ -253,21 +211,21 @@ class _LoginFormState extends State<LoginForm> {
                 '¿Olvidaste tu contraseña?',
                 style: TextStyle(
                   color: widget.onDark ? Colors.white70 : AppColors.inkMuted,
-                  fontSize: 12, // Reducido de 13 → 12
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
           ),
 
-          const SizedBox(height: 12), // Reducido de 8 → 12 (para dar aire al botón)
+          const SizedBox(height: 12),
 
-          // ✅ BOTÓN INGRESAR (altura reducida)
+          // BOTÓN INGRESAR
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.gold,
               foregroundColor: AppColors.ink,
-              minimumSize: const Size.fromHeight(46), // Reducido de 52 → 46
+              minimumSize: const Size.fromHeight(46),
               textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -289,16 +247,16 @@ class _LoginFormState extends State<LoginForm> {
                 : const Text('Ingresar'),
           ),
 
-          const SizedBox(height: 14), // Reducido de 20 → 14
+          const SizedBox(height: 14),
 
-          // ✅ LINK REGISTRARSE (siempre visible ahora)
+          // LINK REGISTRARSE
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 '¿No tienes cuenta? ',
                 style: TextStyle(
-                  fontSize: 13, // Reducido de 14 → 13
+                  fontSize: 13,
                   color: widget.onDark ? Colors.white70 : AppColors.inkMuted,
                   fontWeight: FontWeight.w500,
                 ),
