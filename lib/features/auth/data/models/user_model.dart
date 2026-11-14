@@ -57,4 +57,28 @@ class UserModel {
   bool get isTendero => rol == 'tendero';
   bool get isCliente => rol == 'cliente';
   bool get isAdmin => rol == 'admin';
+
+  UserModel copyWith({
+    String? id,
+    String? nombres,
+    String? apellidos,
+    String? telefono,
+    String? dni,
+    String? rol,
+    String? tiendaId,
+    bool? esPremium,
+    String? fotoPerfilUrl,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      nombres: nombres ?? this.nombres,
+      apellidos: apellidos ?? this.apellidos,
+      telefono: telefono ?? this.telefono,
+      dni: dni ?? this.dni,
+      rol: rol ?? this.rol,
+      tiendaId: tiendaId ?? this.tiendaId,
+      esPremium: esPremium ?? this.esPremium,
+      fotoPerfilUrl: fotoPerfilUrl ?? this.fotoPerfilUrl,
+    );
+  }
 }

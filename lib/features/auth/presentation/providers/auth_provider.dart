@@ -26,6 +26,7 @@ class AuthProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _user != null;
+  bool get isPremium => _perfil?.isPremium ?? _user?.esPremium ?? false;
 
   AuthProvider() {
     final dio = DioClient.create();
@@ -189,6 +190,13 @@ class AuthProvider with ChangeNotifier {
   Future<void> cargarPerfil() async {
     try {
       _perfil = await authService.getPerfil();
+      if (_perfil != null && _user != null) {
+        _user = _user!.copyWith(
+          esPremium: _perfil!.isPremium,
+          fotoPerfilUrl: _perfil!.fotoUrl ?? _user!.fotoPerfilUrl,
+        );
+        await _repository.saveUser(_user!);
+      }
       notifyListeners();
     } catch (_) {}
   }
