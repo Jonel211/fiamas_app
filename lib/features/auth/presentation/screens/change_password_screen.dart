@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
@@ -19,6 +20,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _newController = TextEditingController();
   final _confirmController = TextEditingController();
   bool _submitting = false;
+  bool _obscureCurrent = true;
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
 
   @override
   void dispose() {
@@ -26,6 +30,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     _newController.dispose();
     _confirmController.dispose();
     super.dispose();
+  }
+
+  Widget _visibilityToggle(bool obscured, VoidCallback onPressed) {
+    return IconButton(
+      onPressed: onPressed,
+      icon: Icon(
+        obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+        size: 20,
+        color: AppColors.inkMuted,
+      ),
+    );
   }
 
   // función para manejar el guardado de la contraseña
@@ -94,23 +109,48 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 LabeledField(
                   label: 'Contraseña / PIN',
                   hint: '',
-                  obscureText: true,
+                  obscureText: _obscureCurrent,
+                  maxLength: 6,
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(6),
+                  ],
+                  suffixIcon: _visibilityToggle(
+                    _obscureCurrent,
+                    () => setState(() => _obscureCurrent = !_obscureCurrent),
+                  ),
                   controller: _currentController,
-                  validator: (v) => (v == null || v.isEmpty)
-                      ? 'Ingresa tu contraseña actual'
-                      : null,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) {
+                      return 'Ingresa tu contraseña actual';
+                    }
+                    if (v.length > 6) {
+                      return 'La contraseña no puede tener más de 6 dígitos';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 20),
 
                 LabeledField(
-                  label: 'Nuevo PIN (De 6 dígitos)',
+                  label: 'Nuevo PIN (4 a 6 dígitos)',
                   hint: '',
-                  obscureText: true,
+                  obscureText: _obscureNew,
                   keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(6),
+                  ],
+                  suffixIcon: _visibilityToggle(
+                    _obscureNew,
+                    () => setState(() => _obscureNew = !_obscureNew),
+                  ),
                   controller: _newController,
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Ingresa el nuevo PIN';
-                    if (v.length != 6) return 'El PIN debe tener 6 dígitos';
+                    if (v.length < 4 || v.length > 6) {
+                      return 'El PIN debe tener entre 4 y 6 dígitos';
+                    }
                     return null;
                   },
                 ),
@@ -119,11 +159,23 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 LabeledField(
                   label: 'Confirmar PIN',
                   hint: '',
-                  obscureText: true,
+                  obscureText: _obscureConfirm,
                   keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(6),
+                  ],
+                  suffixIcon: _visibilityToggle(
+                    _obscureConfirm,
+                    () => setState(() => _obscureConfirm = !_obscureConfirm),
+                  ),
                   controller: _confirmController,
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Confirma el nuevo PIN';
+                    if (v.length < 4 || v.length > 6) {
+                      return 'El PIN debe tener entre 4 y 6 dígitos';
+                    }
                     if (v != _newController.text) {
                       return 'Los PIN no coinciden';
                     }
