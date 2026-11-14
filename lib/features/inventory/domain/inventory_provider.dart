@@ -14,6 +14,7 @@ import '../data/services/category_service.dart';
 import '../data/services/product_service.dart';
 import 'category.dart' as inventory_category;
 import 'product.dart';
+import 'inventory_exception.dart';
 
 class InventoryProvider extends ChangeNotifier {
   List<Product> _products = [];
@@ -281,7 +282,7 @@ class InventoryProvider extends ChangeNotifier {
     }
   }
 
-  Future<Product?> createProduct(Product product, {File? imagenFile}) async {
+ Future<Product?> createProduct(Product product, {File? imagenFile}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -291,7 +292,21 @@ class InventoryProvider extends ChangeNotifier {
         _error = 'No hay tienda seleccionada';
         _isLoading = false;
         notifyListeners();
-        return null;
+        throw Exception('No hay tienda seleccionada');
+      }
+
+      //  1. VALIDACIÓN LOCAL INMEDIATA (Funciona Online y Offline)
+      final nombreNormalizado = product.nombre.trim().toLowerCase();
+      final existeLocal = await _dbHelper.productoExistePorNombre(
+        _tiendaId!,
+        nombreNormalizado,
+      );
+
+      if (existeLocal) {
+        _error = 'Ya existe un producto con este nombre en esta tienda.';
+        _isLoading = false;
+        notifyListeners();
+        throw Exception(_error); // Lanza error para que la UI lo muestre
       }
 
       final isConnected = await _connectivity.isConnected();
@@ -312,17 +327,26 @@ class InventoryProvider extends ChangeNotifier {
           _isLoading = false;
           notifyListeners();
           return newProduct;
-        } catch (_) {
+        } catch (e) {
+          //  2. SI EL BACKEND RECHAZA EL PRODUCTO (EJ. 409 DUPLICADO), ¡NO GUARDAR OFFLINE!
+          if (e is InventoryException) {
+            _error = e.message;
+            _isLoading = false;
+            notifyListeners();
+            rethrow; // Deja que la UI muestre el mensaje exacto del backend
+          }
+          // Si es otro error (ej. se fue el internet a la mitad), intentamos guardar offline
           return await _createProductOffline(product, imagenFile);
         }
       } else {
+        // Modo 100% offline
         return await _createProductOffline(product, imagenFile);
       }
     } catch (e) {
-      _error = 'Error: $e';
+      _error = e.toString();
       _isLoading = false;
       notifyListeners();
-      return null;
+      rethrow; // Importante: rethrow para que la pantalla capture el mensaje
     }
   }
 
@@ -383,7 +407,26 @@ class InventoryProvider extends ChangeNotifier {
     Product product, {
     File? imagenFile,
   }) async {
-    if (_productService == null || _tiendaId == null) return null;
+    if (_tiendaId == null) {
+      throw Exception('No hay tienda seleccionada');
+    }
+
+    // VALIDAR NOMBRE EN ACTUALIZACIÓN (Excluye el propio producto que se edita)
+    final nombreNormalizado = product.nombre.trim().toLowerCase();
+    final db = await _dbHelper.database;
+    final result = await db.query(
+      'productos',
+      where: 'tienda_id = ? AND LOWER(nombre) = ? AND id != ?',
+      whereArgs: [_tiendaId, nombreNormalizado, id],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      throw Exception('Ya existe un producto con este nombre en esta tienda.');
+    }
+
+    if (_productService == null) return null;
+
     _isLoading = true;
     notifyListeners();
     try {
@@ -406,6 +449,12 @@ class InventoryProvider extends ChangeNotifier {
       notifyListeners();
       return updated;
     } catch (e) {
+      if (e is InventoryException) {
+        _error = e.message;
+        _isLoading = false;
+        notifyListeners();
+        rethrow;
+      }
       _error = e.toString();
       _isLoading = false;
       notifyListeners();
