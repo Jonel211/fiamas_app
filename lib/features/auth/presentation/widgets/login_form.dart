@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../main.dart';
 import '../providers/auth_provider.dart';
+import '../providers/tienda_provider.dart';
 import '../screens/forgot_password_sheet.dart';
 
 class LoginForm extends StatefulWidget {
@@ -40,6 +41,12 @@ class _LoginFormState extends State<LoginForm> {
 
     if (!mounted) return;
     if (success) {
+      final tiendaProvider = context.read<TiendaProvider>();
+      await tiendaProvider.limpiarSesion();
+      try {
+        await tiendaProvider.cargarMisTiendas();
+      } catch (_) {}
+      if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(context, AppRoutes.stores, (route) => false);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

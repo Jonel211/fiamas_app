@@ -29,9 +29,12 @@ class _ProductsScreenState extends State<ProductsScreen> with WidgetsBindingObse
   double? _maxPrice;
   bool _showActive = true;
   
-  bool _hasLoadedOnce = false;
+  String? _loadedTiendaId;
+  bool _isFetchingStore = false;
 
   Future<void> _loadDataForCurrentStore({bool forceRefresh = false}) async {
+    if (_isFetchingStore && !forceRefresh) return;
+
     final authProvider = context.read<AuthProvider>();
     final tiendaProvider = context.read<TiendaProvider>();
     final inventoryProvider = context.read<InventoryProvider>();
@@ -40,14 +43,20 @@ class _ProductsScreenState extends State<ProductsScreen> with WidgetsBindingObse
     final token = authProvider.token;
 
     if (currentTiendaId != null && token != null && mounted) {
+      final changedStore = _loadedTiendaId != currentTiendaId;
       inventoryProvider.updateTiendaContext(token, currentTiendaId);
       
-      if (!_hasLoadedOnce || forceRefresh) {
-        await Future.wait([
-          inventoryProvider.loadProducts(),
-          inventoryProvider.loadCategories(),
-        ]);
-        _hasLoadedOnce = true;
+      if (changedStore || forceRefresh || (inventoryProvider.products.isEmpty && !inventoryProvider.isLoading)) {
+        _isFetchingStore = true;
+        _loadedTiendaId = currentTiendaId;
+        try {
+          await Future.wait([
+            inventoryProvider.loadProducts(),
+            inventoryProvider.loadCategories(),
+          ]);
+        } finally {
+          _isFetchingStore = false;
+        }
       }
     }
   }
@@ -81,7 +90,7 @@ class _ProductsScreenState extends State<ProductsScreen> with WidgetsBindingObse
     final tiendaProvider = context.watch<TiendaProvider>();
     final currentTiendaId = tiendaProvider.tiendaSeleccionadaId ?? authProvider.tiendaId;
 
-    if (currentTiendaId != null && authProvider.token != null && !_hasLoadedOnce) {
+    if (currentTiendaId != null && authProvider.token != null && _loadedTiendaId != currentTiendaId && !_isFetchingStore) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _loadDataForCurrentStore();
       });
