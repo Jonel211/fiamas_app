@@ -5,6 +5,7 @@ import '../../../../core/widgets/app_header_config.dart';
 import '../../domain/product.dart';
 import '../widgets/product_detail_field.dart';
 import 'new_product_screen.dart';
+import '../../../../core/widgets/zoomable_image.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   const ProductDetailScreen({super.key, required this.product});
@@ -146,17 +147,22 @@ class _ProductImage extends StatelessWidget {
       ),
     );
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: (url == null || url!.isEmpty)
-          ? placeholder
-          : Image.network(
-              url!,
-              width: 140,
-              height: 140,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => placeholder,
-            ),
+    if (url == null || url!.isEmpty) return placeholder;
+
+    //  ZOOM: al hacer tap, abre la imagen en pantalla completa
+    return ZoomableImage(
+      imageUrl: url!,
+      image: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          url!,
+          key: ValueKey(url),
+          width: 140,
+          height: 140,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => placeholder,
+        ),
+      ),
     );
   }
 }
