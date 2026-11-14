@@ -76,7 +76,7 @@ class DatabaseHelper {
     ''');
   }
 
-  // ✅ UPSERT SEGURO: Reemplaza si existe, inserta si no. No borra toda la tabla.
+  //  UPSERT SEGURO: Reemplaza si existe, inserta si no. No borra toda la tabla.
   Future<void> saveClientes(String tiendaId, List<Map<String, dynamic>> clientes) async {
     final db = await database;
     await db.transaction((txn) async {
@@ -86,7 +86,7 @@ class DatabaseHelper {
     });
   }
 
-  // ✅ FILTRADO POR TIENDA: Evita mezclar clientes de diferentes tiendas
+  //  FILTRADO POR TIENDA: Evita mezclar clientes de diferentes tiendas
   Future<List<Map<String, dynamic>>> getClientes(String tiendaId) async {
     final db = await database;
     return await db.query('clientes', where: 'tienda_id = ?', whereArgs: [tiendaId], orderBy: 'nombres ASC');
@@ -158,6 +158,18 @@ class DatabaseHelper {
   Future<void> updateSyncQueueStatus(String id, String status, int retryCount) async {
     final db = await database;
     await db.update('sync_queue', {'status': status, 'retry_count': retryCount}, where: 'id = ?', whereArgs: [id]);
+  }
+    //  NUEVO: Valida si ya existe un producto con ese nombre en la tienda (ignora mayúsculas/minúsculas)
+  Future<bool> productoExistePorNombre(String tiendaId, String nombre) async {
+    final db = await database;
+    final nombreNormalizado = nombre.trim().toLowerCase();
+    final result = await db.query(
+      'productos',
+      where: 'tienda_id = ? AND LOWER(nombre) = ?',
+      whereArgs: [tiendaId, nombreNormalizado],
+      limit: 1,
+    );
+    return result.isNotEmpty;
   }
 
   Future<void> close() async {

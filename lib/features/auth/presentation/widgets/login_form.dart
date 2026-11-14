@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/auth_field.dart';
 import '../../../../main.dart';
 import '../providers/auth_provider.dart';
-import '../providers/tienda_provider.dart';
 import '../screens/forgot_password_sheet.dart';
 
 class LoginForm extends StatefulWidget {
@@ -22,10 +21,6 @@ class _LoginFormState extends State<LoginForm> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
-
-  // Contadores reactivos
-  int _phoneLength = 0;
-  int _passwordLength = 0;
 
   @override
   void dispose() {
@@ -45,13 +40,7 @@ class _LoginFormState extends State<LoginForm> {
 
     if (!mounted) return;
     if (success) {
-      try {
-        await context.read<TiendaProvider>().cargarMisTiendas();
-      } catch (_) {}
-      if (!mounted) return;
-
-      Navigator.pushNamedAndRemoveUntil(
-          context, AppRoutes.stores, (route) => false);
+      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.stores, (route) => false);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -63,20 +52,56 @@ class _LoginFormState extends State<LoginForm> {
     }
   }
 
+  // ✅ ICONO OSCURO Y SIEMPRE VISIBLE
   Widget _icon(IconData data) => Icon(
-        data,
-        size: 20,
-        color: widget.onDark ? Colors.white70 : AppColors.ink,
-      );
+    data,
+    size: 22,
+    color: AppColors.ink,
+  );
 
   Widget _toggle(bool obscured, VoidCallback onPressed) => IconButton(
-        onPressed: onPressed,
-        icon: Icon(
-          obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-          size: 20,
-          color: widget.onDark ? Colors.white70 : AppColors.inkMuted,
-        ),
-      );
+    onPressed: onPressed,
+    icon: Icon(
+      obscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+      size: 20,
+      color: AppColors.inkMuted,
+    ),
+  );
+
+  InputDecoration _buildDecoration({
+    required Widget prefix,
+    Widget? suffix,
+    required bool isDark,
+  }) {
+    return InputDecoration(
+      counterText: '',
+      prefixIcon: prefix,
+      suffixIcon: suffix,
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.teal, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.danger),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.danger, width: 2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,72 +113,91 @@ class _LoginFormState extends State<LoginForm> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // TÍTULO
           Text(
             'Inicia sesión',
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 22,
               fontWeight: FontWeight.w800,
               color: widget.onDark ? Colors.white : AppColors.ink,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
-          // Campo Celular
-          AuthField(
-            label: 'Número de celular',
+          // LABEL TELÉFONO
+          Text(
+            'Número de celular',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: widget.onDark ? Colors.white : AppColors.ink,
+            ),
+          ),
+          const SizedBox(height: 6),
+
+          // CAMPO TELÉFONO
+          TextFormField(
             controller: _phoneController,
             keyboardType: TextInputType.phone,
-            maxLength: 9,
-            digitsOnly: true,
-            onDark: widget.onDark,
-            prefixIcon: _icon(Icons.phone_outlined),
-            onChanged: (val) => setState(() => _phoneLength = val.length),
-            validator: (v) => (v == null || v.isEmpty)
-                ? 'Ingresa tu celular'
-                : (v.length != 9 ? 'Debe tener 9 dígitos' : null),
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              '$_phoneLength/9',
-              style: TextStyle(
-                fontSize: 12,
-                color: widget.onDark ? Colors.white70 : AppColors.inkMuted,
-                fontWeight: FontWeight.w500,
-              ),
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(9),
+            ],
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
             ),
+            decoration: _buildDecoration(
+              prefix: _icon(Icons.phone_outlined),
+              isDark: widget.onDark,
+            ),
+            validator: (v) {
+              if (v == null || v.isEmpty) return 'Ingresa tu celular';
+              if (v.length != 9) return 'Debe tener 9 dígitos';
+              return null;
+            },
           ),
+
           const SizedBox(height: 12),
 
-          // Campo Contraseña
-          AuthField(
-            label: 'Contraseña',
+          // LABEL CONTRASEÑA
+          Text(
+            'Contraseña',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: widget.onDark ? Colors.white : AppColors.ink,
+            ),
+          ),
+          const SizedBox(height: 6),
+
+          // CAMPO CONTRASEÑA
+          TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,
-            maxLength: 6,
-            onDark: widget.onDark,
-            prefixIcon: _icon(Icons.lock_outline_rounded),
-            suffixIcon: _toggle(
-              _obscurePassword,
-              () => setState(() => _obscurePassword = !_obscurePassword),
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(6),
+            ],
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
             ),
-            onChanged: (val) => setState(() => _passwordLength = val.length),
-            validator: (v) =>
-                (v == null || v.isEmpty) ? 'Ingresa tu contraseña' : null,
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              '$_passwordLength/6',
-              style: TextStyle(
-                fontSize: 12,
-                color: widget.onDark ? Colors.white70 : AppColors.inkMuted,
-                fontWeight: FontWeight.w500,
-              ),
+            decoration: _buildDecoration(
+              prefix: _icon(Icons.lock_outline_rounded),
+              suffix: _toggle(_obscurePassword, () => setState(() => _obscurePassword = !_obscurePassword)),
+              isDark: widget.onDark,
             ),
+            validator: (v) {
+              if (v == null || v.isEmpty) return 'Ingresa tu contraseña';
+              return null;
+            },
           ),
+
           const SizedBox(height: 8),
 
+          // LINK OLVIDASTE CONTRASEÑA
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
@@ -167,23 +211,22 @@ class _LoginFormState extends State<LoginForm> {
                 '¿Olvidaste tu contraseña?',
                 style: TextStyle(
                   color: widget.onDark ? Colors.white70 : AppColors.inkMuted,
-                  fontSize: 13,
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 16),
 
+          const SizedBox(height: 12),
+
+          // BOTÓN INGRESAR
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.gold,
               foregroundColor: AppColors.ink,
-              minimumSize: const Size.fromHeight(52),
-              textStyle: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
+              minimumSize: const Size.fromHeight(46),
+              textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -194,8 +237,8 @@ class _LoginFormState extends State<LoginForm> {
                 : const Icon(Icons.login_rounded, size: 20),
             label: isLoading
                 ? const SizedBox(
-                    height: 22,
-                    width: 22,
+                    height: 20,
+                    width: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
                       color: AppColors.ink,
@@ -203,8 +246,10 @@ class _LoginFormState extends State<LoginForm> {
                   )
                 : const Text('Ingresar'),
           ),
-          const SizedBox(height: 16),
 
+          const SizedBox(height: 14),
+
+          // LINK REGISTRARSE
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -213,17 +258,18 @@ class _LoginFormState extends State<LoginForm> {
                 style: TextStyle(
                   fontSize: 13,
                   color: widget.onDark ? Colors.white70 : AppColors.inkMuted,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
               GestureDetector(
                 onTap: widget.onRegister,
                 behavior: HitTestBehavior.opaque,
-                child: Text(
+                child: const Text(
                   'Regístrate',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: widget.onDark ? Colors.white : AppColors.teal,
+                    color: Colors.white,
                   ),
                 ),
               ),
