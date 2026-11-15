@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:fiamas_app/core/constants/app_colors.dart';
+import '../../../../core/widgets/app_header.dart';
 import '../../../../main.dart'; 
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
@@ -129,12 +130,27 @@ class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                '${provider.clientes.length} clientes registrados',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.inkMuted,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${provider.clientes.length} clientes registrados',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.inkMuted,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  AppHeaderPillAction(
+                    label: 'scoring',
+                    backgroundColor: AppColors.teal,
+                    onTap: () => Navigator.of(context)
+                        .pushNamed(AppRoutes.scoringHistory),
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
               Container(

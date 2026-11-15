@@ -148,9 +148,17 @@ class AppHeaderIconAction extends StatelessWidget {
 }
 
 class AppHeaderPillAction extends StatelessWidget {
-  const AppHeaderPillAction({super.key, required this.label, this.onTap});
+  const AppHeaderPillAction({
+    super.key,
+    required this.label,
+    this.onTap,
+    this.backgroundColor,
+    this.textColor,
+  });
   final String label;
   final VoidCallback? onTap;
+  final Color? backgroundColor;
+  final Color? textColor;
 
   @override
   Widget build(BuildContext context) => GestureDetector(
@@ -158,13 +166,13 @@ class AppHeaderPillAction extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.2),
+            color: backgroundColor ?? Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: textColor ?? Colors.white,
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),

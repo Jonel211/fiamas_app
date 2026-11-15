@@ -68,12 +68,6 @@ class _MainShellScreenState extends State<MainShellScreen>
 
   List<Widget> _buildHeaderActions(int unread) {
     return [
-      if (_currentIndex == 3)
-        AppHeaderPillAction(
-          label: 'scoring',
-          onTap: () =>
-              Navigator.of(context).pushNamed(AppRoutes.scoringHistory),
-        ),
       AppHeaderIconAction(
         icon: Icons.notifications_none,
         badgeCount: unread,
