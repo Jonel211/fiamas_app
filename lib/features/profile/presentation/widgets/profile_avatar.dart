@@ -2,8 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/image_zoom_screen.dart';
 
 /// Avatar circular con la foto del tendero (o su inicial) y botón de cámara.
+/// Al hacer tap sobre la foto se abre en pantalla completa con zoom.
 class ProfileAvatar extends StatelessWidget {
   const ProfileAvatar({
     super.key,
@@ -61,6 +63,21 @@ class ProfileAvatar extends StatelessWidget {
     return _initialView();
   }
 
+  bool get _hasRealImage =>
+      (localFile != null) || (imageUrl != null && imageUrl!.isNotEmpty);
+
+  void _openZoom(BuildContext context) {
+    if (!_hasRealImage) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ImageZoomScreen(
+          imageUrl: localFile != null ? null : imageUrl,
+          localFile: localFile,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -69,7 +86,10 @@ class ProfileAvatar extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          ClipOval(child: _photoView()),
+          GestureDetector(
+            onTap: loading ? null : () => _openZoom(context),
+            child: ClipOval(child: _photoView()),
+          ),
           if (loading)
             Positioned.fill(
               child: DecoratedBox(

@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -6,6 +7,8 @@ import '../../../../core/widgets/app_header_config.dart';
 import '../../../auth/data/models/tienda_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
+import '../../data/services/qr_export_service.dart';
+import '../widgets/qr_share_card.dart';
 
 class NuevoClienteQrScreen extends StatefulWidget {
   const NuevoClienteQrScreen({super.key});
@@ -15,10 +18,13 @@ class NuevoClienteQrScreen extends StatefulWidget {
 }
 
 class _NuevoClienteQrScreenState extends State<NuevoClienteQrScreen> {
+  final GlobalKey _qrCardKey = GlobalKey();
+  bool _isExportingImage = false;
+  bool _isExportingPdf = false;
+
   @override
   void initState() {
     super.initState();
-    // La lista de tiendas solo se llena al abrir "Mis Tiendas"; si está vacía, se carga aquí.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final tp = context.read<TiendaProvider>();
@@ -26,12 +32,84 @@ class _NuevoClienteQrScreenState extends State<NuevoClienteQrScreen> {
     });
   }
 
-  /// Misma regla que el resto de la app: tienda elegida o, si no, la del login.
   TiendaModel? _tiendaActual(TiendaProvider tp, String? idLogin) {
     final id = tp.tiendaSeleccionadaId ?? idLogin;
     if (id == null) return null;
     final index = tp.tiendas.indexWhere((t) => t.id == id);
     return index == -1 ? null : tp.tiendas[index];
+  }
+
+  void _snack(String msg, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: error ? AppColors.danger : AppColors.teal,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _exportarImagen() async {
+    final tp = context.read<TiendaProvider>();
+    final idLogin = context.read<AuthProvider>().user?.tiendaId;
+    final tienda = _tiendaActual(tp, idLogin);
+    final qrToken = tienda?.qrToken;
+
+    if (qrToken == null || qrToken.isEmpty) {
+      _snack('No hay QR disponible para exportar', error: true);
+      return;
+    }
+
+    setState(() => _isExportingImage = true);
+    // Esperar un frame para que RepaintBoundary tenga el widget renderizado
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    try {
+      final bytes = await QrExportService.captureWidgetAsPng(_qrCardKey);
+      if (bytes == null) throw Exception('No se pudo capturar la imagen');
+
+      final fileName = 'qr_${tienda!.nombre.replaceAll(' ', '_')}.png';
+      await QrExportService.shareImage(bytes, fileName);
+    } catch (e) {
+      _snack('Error al exportar imagen: $e', error: true);
+    } finally {
+      if (mounted) setState(() => _isExportingImage = false);
+    }
+  }
+
+  Future<void> _exportarPdf() async {
+    final tp = context.read<TiendaProvider>();
+    final idLogin = context.read<AuthProvider>().user?.tiendaId;
+    final tienda = _tiendaActual(tp, idLogin);
+    final qrToken = tienda?.qrToken;
+
+    if (qrToken == null || qrToken.isEmpty) {
+      _snack('No hay QR disponible para exportar', error: true);
+      return;
+    }
+
+    setState(() => _isExportingPdf = true);
+
+    try {
+      // 1. Renderizar QR a bytes
+      final Uint8List qrBytes = await QrExportService.renderQrToBytes(qrToken);
+
+      // 2. Generar PDF
+      final Uint8List pdfBytes = await QrExportService.generatePdf(
+        nombreTienda: tienda!.nombre,
+        qrData: qrToken,
+        qrImageBytes: qrBytes,
+      );
+
+      // 3. Compartir PDF
+      final fileName = 'QR_${tienda.nombre.replaceAll(' ', '_')}.pdf';
+      await QrExportService.sharePdf(pdfBytes, fileName);
+    } catch (e) {
+      _snack('Error al exportar PDF: $e', error: true);
+    } finally {
+      if (mounted) setState(() => _isExportingPdf = false);
+    }
   }
 
   @override
@@ -46,31 +124,23 @@ class _NuevoClienteQrScreenState extends State<NuevoClienteQrScreen> {
 
     Widget contenidoQr;
     if (tieneQr) {
-      // Siempre el mismo token guardado de la tienda: no se genera uno nuevo.
-      contenidoQr = QrImageView(
-        data: qrToken,
-        version: QrVersions.auto,
-        size: 200.0,
-        backgroundColor: Colors.white,
-        eyeStyle: const QrEyeStyle(
-          eyeShape: QrEyeShape.square,
-          color: AppColors.ink,
-        ),
-        dataModuleStyle: const QrDataModuleStyle(
-          dataModuleShape: QrDataModuleShape.square,
-          color: AppColors.ink,
+      contenidoQr = RepaintBoundary(
+        key: _qrCardKey,
+        child: QrShareCard(
+          nombreTienda: nombreTienda,
+          qrData: qrToken!,
+          logoUrl: tiendaActual?.logoUrl,
+          size: 320,
         ),
       );
     } else if (tiendaProvider.isLoading || (tiendaProvider.tiendas.isEmpty && tiendaProvider.error == null)) {
       contenidoQr = const SizedBox(
-        width: 200,
-        height: 200,
+        width: 200, height: 200,
         child: Center(child: CircularProgressIndicator()),
       );
     } else {
       contenidoQr = SizedBox(
-        width: 200,
-        height: 200,
+        width: 200, height: 200,
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -97,7 +167,7 @@ class _NuevoClienteQrScreenState extends State<NuevoClienteQrScreen> {
       child: Scaffold(
         backgroundColor: AppColors.ivory,
         body: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -112,26 +182,54 @@ class _NuevoClienteQrScreenState extends State<NuevoClienteQrScreen> {
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 14, color: AppColors.inkMuted, height: 1.4),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 24),
 
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
+              // ✅ TARJETA QR ESTILO YAPE (capturable como imagen)
+              contenidoQr,
+
+              const SizedBox(height: 24),
+
+              // ✅ BOTONES DE EXPORTACIÓN
+              if (tieneQr)
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: _isExportingImage ? null : _exportarImagen,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.teal,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: _isExportingImage
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Icon(Icons.image_rounded, size: 18),
+                        label: Text(_isExportingImage ? 'Generando...' : 'Imagen'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: _isExportingPdf ? null : _exportarPdf,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.gold,
+                          foregroundColor: AppColors.ink,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: _isExportingPdf
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.ink))
+                            : const Icon(Icons.picture_as_pdf_rounded, size: 18),
+                        label: Text(_isExportingPdf ? 'Generando...' : 'PDF'),
+                      ),
                     ),
                   ],
                 ),
-                child: contenidoQr,
-              ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 20),
 
+              // ✅ INSTRUCCIONES
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -161,7 +259,6 @@ class _NuevoClienteQrScreenState extends State<NuevoClienteQrScreen> {
 
 class _StepText extends StatelessWidget {
   const _StepText({required this.number, required this.text});
-
   final String number;
   final String text;
 
@@ -171,16 +268,13 @@ class _StepText extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 24,
-          height: 24,
+          width: 24, height: 24,
           alignment: Alignment.center,
           decoration: const BoxDecoration(color: AppColors.teal, shape: BoxShape.circle),
           child: Text(number, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
         ),
         const SizedBox(width: 12),
-        Expanded(
-          child: Text(text, style: const TextStyle(fontSize: 13, color: AppColors.ink, height: 1.4)),
-        ),
+        Expanded(child: Text(text, style: const TextStyle(fontSize: 13, color: AppColors.ink, height: 1.4))),
       ],
     );
   }
