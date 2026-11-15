@@ -71,6 +71,11 @@ dependencies:
   uuid: ^4.5.1                    # Para generar IDs únicos (UUID) para los registros locales
   internet_connection_checker: ^3.0.1
 
+   #NUEVAS PARA EXPORTAR QR
+  path_provider: ^2.1.4        # Rutas de archivos temporales
+  share_plus: ^13.3.1         # Compartir imagen/PDF por WhatsApp, etc.
+  image: ^4.2.0                # Composición de imagen (logo + QR)
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
