@@ -60,20 +60,24 @@ class _MainShellScreenState extends State<MainShellScreen>
     MoreOptionsScreen(),
   ];
 
-  List<Widget> _buildHeaderActions() {
-    if (_currentIndex == 3) {
-      return [
+  Future<void> _openNotifications() async {
+    await Navigator.of(context).pushNamed(AppRoutes.notifications);
+    if (!mounted) return;
+    context.read<NotificationProvider>().refresh();
+  }
+
+  List<Widget> _buildHeaderActions(int unread) {
+    return [
+      if (_currentIndex == 3)
         AppHeaderPillAction(
           label: 'scoring',
           onTap: () =>
               Navigator.of(context).pushNamed(AppRoutes.scoringHistory),
         ),
-      ];
-    }
-    return [
       AppHeaderIconAction(
         icon: Icons.notifications_none,
-        onTap: () => Navigator.of(context).pushNamed(AppRoutes.notifications),
+        badgeCount: unread,
+        onTap: _openNotifications,
       ),
     ];
   }
@@ -111,12 +115,15 @@ class _MainShellScreenState extends State<MainShellScreen>
     final tituloTienda = tiendaActual?.nombre.isNotEmpty == true 
         ? tiendaActual!.nombre 
         : 'Mi Tienda';
+    final unread = context.select<NotificationProvider, int>(
+      (provider) => provider.unreadCount,
+    );
 
     return AppHeaderConfig(
       visible: _currentIndex != 0,
       title: tituloTienda,
       centerTitle: true,
-      actions: _buildHeaderActions(),
+      actions: _buildHeaderActions(unread),
       child: Scaffold(
         backgroundColor: AppColors.ivory,
         body: Column(

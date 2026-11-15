@@ -120,15 +120,31 @@ class AppHeaderIconBox extends StatelessWidget {
 }
 
 class AppHeaderIconAction extends StatelessWidget {
-  const AppHeaderIconAction({super.key, required this.icon, this.onTap});
+  const AppHeaderIconAction({
+    super.key,
+    required this.icon,
+    this.onTap,
+    this.badgeCount,
+  });
   final IconData icon;
   final VoidCallback? onTap;
+  final int? badgeCount;
 
   @override
-  Widget build(BuildContext context) => IconButton(
-        onPressed: onTap,
-        icon: Icon(icon, color: Colors.white),
-      );
+  Widget build(BuildContext context) {
+    final count = badgeCount ?? 0;
+
+    return IconButton(
+      onPressed: onTap,
+      icon: Badge(
+        isLabelVisible: count > 0,
+        label: Text(count > 99 ? '99+' : '$count'),
+        backgroundColor: const Color(0xFFE5A93C),
+        textColor: const Color(0xFF2C2208),
+        child: Icon(icon, color: Colors.white),
+      ),
+    );
+  }
 }
 
 class AppHeaderPillAction extends StatelessWidget {
