@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import '../constants/app_colors.dart';
+import '../../features/auth/data/models/tienda_model.dart';
+import '../../features/auth/presentation/providers/tienda_provider.dart';
+import 'store_avatar.dart';
 
 class AppHeader extends StatelessWidget {
   const AppHeader({
@@ -11,6 +16,7 @@ class AppHeader extends StatelessWidget {
     this.leading,
     this.centerTitle = true,
     this.actions = const [],
+    this.onStoreTap,
   });
 
   final String title;
@@ -20,16 +26,29 @@ class AppHeader extends StatelessWidget {
   final Widget? leading;
   final bool centerTitle;
   final List<Widget> actions;
+  final VoidCallback? onStoreTap;
 
   @override
   Widget build(BuildContext context) {
+    final tienda = context.select<TiendaProvider, TiendaModel?>(
+      (provider) => provider.tiendaSeleccionada,
+    );
+
     final leftWidget = leading ??
         (showBack
             ? AppHeaderIconBox(
                 icon: Icons.arrow_back_ios_new_rounded,
                 onTap: onBack ?? () => Navigator.of(context).maybePop(),
               )
-            : const AppHeaderIconBox(icon: Icons.storefront_outlined));
+            : GestureDetector(
+                onTap: onStoreTap,
+                behavior: HitTestBehavior.opaque,
+                child: StoreAvatar(
+                  imageUrl: tienda?.logoUrl,
+                  name: tienda?.nombre ?? '',
+                  size: 40,
+                ),
+              ));
 
     final titleColumn = Column(
       mainAxisSize: MainAxisSize.min,

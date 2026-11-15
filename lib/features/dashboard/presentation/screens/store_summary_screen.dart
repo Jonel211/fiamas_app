@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/store_avatar.dart';
 import '../../../../main.dart'; 
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
@@ -162,10 +163,10 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
                   children: [
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
-                          child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 22),
+                        StoreAvatar(
+                          imageUrl: tiendaProvider.tiendaSeleccionada?.logoUrl,
+                          name: nombre,
+                          size: 56,
                         ),
                         const SizedBox(width: 12),
                         Expanded(

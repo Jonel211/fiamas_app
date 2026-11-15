@@ -208,7 +208,7 @@ class FiamasApp extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (showHeader)
-                  _buildHeader(config)
+                  _buildHeader(config, controller)
                 else
                   const SizedBox.shrink(),
                 Expanded(
@@ -295,7 +295,7 @@ class FiamasApp extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(HeaderConfig config) {
+  Widget _buildHeader(HeaderConfig config, AppBarController controller) {
     return Material(
       color: AppColors.teal,
       child: DefaultTextStyle(
@@ -312,6 +312,13 @@ class FiamasApp extends StatelessWidget {
           leading: config.leading,
           centerTitle: config.centerTitle,
           actions: config.actions,
+          onStoreTap: () {
+            if (controller.activeRoute?.settings.name ==
+                AppRoutes.storeProfile) {
+              return;
+            }
+            navigatorKey.currentState?.pushNamed(AppRoutes.storeProfile);
+          },
         ),
       ),
     );
