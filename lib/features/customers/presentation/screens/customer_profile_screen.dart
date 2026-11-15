@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart'; 
+import 'package:url_launcher/url_launcher.dart';
 import 'package:fiamas_app/core/constants/app_colors.dart';
 import 'package:fiamas_app/core/widgets/app_header_config.dart';
+import 'package:fiamas_app/core/widgets/image_zoom_screen.dart'; 
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
@@ -53,6 +54,17 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     return 'Cliente desde $month ${date.year}';
   }
 
+  //  NUEVO: Abre la foto del cliente en pantalla completa con zoom
+  void _abrirZoomImagen(BuildContext context, String? photoUrl, String nombreCliente) {
+    if (photoUrl == null || photoUrl.isEmpty) return;
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ImageZoomScreen(imageUrl: photoUrl),
+      ),
+    );
+  }
+
   Future<void> _launchCall(String phone) async {
     final Uri url = Uri.parse('tel:$phone');
     if (!await launchUrl(url)) {
@@ -84,7 +96,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<ClienteProvider>();
     final resumen = provider.resumenCliente;
-    
+
     final name = widget.customer.nombreCompleto;
     final phone = widget.customer.telefono;
     final address = widget.customer.direccion;
@@ -95,7 +107,6 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         : null;
 
     final creditLimit = double.tryParse(detalleTienda?['limite_credito']?.toString() ?? '') ?? widget.customer.vinculacion.limiteCredito;
-    // Misma fuente y lógica que el Historial de Cliente (suma de fiados/pagos)
     final totalFiado = provider.totalFiadoCliente;
     final totalPagado = provider.totalPagadoCliente;
     final debt = provider.saldoPendienteCliente;
@@ -115,6 +126,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                 resumen?['foto_url'] ??
                 resumen?['foto']));
 
+    final tieneFoto = photoUrl != null && photoUrl.isNotEmpty;
     final used = debt;
     final available = creditLimit - used;
     final usagePercent = creditLimit > 0 ? (used / creditLimit * 100).clamp(0.0, 100.0) : 0.0;
@@ -144,26 +156,54 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                           ),
                           child: Column(
                             children: [
-                              CircleAvatar(
-                                radius: 45,
-                                backgroundColor: AppColors.teal,
-                                backgroundImage: (photoUrl != null && photoUrl.isNotEmpty) ? NetworkImage(photoUrl) : null,
-                                onBackgroundImageError: (photoUrl != null && photoUrl.isNotEmpty) ? (_, _) {} : null,
-                                child: (photoUrl != null && photoUrl.isNotEmpty)
-                                    ? null
-                                    : Text(initial, style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold)),
+                              //  ZOOM: La foto del cliente ahora es clicable
+                              GestureDetector(
+                                onTap: tieneFoto ? () => _abrirZoomImagen(context, photoUrl, name) : null,
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 45,
+                                      backgroundColor: AppColors.teal,
+                                      backgroundImage: tieneFoto ? NetworkImage(photoUrl!) : null,
+                                      onBackgroundImageError: tieneFoto ? (_, _) {} : null,
+                                      child: tieneFoto
+                                          ? null
+                                          : Text(initial, style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold)),
+                                    ),
+                                    // Ícono de lupa en la esquina (solo si hay foto)
+                                    if (tieneFoto)
+                                      Positioned(
+                                        right: -2,
+                                        bottom: -2,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(5),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black.withValues(alpha: 0.55),
+                                            shape: BoxShape.circle,
+                                            border: Border.all(color: Colors.white, width: 1.5),
+                                          ),
+                                          child: const Icon(
+                                            Icons.zoom_in_rounded,
+                                            size: 12,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
                               ),
                               const SizedBox(height: 16),
                               Text(name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.ink), textAlign: TextAlign.center),
                               const SizedBox(height: 4),
                               Text(fechaTexto, style: const TextStyle(fontSize: 13, color: AppColors.inkMuted)),
                               const SizedBox(height: 12),
-                              
+
                               // BOTÓN DEL SCORE CLICABLE
                               GestureDetector(
                                 onTap: () {
                                   Navigator.pushNamed(
-                                    context, 
+                                    context,
                                     '/scoring-history',
                                     arguments: {
                                       'name': name,
@@ -232,7 +272,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                             ],
                           ),
                           Text(
-                            phone, 
+                            phone,
                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.ink),
                           ),
                         ],
@@ -360,8 +400,8 @@ class _ActionCircleButton extends StatelessWidget {
   final VoidCallback onTap;
 
   const _ActionCircleButton({
-    required this.icon, 
-    required this.label, 
+    required this.icon,
+    required this.label,
     required this.onTap,
   });
 
