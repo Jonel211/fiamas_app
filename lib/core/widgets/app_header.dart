@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import '../constants/app_colors.dart';
+import '../../features/auth/data/models/tienda_model.dart';
+import '../../features/auth/presentation/providers/tienda_provider.dart';
+import 'store_avatar.dart';
 
 class AppHeader extends StatelessWidget {
   const AppHeader({
@@ -11,6 +16,7 @@ class AppHeader extends StatelessWidget {
     this.leading,
     this.centerTitle = true,
     this.actions = const [],
+    this.onStoreTap,
   });
 
   final String title;
@@ -20,16 +26,29 @@ class AppHeader extends StatelessWidget {
   final Widget? leading;
   final bool centerTitle;
   final List<Widget> actions;
+  final VoidCallback? onStoreTap;
 
   @override
   Widget build(BuildContext context) {
+    final tienda = context.select<TiendaProvider, TiendaModel?>(
+      (provider) => provider.tiendaSeleccionada,
+    );
+
     final leftWidget = leading ??
         (showBack
             ? AppHeaderIconBox(
                 icon: Icons.arrow_back_ios_new_rounded,
                 onTap: onBack ?? () => Navigator.of(context).maybePop(),
               )
-            : const AppHeaderIconBox(icon: Icons.storefront_outlined));
+            : GestureDetector(
+                onTap: onStoreTap,
+                behavior: HitTestBehavior.opaque,
+                child: StoreAvatar(
+                  imageUrl: tienda?.logoUrl,
+                  name: tienda?.nombre ?? '',
+                  size: 40,
+                ),
+              ));
 
     final titleColumn = Column(
       mainAxisSize: MainAxisSize.min,
@@ -120,21 +139,45 @@ class AppHeaderIconBox extends StatelessWidget {
 }
 
 class AppHeaderIconAction extends StatelessWidget {
-  const AppHeaderIconAction({super.key, required this.icon, this.onTap});
+  const AppHeaderIconAction({
+    super.key,
+    required this.icon,
+    this.onTap,
+    this.badgeCount,
+  });
   final IconData icon;
   final VoidCallback? onTap;
+  final int? badgeCount;
 
   @override
-  Widget build(BuildContext context) => IconButton(
-        onPressed: onTap,
-        icon: Icon(icon, color: Colors.white),
-      );
+  Widget build(BuildContext context) {
+    final count = badgeCount ?? 0;
+
+    return IconButton(
+      onPressed: onTap,
+      icon: Badge(
+        isLabelVisible: count > 0,
+        label: Text(count > 99 ? '99+' : '$count'),
+        backgroundColor: const Color(0xFFE5A93C),
+        textColor: const Color(0xFF2C2208),
+        child: Icon(icon, color: Colors.white),
+      ),
+    );
+  }
 }
 
 class AppHeaderPillAction extends StatelessWidget {
-  const AppHeaderPillAction({super.key, required this.label, this.onTap});
+  const AppHeaderPillAction({
+    super.key,
+    required this.label,
+    this.onTap,
+    this.backgroundColor,
+    this.textColor,
+  });
   final String label;
   final VoidCallback? onTap;
+  final Color? backgroundColor;
+  final Color? textColor;
 
   @override
   Widget build(BuildContext context) => GestureDetector(
@@ -142,13 +185,13 @@ class AppHeaderPillAction extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.2),
+            color: backgroundColor ?? Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: textColor ?? Colors.white,
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),

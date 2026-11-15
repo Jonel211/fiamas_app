@@ -87,7 +87,7 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
             (provider.tiendas.isNotEmpty ? provider.tiendas.first : null));
 
     return AppHeaderConfig(
-      title: tienda?.nombre ?? 'Mi Tienda',
+      title: 'Mi tienda',
       showBack: true,
       centerTitle: true,
       actions: [

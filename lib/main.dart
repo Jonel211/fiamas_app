@@ -22,6 +22,7 @@ import 'features/inventory/domain/inventory_provider.dart';
 import 'features/menu/presentation/screens/menu_screen.dart';
 import 'features/profile/presentation/screens/profile_screen.dart';
 import 'features/profile/presentation/screens/edit_profile_screen.dart';
+import 'features/notifications/presentation/providers/notification_provider.dart';
 import 'features/notifications/presentation/screens/notifications_screen.dart';
 import 'features/stores/presentation/screens/my_stores_screen.dart';
 import 'features/stores/presentation/screens/new_store_screen.dart';
@@ -92,6 +93,7 @@ Future<void> main() async {
           },
         ),
         ChangeNotifierProvider(create: (_) => ClienteProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => AppBarController()),
       ],
       child: const FiamasApp(),
@@ -206,7 +208,7 @@ class FiamasApp extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (showHeader)
-                  _buildHeader(config)
+                  _buildHeader(config, controller)
                 else
                   const SizedBox.shrink(),
                 Expanded(
@@ -293,7 +295,7 @@ class FiamasApp extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(HeaderConfig config) {
+  Widget _buildHeader(HeaderConfig config, AppBarController controller) {
     return Material(
       color: AppColors.teal,
       child: DefaultTextStyle(
@@ -310,6 +312,13 @@ class FiamasApp extends StatelessWidget {
           leading: config.leading,
           centerTitle: config.centerTitle,
           actions: config.actions,
+          onStoreTap: () {
+            if (controller.activeRoute?.settings.name ==
+                AppRoutes.storeProfile) {
+              return;
+            }
+            navigatorKey.currentState?.pushNamed(AppRoutes.storeProfile);
+          },
         ),
       ),
     );

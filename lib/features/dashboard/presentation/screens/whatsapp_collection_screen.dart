@@ -130,7 +130,7 @@ class _WhatsappCollectionScreenState extends State<WhatsappCollectionScreen> {
           );
 
     return AppHeaderConfig(
-      title: nombreTienda,
+      title: 'Cobros',
       showBack: true,
       child: Scaffold(
         backgroundColor: AppColors.background,

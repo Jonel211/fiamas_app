@@ -214,8 +214,6 @@ class _ProductsScreenState extends State<ProductsScreen> with WidgetsBindingObse
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Mis productos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.ink)),
-                                const SizedBox(height: 14),
                                 ProductsSearchBar(controller: _search, onChanged: (v) => setState(() => _query = v), onFilter: _openFilterSheet),
                                 const SizedBox(height: 16),
                                 Row(

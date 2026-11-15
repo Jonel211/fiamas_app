@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_header.dart';
 import '../../../../core/widgets/app_header_config.dart';
 import '../../data/notification_repository.dart';
 import '../../domain/app_notification.dart';
+import '../providers/notification_provider.dart';
 import '../widgets/notification_card.dart';
 import '../widgets/notification_group_header.dart';
 
@@ -31,6 +33,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   int get _unread => _items.where((n) => !n.isRead).length;
+
+  void _syncUnread() {
+    if (!mounted) return;
+    context.read<NotificationProvider>().setUnread(_unread);
+  }
 
   Future<void> _load() async {
     setState(() {
@@ -64,11 +71,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         for (final n in _items) n.id == id ? n.markAsRead() : n,
       ];
     });
+    _syncUnread();
 
     try {
       await _repo.markAsRead(id);
     } catch (_) {
       if (mounted) setState(() => _items = previous);
+      _syncUnread();
     }
   }
 
@@ -78,11 +87,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     setState(() {
       _items = [for (final n in _items) n.markAsRead()];
     });
+    _syncUnread();
 
     try {
       await _repo.markAllAsRead();
     } catch (_) {
       if (mounted) setState(() => _items = previous);
+      _syncUnread();
     }
   }
 
@@ -128,6 +139,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     final previous = _items;
     setState(() => _items = const []);
+    _syncUnread();
 
     try {
       await _repo.clearAll();
@@ -144,6 +156,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       if (!mounted) return;
 
       setState(() => _items = previous);
+      _syncUnread();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Error al eliminar las notificaciones'),
@@ -234,11 +247,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     setState(() {
       _items = _items.where((n) => n.id != id).toList();
     });
+    _syncUnread();
 
     try {
       await _repo.deleteNotification(id);
     } catch (_) {
       if (mounted) setState(() => _items = previous);
+      _syncUnread();
     }
   }
 
