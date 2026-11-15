@@ -58,6 +58,7 @@ class TiendaProvider extends ChangeNotifier {
 
   Future<void> seleccionarTienda(String tiendaId) async {
     _tiendaSeleccionadaId = tiendaId;
+    _error = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefsKey, tiendaId);
     notifyListeners();
@@ -83,42 +84,56 @@ class TiendaProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
-    try {
-      final response = await _dio.get('/tiendas/mis-tiendas');
-      if (response.data['tiendas'] != null) {
-        _tiendas = (response.data['tiendas'] as List)
-            .map((json) => TiendaModel.fromJson(json))
-            .toList();
-      } else {
-        _tiendas = [];
-      }
+    const maxAttempts = 2;
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        final response = await _dio.get('/tiendas/mis-tiendas');
+        if (response.data['tiendas'] != null) {
+          _tiendas = (response.data['tiendas'] as List)
+              .map((json) => TiendaModel.fromJson(json))
+              .toList();
+        } else {
+          _tiendas = [];
+        }
 
-      // Si la tienda guardada ya no existe (eliminada o de otro usuario), olvidarla.
-      if (_tiendaSeleccionadaId != null &&
-          !_tiendas.any((t) => t.id == _tiendaSeleccionadaId)) {
-        _tiendaSeleccionadaId = null;
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove(_prefsKey);
-      }
+        // Si la tienda guardada ya no existe (eliminada o de otro usuario), olvidarla.
+        if (_tiendaSeleccionadaId != null &&
+            !_tiendas.any((t) => t.id == _tiendaSeleccionadaId)) {
+          _tiendaSeleccionadaId = null;
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove(_prefsKey);
+        }
 
-      // Si no hay tienda seleccionada pero hay tiendas disponibles, auto-seleccionar la primera activa
-      if (_tiendaSeleccionadaId == null && _tiendas.isNotEmpty) {
-        final tiendaPorDefecto = _tiendas.firstWhere(
-          (t) => t.activo,
-          orElse: () => _tiendas.first,
-        );
-        _tiendaSeleccionadaId = tiendaPorDefecto.id;
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_prefsKey, tiendaPorDefecto.id);
+        // Si no hay tienda seleccionada pero hay tiendas disponibles, auto-seleccionar la primera activa
+        if (_tiendaSeleccionadaId == null && _tiendas.isNotEmpty) {
+          final tiendaPorDefecto = _tiendas.firstWhere(
+            (t) => t.activo,
+            orElse: () => _tiendas.first,
+          );
+          _tiendaSeleccionadaId = tiendaPorDefecto.id;
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_prefsKey, tiendaPorDefecto.id);
+        }
+
+        _error = null;
+        break;
+      } on DioException catch (e) {
+        if (attempt < maxAttempts) {
+          await Future.delayed(const Duration(milliseconds: 1200));
+          continue;
+        }
+        _error = _msg(e, 'Error al cargar tiendas');
+      } catch (e) {
+        if (attempt < maxAttempts) {
+          await Future.delayed(const Duration(milliseconds: 1200));
+          continue;
+        }
+        _error = 'Error desconocido: $e';
       }
-    } on DioException catch (e) {
-      _error = _msg(e, 'Error al cargar tiendas');
-    } catch (e) {
-      _error = 'Error desconocido: $e';
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
+
+    _isLoading = false;
+    notifyListeners();
   }
 
   Future<bool> crearTienda({

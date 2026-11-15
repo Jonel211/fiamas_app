@@ -27,6 +27,7 @@ class _MyStoresScreenState extends State<MyStoresScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TiendaProvider>().cargarMisTiendas();
+      context.read<AuthProvider>().cargarPerfil();
     });
   }
 
@@ -35,7 +36,10 @@ class _MyStoresScreenState extends State<MyStoresScreen> {
   }
 
   Future<void> _onRefresh() async {
-    await context.read<TiendaProvider>().cargarMisTiendas();
+    await Future.wait([
+      context.read<TiendaProvider>().cargarMisTiendas(),
+      context.read<AuthProvider>().cargarPerfil(),
+    ]);
   }
 
   // FUNCIÓN PARA MOSTRAR EL MODAL DE PREMIUM
@@ -170,11 +174,19 @@ class _MyStoresScreenState extends State<MyStoresScreen> {
   }
 
   // FUNCIÓN QUE DECIDE SI MOSTRAR MODAL O NAVEGAR
-  void _irANuevaTienda(BuildContext context) {
+  Future<void> _irANuevaTienda(BuildContext context) async {
     final authProvider = context.read<AuthProvider>();
-    final esPremium = authProvider.user?.esPremium ?? false;
+    final tiendaProvider = context.read<TiendaProvider>();
 
-    if (!esPremium) {
+    // Refrescar el perfil para garantizar el estado premium actualizado
+    await authProvider.cargarPerfil();
+    if (!context.mounted) return;
+
+    final esPremium = authProvider.isPremium;
+    final tiendasActivas = tiendaProvider.tiendas.where((t) => t.activo).length;
+
+    // Si ya tiene al menos una tienda activa y no es premium, requerir plan premium
+    if (tiendasActivas >= 1 && !esPremium) {
       _mostrarDialogoPremium(context);
     } else {
       Navigator.push(

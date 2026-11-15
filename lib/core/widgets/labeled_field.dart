@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
 
 /// Campo de texto con etiqueta arriba, usado en login, registro y
@@ -15,6 +16,9 @@ class LabeledField extends StatelessWidget {
     this.keyboardType,
     this.controller,
     this.validator,
+    this.maxLength,
+    this.inputFormatters,
+    this.onChanged,
   });
 
   final String label;
@@ -25,6 +29,9 @@ class LabeledField extends StatelessWidget {
   final TextInputType? keyboardType;
   final TextEditingController? controller;
   final String? Function(String?)? validator;
+  final int? maxLength;
+  final List<TextInputFormatter>? inputFormatters;
+  final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -38,8 +45,12 @@ class LabeledField extends StatelessWidget {
           obscureText: obscureText,
           keyboardType: keyboardType,
           validator: validator,
+          maxLength: maxLength,
+          inputFormatters: inputFormatters,
+          onChanged: onChanged,
           decoration: InputDecoration(
             hintText: hint,
+            counterText: '',
             prefixIcon: icon != null
                 ? Icon(icon, size: 20, color: AppColors.inkMuted)
                 : null,

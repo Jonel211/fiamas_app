@@ -75,6 +75,12 @@ class InventoryProvider extends ChangeNotifier {
       _productService = ProductService(token: token);
       _categoryService = CategoryService(token: token);
       _notifySoon();
+      Future.microtask(() {
+        if (!_disposed && _tiendaId == nuevaTiendaId) {
+          loadProducts();
+          loadCategories();
+        }
+      });
     }
   }
 
@@ -303,10 +309,9 @@ class InventoryProvider extends ChangeNotifier {
       );
 
       if (existeLocal) {
-        _error = 'Ya existe un producto con este nombre en esta tienda.';
         _isLoading = false;
         notifyListeners();
-        throw Exception(_error); // Lanza error para que la UI lo muestre
+        throw Exception('Ya existe un producto con este nombre en esta tienda.');
       }
 
       final isConnected = await _connectivity.isConnected();
@@ -330,7 +335,6 @@ class InventoryProvider extends ChangeNotifier {
         } catch (e) {
           //  2. SI EL BACKEND RECHAZA EL PRODUCTO (EJ. 409 DUPLICADO), ¡NO GUARDAR OFFLINE!
           if (e is InventoryException) {
-            _error = e.message;
             _isLoading = false;
             notifyListeners();
             rethrow; // Deja que la UI muestre el mensaje exacto del backend
@@ -343,7 +347,6 @@ class InventoryProvider extends ChangeNotifier {
         return await _createProductOffline(product, imagenFile);
       }
     } catch (e) {
-      _error = e.toString();
       _isLoading = false;
       notifyListeners();
       rethrow; // Importante: rethrow para que la pantalla capture el mensaje

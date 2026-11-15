@@ -35,7 +35,8 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
     final authProvider = Provider.of<AuthProvider>(context);
     String? id = tiendaProvider.tiendaSeleccionadaId ?? authProvider.user?.tiendaId;
 
-    if (id == null && tiendaProvider.tiendas.isNotEmpty) {
+    if (tiendaProvider.tiendas.isNotEmpty &&
+        (id == null || !tiendaProvider.tiendas.any((t) => t.id == id))) {
       final primera = tiendaProvider.tiendas.firstWhere(
         (t) => t.activo,
         orElse: () => tiendaProvider.tiendas.first,
@@ -50,7 +51,7 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
       });
     }
 
-    if (id != null && (id != _loadedTiendaId || (_summary == null && !_loadingSummary))) {
+    if (id != null && (id != _loadedTiendaId || (_summary == null && !_loadingSummary && _summaryError == null))) {
       _loadedTiendaId = id;
       _summary = null; 
       _movimientos = [];
@@ -72,29 +73,55 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
   }
 
   Future<void> _fetchSummary(String id) async {
+    const maxAttempts = 3;
+    var targetId = id;
+
     try {
-      final results = await Future.wait([
-        _service.getResumen(id),
-        _service.getMovimientosRecientes(id),
-      ]);
+      for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          final results = await Future.wait([
+            _service.getResumen(targetId),
+            _service.getMovimientosRecientes(targetId),
+          ]);
 
-      final data = results[0] as StoreSummary;
-      final movs = results[1] as List<MovimientoReciente>;
+          final data = results[0] as StoreSummary;
+          final movs = results[1] as List<MovimientoReciente>;
 
-      if (!mounted || _loadedTiendaId != id) return; 
+          if (!mounted || (_loadedTiendaId != id && _loadedTiendaId != targetId)) return;
 
-      setState(() {
-        _summary = data;
-        _movimientos = movs;
-        _summaryError = null;
-      });
-    } catch (e) {
-      if (!mounted || _loadedTiendaId != id) return;
-      setState(() {
-        _summaryError = e.toString().replaceAll('Exception: ', '');
-      });
+          setState(() {
+            _summary = data;
+            _movimientos = movs;
+            _summaryError = null;
+          });
+          return;
+        } catch (e) {
+          if (!mounted || (_loadedTiendaId != id && _loadedTiendaId != targetId)) return;
+
+          if (attempt < maxAttempts) {
+            final tiendaProvider = context.read<TiendaProvider>();
+            if (tiendaProvider.tiendas.isEmpty) {
+              try {
+                await tiendaProvider.cargarMisTiendas();
+              } catch (_) {}
+            }
+            if (!mounted) return;
+            final nuevoId = tiendaProvider.tiendaSeleccionadaId;
+            if (nuevoId != null && nuevoId != targetId) {
+              targetId = nuevoId;
+              _loadedTiendaId = nuevoId;
+            }
+            await Future.delayed(const Duration(milliseconds: 1200));
+            continue;
+          }
+
+          setState(() {
+            _summaryError = e.toString().replaceAll('Exception: ', '');
+          });
+        }
+      }
     } finally {
-      if (mounted && _loadedTiendaId == id) {
+      if (mounted && (_loadedTiendaId == id || _loadedTiendaId == targetId)) {
         setState(() => _loadingSummary = false);
       }
     }

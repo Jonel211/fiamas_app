@@ -96,6 +96,11 @@ class AuthRepository {
     }
   }
 
+  // Guardar/actualizar Usuario
+  Future<void> saveUser(UserModel user) async {
+    await _storage.write(key: _userKey, value: jsonEncode(user.toJson()));
+  }
+
   Future<void> logout() async {
     await _storage.delete(key: _tokenKey);
     await _storage.delete(key: _userKey);
