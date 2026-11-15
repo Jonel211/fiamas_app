@@ -5,7 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../main.dart'; 
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
-import '../../../notifications/data/notification_repository.dart';
+import '../../../notifications/presentation/providers/notification_provider.dart';
 import '../../data/dashboard_service.dart';
 import '../widgets/movement_tile.dart';
 
@@ -17,21 +17,13 @@ class StoreSummaryScreen extends StatefulWidget {
 }
 
 class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware {
-  final _notifRepo = NotificationRepository();
   final _service = DashboardService();
 
-  int _unread = 0;
   StoreSummary? _summary;
   List<MovimientoReciente> _movimientos = [];
   String? _loadedTiendaId;
   bool _loadingSummary = false;
   String? _summaryError;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUnread();
-  }
 
   @override
   void didChangeDependencies() {
@@ -114,19 +106,11 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
       _loadingSummary = true;
       _summaryError = null;
     });
-    await Future.wait([_fetchSummary(id), _loadUnread()]);
-  }
-
-  Future<void> _loadUnread() async {
-    try {
-      final count = await _notifRepo.unreadCount();
-      if (mounted) setState(() => _unread = count);
-    } catch (_) {}
+    await _fetchSummary(id);
   }
 
   Future<void> _openNotifications() async {
     await Navigator.of(context).pushNamed(AppRoutes.notifications);
-    _loadUnread();
   }
 
   String _money(double v) => 'S/ ${v.toStringAsFixed(2)}';
@@ -156,6 +140,9 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
     final nombre = summary?.nombre.isNotEmpty == true
         ? summary!.nombre
         : (tiendaProvider.tiendaSeleccionada?.nombre ?? 'Mi tienda');
+    final unread = context.select<NotificationProvider, int>(
+      (provider) => provider.unreadCount,
+    );
 
     return SafeArea(
       child: RefreshIndicator(
@@ -187,8 +174,8 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
                         IconButton(
                           onPressed: _openNotifications,
                           icon: Badge(
-                            isLabelVisible: _unread > 0,
-                            label: Text(_unread > 9 ? '9+' : '$_unread'),
+                            isLabelVisible: unread > 0,
+                            label: Text(unread > 9 ? '9+' : '$unread'),
                             backgroundColor: const Color(0xFFE5A93C),
                             textColor: const Color(0xFF2C2208),
                             child: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 24),

@@ -22,6 +22,7 @@ import 'features/inventory/domain/inventory_provider.dart';
 import 'features/menu/presentation/screens/menu_screen.dart';
 import 'features/profile/presentation/screens/profile_screen.dart';
 import 'features/profile/presentation/screens/edit_profile_screen.dart';
+import 'features/notifications/presentation/providers/notification_provider.dart';
 import 'features/notifications/presentation/screens/notifications_screen.dart';
 import 'features/stores/presentation/screens/my_stores_screen.dart';
 import 'features/stores/presentation/screens/new_store_screen.dart';
@@ -92,6 +93,7 @@ Future<void> main() async {
           },
         ),
         ChangeNotifierProvider(create: (_) => ClienteProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => AppBarController()),
       ],
       child: const FiamasApp(),

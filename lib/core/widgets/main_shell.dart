@@ -14,6 +14,7 @@ import '../../features/inventory/presentation/screens/new_product_screen.dart';
 import '../../features/debts/presentation/screens/debts_screen.dart';
 import '../../features/customers/presentation/screens/customer_list_screen.dart';
 import '../../features/menu/presentation/screens/more_options_screen.dart';
+import '../../features/notifications/presentation/providers/notification_provider.dart';
 
 class MainShellScreen extends StatefulWidget {
   const MainShellScreen({super.key, this.initialIndex = 0});
@@ -24,13 +25,31 @@ class MainShellScreen extends StatefulWidget {
   State<MainShellScreen> createState() => _MainShellScreenState();
 }
 
-class _MainShellScreenState extends State<MainShellScreen> {
+class _MainShellScreenState extends State<MainShellScreen>
+    with WidgetsBindingObserver {
   late int _currentIndex;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<NotificationProvider>().refresh();
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      context.read<NotificationProvider>().refresh();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   final List<Widget> _pages = const [
