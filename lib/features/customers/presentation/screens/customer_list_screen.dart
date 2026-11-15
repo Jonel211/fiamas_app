@@ -117,19 +117,10 @@ class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware
         color: AppColors.teal,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Clientes',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.ink,
-                ),
-              ),
-              const SizedBox(height: 4),
               Row(
                 children: [
                   Expanded(

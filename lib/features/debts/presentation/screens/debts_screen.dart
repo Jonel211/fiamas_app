@@ -81,7 +81,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -92,11 +92,6 @@ class _DebtsScreenState extends State<DebtsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Fiados',
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
-                          const SizedBox(height: 2),
                           Text(
                             'Gestión de deudores',
                             style: Theme.of(context).textTheme.bodyMedium,
