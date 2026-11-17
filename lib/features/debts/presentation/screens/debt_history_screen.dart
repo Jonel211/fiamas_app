@@ -9,7 +9,6 @@ import '../../../customers/data/models/cliente_model.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../../domain/debt.dart';
 import 'debt_detail_multiple_screen.dart';
-import 'select_debts_screen.dart';
 
 class DebtHistoryScreen extends StatefulWidget {
   final Map<String, dynamic> customer;
@@ -23,6 +22,8 @@ class DebtHistoryScreen extends StatefulWidget {
 class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
   String _selectedFilter = 'Todos';
   bool _isInit = false;
+  bool _isSelectionMode = false;
+  final Set<String> _selectedDebtIds = {};
 
   @override
   void didChangeDependencies() {
@@ -50,6 +51,27 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
   }
 
   bool _esVigente(Debt d) => d.status != DebtStatus.pagado;
+
+  bool get _hasSelection => _selectedDebtIds.isNotEmpty;
+
+  void _enterSelectionMode() {
+    setState(() => _isSelectionMode = true);
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      _isSelectionMode = false;
+      _selectedDebtIds.clear();
+    });
+  }
+
+  void _toggleSelection(String debtId) {
+    setState(() {
+      if (!_selectedDebtIds.remove(debtId)) {
+        _selectedDebtIds.add(debtId);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,9 +121,39 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
 
     final tieneDeudasPendientes = fiados.any(_esVigente);
 
+    final selectedTotal = fiados
+        .where((d) => _selectedDebtIds.contains(d.id))
+        .fold<double>(0.0, (sum, debt) => sum + debt.amount);
+
     return AppHeaderConfig(
-      title: 'Historial de Cliente',
-      showBack: true,
+      title: _isSelectionMode
+          ? '${_selectedDebtIds.length} seleccionados'
+          : 'Historial de Cliente',
+      centerTitle: true,
+      showBack: !_isSelectionMode,
+      leading: _isSelectionMode
+          ? TextButton(
+              onPressed: _exitSelectionMode,
+              style: TextButton.styleFrom(padding: EdgeInsets.zero),
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w600),
+              ),
+            )
+          : null,
+      actions: _isSelectionMode
+          ? [
+              IconButton(
+                icon: Icon(
+                  Icons.check_circle,
+                  color: _hasSelection ? Colors.white : Colors.white54,
+                ),
+                onPressed:
+                    _hasSelection ? () => _goToDetail(fiados) : null,
+              ),
+            ]
+          : const [],
       child: Scaffold(
         backgroundColor: AppColors.background,
         body: CustomScrollView(
@@ -356,16 +408,44 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
               ),
           ],
         ),
-        floatingActionButton: tieneDeudasPendientes
+        bottomNavigationBar: (_isSelectionMode && _hasSelection)
+            ? SafeArea(
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, -2))
+                    ],
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _goToDetail(fiados),
+                      icon: const Icon(Icons.account_balance_wallet, size: 20),
+                      label: Text(
+                        'Cobrar S/ ${selectedTotal.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.teal,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            : null,
+        floatingActionButton: (!_isSelectionMode && tieneDeudasPendientes)
             ? FloatingActionButton.extended(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) =>
-                            SelectDebtsScreen(customer: widget.customer)),
-                  );
-                },
+                onPressed: _enterSelectionMode,
                 backgroundColor: AppColors.teal,
                 icon: const Icon(Icons.checklist, color: Colors.white),
                 label: const Text('Seleccionar fiados',
@@ -401,30 +481,26 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
   Widget _buildDebtCard(Debt debt) {
     final pagado = debt.status == DebtStatus.pagado;
     final parcial = debt.status == DebtStatus.parcial;
+    final isSelected = _selectedDebtIds.contains(debt.id);
 
     final etiqueta = pagado ? 'PAGADO' : (parcial ? 'PARCIAL' : 'PENDIENTE');
     final color = pagado
         ? AppColors.success
         : (parcial ? AppColors.skyBlue : AppColors.gold);
 
+    final estadoTexto = _isSelectionMode
+        ? (pagado ? 'Cancelado' : 'Pendiente')
+        : (pagado
+            ? 'Cancelado'
+            : 'Resta S/ ${debt.remainingAmount.toStringAsFixed(2)}');
+
     return GestureDetector(
-      onTap: () async {
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => DebtDetailMultipleScreen(
-              customer: {
-                'id': widget.customer['id'],
-                'name': debt.customerName,
-                'phone': debt.phone,
-              },
-              debts: [debt],
-            ),
-          ),
-        );
-        // Al volver (por ejemplo tras cobrar) se refresca la lista
-        if (!mounted) return;
-        _cargarFiados();
+      onTap: () {
+        if (_isSelectionMode) {
+          _toggleSelection(debt.id);
+        } else {
+          _openDebtDetail(debt);
+        }
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -439,62 +515,126 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                 offset: const Offset(0, 2))
           ],
         ),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('S/ ${debt.amount.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.ink)),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    etiqueta,
-                    style: TextStyle(
-                        color: color,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600),
+            if (_isSelectionMode) ...[
+              Container(
+                margin: const EdgeInsets.only(top: 2, right: 12),
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.teal : Colors.white,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: isSelected ? AppColors.teal : AppColors.mist,
+                    width: 2,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              debt.items.map((item) => item.productName).join(', '),
-              style: TextStyle(fontSize: 13, color: AppColors.inkMuted),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(debt.dateLabel,
-                    style: TextStyle(fontSize: 12, color: AppColors.inkMuted)),
-                Text(
-                  pagado
-                      ? 'Cancelado'
-                      : 'Resta S/ ${debt.remainingAmount.toStringAsFixed(2)}',
-                  style: TextStyle(
-                      fontSize: 12,
-                      color: pagado ? AppColors.success : AppColors.gold,
-                      fontWeight: FontWeight.w500),
-                ),
-              ],
+                child: isSelected
+                    ? const Icon(Icons.check, size: 16, color: Colors.white)
+                    : null,
+              ),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('S/ ${debt.amount.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.ink)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          etiqueta,
+                          style: TextStyle(
+                              color: color,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    debt.items.map((item) => item.productName).join(', '),
+                    style: TextStyle(fontSize: 13, color: AppColors.inkMuted),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(debt.dateLabel,
+                          style: TextStyle(
+                              fontSize: 12, color: AppColors.inkMuted)),
+                      Text(
+                        estadoTexto,
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: pagado ? AppColors.success : AppColors.gold,
+                            fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _openDebtDetail(Debt debt) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DebtDetailMultipleScreen(
+          customer: {
+            'id': widget.customer['id'],
+            'name': debt.customerName,
+            'phone': debt.phone,
+          },
+          debts: [debt],
+        ),
+      ),
+    );
+    // Al volver (por ejemplo tras cobrar) se refresca la lista
+    if (!mounted) return;
+    _cargarFiados();
+  }
+
+  void _goToDetail(List<Debt> todasLasDeudas) {
+    final selectedDebts = todasLasDeudas
+        .where((d) => _selectedDebtIds.contains(d.id))
+        .toList();
+
+    if (selectedDebts.isEmpty) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DebtDetailMultipleScreen(
+          customer: widget.customer,
+          debts: selectedDebts,
+        ),
+      ),
+    ).then((_) {
+      if (!mounted) return;
+      _cargarFiados();
+    });
   }
 }
 
