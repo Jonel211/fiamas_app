@@ -69,7 +69,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       );
       Navigator.of(context).pop();
     } else {
-      final errorMsg = authProvider.errorMessage ?? 'Error al actualizar la contraseña.';
+      final errorMsg =
+          authProvider.errorMessage ?? 'Error al actualizar la contraseña.';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMsg),
@@ -111,9 +112,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   hint: '',
                   obscureText: _obscureCurrent,
                   maxLength: 6,
-                  inputFormatters: [
-                    LengthLimitingTextInputFormatter(6),
-                  ],
+                  inputFormatters: [LengthLimitingTextInputFormatter(6)],
                   suffixIcon: _visibilityToggle(
                     _obscureCurrent,
                     () => setState(() => _obscureCurrent = !_obscureCurrent),
@@ -135,12 +134,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   label: 'Nuevo PIN (4 a 6 dígitos)',
                   hint: '',
                   obscureText: _obscureNew,
-                  keyboardType: TextInputType.number,
                   maxLength: 6,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(6),
-                  ],
+                  inputFormatters: [LengthLimitingTextInputFormatter(6)],
                   suffixIcon: _visibilityToggle(
                     _obscureNew,
                     () => setState(() => _obscureNew = !_obscureNew),
@@ -160,12 +155,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   label: 'Confirmar PIN',
                   hint: '',
                   obscureText: _obscureConfirm,
-                  keyboardType: TextInputType.number,
                   maxLength: 6,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(6),
-                  ],
+                  inputFormatters: [LengthLimitingTextInputFormatter(6)],
                   suffixIcon: _visibilityToggle(
                     _obscureConfirm,
                     () => setState(() => _obscureConfirm = !_obscureConfirm),
@@ -206,7 +197,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           height: 24,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : const Text('Guardar'),
