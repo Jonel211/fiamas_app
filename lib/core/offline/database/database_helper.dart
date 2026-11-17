@@ -20,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 4, // Versión 4 para la migración de clientes
+      version: 5, // v5: tabla whatsapp_status para el flag de bienvenida
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
       onConfigure: (db) async {
@@ -45,6 +45,19 @@ class DatabaseHelper {
       // Agregar tienda_id a clientes sin perder datos existentes
       try { await db.execute('ALTER TABLE clientes ADD COLUMN tienda_id TEXT'); } 
       catch (e) { dev.log('⚠️ Columna tienda_id en clientes: $e', name: 'DB_MIGRATION'); }
+    }
+    if (oldVersion < 5) {
+      // Tabla aparte para no perder el flag cuando saveClientes haga replace
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS whatsapp_status (
+            telefono TEXT NOT NULL,
+            tienda_id TEXT NOT NULL,
+            bienvenida_enviada INTEGER DEFAULT 0,
+            PRIMARY KEY (telefono, tienda_id)
+          )
+        ''');
+      } catch (e) { dev.log('⚠️ Tabla whatsapp_status: $e', name: 'DB_MIGRATION'); }
     }
   }
 
@@ -74,6 +87,50 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE sync_queue (id TEXT PRIMARY KEY, type TEXT NOT NULL, entity TEXT NOT NULL, entity_id TEXT NOT NULL, payload TEXT NOT NULL, status TEXT DEFAULT 'pending', retry_count INTEGER DEFAULT 0, created_at TEXT NOT NULL)
     ''');
+    await db.execute('''
+      CREATE TABLE whatsapp_status (
+        telefono TEXT NOT NULL,
+        tienda_id TEXT NOT NULL,
+        bienvenida_enviada INTEGER DEFAULT 0,
+        PRIMARY KEY (telefono, tienda_id)
+      )
+    ''');
+  }
+
+  // ============================================================
+  // WHATSAPP: flag de "bienvenida enviada" por cliente + tienda
+  // ============================================================
+
+  /// Devuelve true si ya se inició la conversación de WhatsApp con
+  /// este cliente en esta tienda (para que el envío de imagen funcione).
+  Future<bool> getWhatsappBienvenida(String telefono, String tiendaId) async {
+    final db = await database;
+    final result = await db.query(
+      'whatsapp_status',
+      where: 'telefono = ? AND tienda_id = ?',
+      whereArgs: [telefono, tiendaId],
+      limit: 1,
+    );
+    if (result.isEmpty) return false;
+    return (result.first['bienvenida_enviada'] as int? ?? 0) == 1;
+  }
+
+  /// Marca el flag de bienvenida para el cliente en la tienda.
+  Future<void> setWhatsappBienvenida(
+    String telefono,
+    String tiendaId, {
+    required bool enviada,
+  }) async {
+    final db = await database;
+    await db.insert(
+      'whatsapp_status',
+      {
+        'telefono': telefono,
+        'tienda_id': tiendaId,
+        'bienvenida_enviada': enviada ? 1 : 0,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   //  UPSERT SEGURO: Reemplaza si existe, inserta si no. No borra toda la tabla.
@@ -159,7 +216,8 @@ class DatabaseHelper {
     final db = await database;
     await db.update('sync_queue', {'status': status, 'retry_count': retryCount}, where: 'id = ?', whereArgs: [id]);
   }
-    //  NUEVO: Valida si ya existe un producto con ese nombre en la tienda (ignora mayúsculas/minúsculas)
+
+  //  NUEVO: Valida si ya existe un producto con ese nombre en la tienda (ignora mayúsculas/minúsculas)
   Future<bool> productoExistePorNombre(String tiendaId, String nombre) async {
     final db = await database;
     final nombreNormalizado = nombre.trim().toLowerCase();

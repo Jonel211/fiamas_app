@@ -607,4 +607,44 @@ class ClienteProvider extends ChangeNotifier {
         )
         .toList();
   }
+
+  /// Fiados pendientes de un cliente, sin tocar el estado del provider.
+  Future<List<Debt>> obtenerFiadosPendientes(
+    String clienteId,
+    String tiendaId, {
+    required String nombre,
+    required String telefono,
+  }) async {
+    final response = await _dio.get(
+      '/clientes/$clienteId/fiados',
+      queryParameters: {'tienda_id': tiendaId},
+    );
+    final List<dynamic> data = response.data['fiados'] ?? [];
+
+    double num_(dynamic v, [double f = 0.0]) =>
+        double.tryParse(v?.toString() ?? '') ?? f;
+
+    return data
+        .where((j) => j['estado'] != 'pagado' && j['estado'] != 'cancelado')
+        .map<Debt>((j) {
+      final parcial = j['estado'] == 'parcial';
+      final fecha = j['fecha_creacion']?.toString() ?? '';
+      return Debt(
+        id: (j['id'] ?? '').toString(),
+        customerName: nombre,
+        phone: telefono,
+        amount: num_(j['monto_total']),
+        paidAmount: num_(j['monto_pagado']),
+        status: parcial ? DebtStatus.parcial : DebtStatus.pendiente,
+        dateLabel: fecha.length >= 10 ? 'Creado: ${fecha.substring(0, 10)}' : 'Sin fecha',
+        items: ((j['detalles'] as List?) ?? []).map<DebtItem>((d) {
+          return DebtItem(
+            productName: (d['producto']?['nombre'] ?? 'Producto').toString(),
+            quantity: num_(d['cantidad'], 1.0),
+            unitPrice: num_(d['precio_unitario']),
+          );
+        }).toList(),
+      );
+    }).toList();
+  }
 }
