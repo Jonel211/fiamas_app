@@ -77,3 +77,22 @@ Future<bool> abrirWhatsapp({
     return false;
   }
 }
+
+/// Mensaje que se envía al cliente la PRIMERA VEZ que el tendero
+/// toca "Enviar recordatorio" para él. Su propósito es crear el hilo
+/// de conversación en WhatsApp, para que después el envío de imagen
+/// con el truco del `jid` funcione automáticamente.
+String construirMensajeBienvenida({
+  required String nombreCliente,
+  required String nombreTienda,
+}) {
+  final nombre = nombreCliente.trim().isEmpty
+      ? 'amigo(a)'
+      : nombreCliente.trim();
+  final tienda = nombreTienda.trim().isEmpty
+      ? 'tu tienda de confianza'
+      : nombreTienda.trim();
+  return 'Hola $nombre, te saluda $tienda. 👋\n\n'
+      'Bienvenido(a) a Fiamas. A partir de ahora te enviaré por aquí '
+      'tus recordatorios de fiados. ¡Gracias por tu preferencia!';
+}
