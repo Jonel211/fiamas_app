@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fiamas_app/core/constants/app_colors.dart';
 import 'package:fiamas_app/core/widgets/app_header_config.dart';
+
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../../domain/debt.dart';
@@ -30,16 +31,16 @@ class _CollectMultiplePaymentScreenState
   final TextEditingController _referenceController = TextEditingController();
 
   late double _totalDebt;
+  late final List<Debt> _debts;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
+    //  solo se procesan fiados seleccionables (pendientes/parciales).
+    _debts = widget.selectedDebts.where((debt) => debt.isSelectable).toList();
     // Calculamos la deuda total sumando el saldo restante de cada fiado
-    _totalDebt = widget.selectedDebts.fold(
-      0.0,
-      (sum, debt) => sum + debt.remainingAmount,
-    );
+    _totalDebt = _debts.fold(0.0, (sum, debt) => sum + debt.remainingAmount);
     _amountController.text = _totalDebt.toStringAsFixed(2);
   }
 
@@ -92,14 +93,16 @@ class _CollectMultiplePaymentScreenState
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${widget.selectedDebts.length} fiados seleccionados',
+                      '${_debts.length} '
+                      'fiado${_debts.length == 1 ? '' : 's'} '
+                      'seleccionado${_debts.length == 1 ? '' : 's'}',
                       style: TextStyle(fontSize: 12, color: AppColors.inkMuted),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               _buildPaymentOption(
                 iconPath: 'assets/icons/bill_icon.png',
                 title: 'Pagó todo',
@@ -328,15 +331,20 @@ class _CollectMultiplePaymentScreenState
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: _isSaving ? null : _confirmPayment,
-                  icon: _isSaving 
+                  icon: _isSaving
                       ? const SizedBox(
-                          width: 20, 
-                          height: 20, 
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
                         )
                       : const Icon(Icons.check, size: 20),
                   label: Text(
-                    _isSaving ? 'Procesando...' : 'Confirmar abono S/ ${_paidAmount.toStringAsFixed(2)}',
+                    _isSaving
+                        ? 'Procesando...'
+                        : 'Confirmar abono S/ ${_paidAmount.toStringAsFixed(2)}',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -372,7 +380,9 @@ class _CollectMultiplePaymentScreenState
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.skyBlue.withValues(alpha: 0.5) : Colors.white,
+          color: isSelected
+              ? AppColors.skyBlue.withValues(alpha: 0.5)
+              : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppColors.teal : AppColors.mist,
@@ -408,11 +418,8 @@ class _CollectMultiplePaymentScreenState
               onChanged: (value) {
                 if (value != null) onTap();
               },
-              child: Radio<bool>(
-                value: true,
-                activeColor: AppColors.teal,
-              ),
-            )
+              child: Radio<bool>(value: true, activeColor: AppColors.teal),
+            ),
           ],
         ),
       ),
@@ -494,11 +501,11 @@ class _CollectMultiplePaymentScreenState
     bool huboError = false;
 
     // Recorremos los fiados seleccionados
-    for (var debt in widget.selectedDebts) {
+    for (var debt in _debts) {
       if (montoRestante <= 0) break;
 
       double saldoFiado = debt.remainingAmount;
-      
+
       // Si el monto restante cubre todo el fiado
       if (montoRestante >= saldoFiado) {
         final success = await clienteProvider.registrarPago(
@@ -515,7 +522,7 @@ class _CollectMultiplePaymentScreenState
           huboError = true;
           break;
         }
-      } 
+      }
       // Si el monto restante solo cubre una parte del fiado
       else {
         final success = await clienteProvider.registrarPago(
@@ -531,7 +538,7 @@ class _CollectMultiplePaymentScreenState
         } else {
           huboError = true;
         }
-        break; 
+        break;
       }
     }
 
@@ -540,7 +547,10 @@ class _CollectMultiplePaymentScreenState
 
       if (huboError) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error al registrar el pago. Intente de nuevo.'), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text('Error al registrar el pago. Intente de nuevo.'),
+            backgroundColor: Colors.red,
+          ),
         );
       } else {
         // Exito
@@ -556,7 +566,10 @@ class _CollectMultiplePaymentScreenState
               TextButton(
                 onPressed: () {
                   Navigator.pop(context); // Cierra el dialogo
-                  Navigator.pop(context, true); // Regresa a la pantalla de historial
+                  Navigator.pop(
+                    context,
+                    true,
+                  ); // Regresa a la pantalla de historial
                 },
                 child: const Text('Aceptar'),
               ),

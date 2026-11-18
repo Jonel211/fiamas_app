@@ -17,6 +17,12 @@ class AppColors {
   /// Azul claro: fondos suaves, chips, estados informativos.
   static const Color skyBlue = Color(0xFFB1D8F7);
 
+  /// Texto del estado "Parcial" en fiados.
+  static const Color parcial = Color(0xFF1565C0);
+
+  /// Fondo suave del estado "Parcial" en fiados.
+  static const Color parcialSoft = Color(0xFFE3F0FF);
+
   /// Blanco puro.
   static const Color ivory = Color(0xFFFFFFFF);
 

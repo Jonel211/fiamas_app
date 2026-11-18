@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/constants/app_colors.dart';
 
 class ClienteModel {
@@ -54,6 +55,8 @@ class VinculacionModel {
   final int totalPagos;
   final int cantidadFiadosMora;
 
+  final int? fiadosActivos;
+
   VinculacionModel({
     required this.id,
     required this.limiteCredito,
@@ -63,6 +66,7 @@ class VinculacionModel {
     required this.totalFiados,
     required this.totalPagos,
     required this.cantidadFiadosMora,
+    this.fiadosActivos,
   });
 
   factory VinculacionModel.fromJson(Map<String, dynamic> json) {
@@ -79,7 +83,18 @@ class VinculacionModel {
       totalPagos: int.tryParse(json['total_pagos']?.toString() ?? '') ?? 0,
       cantidadFiadosMora:
           int.tryParse(json['cantidad_fiados_mora']?.toString() ?? '') ?? 0,
+      fiadosActivos: _parseFiadosActivos(json['fiados_activos']),
     );
+  }
+
+  static int? _parseFiadosActivos(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+
+    final text = value.toString().trim();
+    if (text.isEmpty) return null;
+    return int.tryParse(text) ?? double.tryParse(text)?.toInt();
   }
 
   /// Nivel de scoring según lo que calcula el backend.

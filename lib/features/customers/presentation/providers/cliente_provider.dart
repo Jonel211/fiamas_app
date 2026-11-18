@@ -56,8 +56,7 @@ class ClienteProvider extends ChangeNotifier {
       fiadosParaTotales.fold(0.0, (sum, d) => sum + d.paidAmount);
 
   /// Saldo pendiente = Total fiado - Total pagado.
-  double get saldoPendienteCliente =>
-      totalFiadoCliente - totalPagadoCliente;
+  double get saldoPendienteCliente => totalFiadoCliente - totalPagadoCliente;
   bool get isLoading => _isLoading;
   bool get isLoadingConDeuda => _isLoadingConDeuda;
   bool get isLoadingRecientes => _isLoadingRecientes;
@@ -126,19 +125,22 @@ class ClienteProvider extends ChangeNotifier {
           await _dbHelper.saveClientes(
             tiendaId,
             _clientes
-                .map((c) => {
-                      'id': c.id,
-                      'tienda_id': tiendaId,
-                      'telefono': c.telefono,
-                      'nombres': c.nombres,
-                      'apellidos': c.apellidos,
-                      'direccion': c.direccion ?? '',
-                      'foto_perfil_url': c.fotoPerfilUrl ?? '',
-                      'creado_en': c.creadoEn?.toIso8601String() ??
-                          DateTime.now().toIso8601String(),
-                      'limite_credito': c.vinculacion.limiteCredito,
-                      'saldo_actual': c.vinculacion.saldoActual,
-                    })
+                .map(
+                  (c) => {
+                    'id': c.id,
+                    'tienda_id': tiendaId,
+                    'telefono': c.telefono,
+                    'nombres': c.nombres,
+                    'apellidos': c.apellidos,
+                    'direccion': c.direccion ?? '',
+                    'foto_perfil_url': c.fotoPerfilUrl ?? '',
+                    'creado_en':
+                        c.creadoEn?.toIso8601String() ??
+                        DateTime.now().toIso8601String(),
+                    'limite_credito': c.vinculacion.limiteCredito,
+                    'saldo_actual': c.vinculacion.saldoActual,
+                  },
+                )
                 .toList(),
           );
         } else {
@@ -222,8 +224,9 @@ class ClienteProvider extends ChangeNotifier {
       if (_tiendaConDeudaId != tiendaId) return;
 
       final List<dynamic> data = response.data['clientes'] ?? [];
-      _clientesConDeuda =
-          data.map((json) => ClienteModel.fromJson(json)).toList();
+      _clientesConDeuda = data
+          .map((json) => ClienteModel.fromJson(json))
+          .toList();
     } on DioException catch (e) {
       if (_tiendaConDeudaId == tiendaId) {
         _errorConDeuda = _mensajeError(
@@ -363,19 +366,22 @@ class ClienteProvider extends ChangeNotifier {
         await _dbHelper.saveClientes(
           tiendaId,
           _clientes
-              .map((c) => {
-                    'id': c.id,
-                    'tienda_id': tiendaId,
-                    'telefono': c.telefono,
-                    'nombres': c.nombres,
-                    'apellidos': c.apellidos,
-                    'direccion': c.direccion ?? '',
-                    'foto_perfil_url': c.fotoPerfilUrl ?? '',
-                    'creado_en': c.creadoEn?.toIso8601String() ??
-                        DateTime.now().toIso8601String(),
-                    'limite_credito': c.vinculacion.limiteCredito,
-                    'saldo_actual': c.vinculacion.saldoActual,
-                  })
+              .map(
+                (c) => {
+                  'id': c.id,
+                  'tienda_id': tiendaId,
+                  'telefono': c.telefono,
+                  'nombres': c.nombres,
+                  'apellidos': c.apellidos,
+                  'direccion': c.direccion ?? '',
+                  'foto_perfil_url': c.fotoPerfilUrl ?? '',
+                  'creado_en':
+                      c.creadoEn?.toIso8601String() ??
+                      DateTime.now().toIso8601String(),
+                  'limite_credito': c.vinculacion.limiteCredito,
+                  'saldo_actual': c.vinculacion.saldoActual,
+                },
+              )
               .toList(),
         );
       } catch (_) {}
@@ -471,8 +477,9 @@ class ClienteProvider extends ChangeNotifier {
   Future<void> _cargarFiadosDesdeCache(String clienteId) async {
     try {
       final cached = await _dbHelper.getFiados();
-      final misFiados =
-          cached.where((f) => f['cliente_id'] == clienteId).toList();
+      final misFiados = cached
+          .where((f) => f['cliente_id'] == clienteId)
+          .toList();
 
       if (misFiados.isNotEmpty) {
         _fiadosCliente = misFiados.map<Debt>((json) {
@@ -480,8 +487,8 @@ class ClienteProvider extends ChangeNotifier {
           final DebtStatus estadoEnum = estadoString == 'pagado'
               ? DebtStatus.pagado
               : (estadoString == 'parcial'
-                  ? DebtStatus.parcial
-                  : DebtStatus.pendiente);
+                    ? DebtStatus.parcial
+                    : DebtStatus.pendiente);
           final fecha =
               json['fecha_fiado']?.toString() ?? json['creado_en']?.toString();
           final fechaLabel = (fecha != null && fecha.length >= 10)
@@ -514,8 +521,8 @@ class ClienteProvider extends ChangeNotifier {
       final DebtStatus estadoEnum = estadoString == 'pagado'
           ? DebtStatus.pagado
           : (estadoString == 'parcial'
-              ? DebtStatus.parcial
-              : DebtStatus.pendiente);
+                ? DebtStatus.parcial
+                : DebtStatus.pendiente);
       final fecha =
           json['fecha_creacion']?.toString() ?? json['fecha_fiado']?.toString();
       final fechaLabel = (fecha != null && fecha.length >= 10)
@@ -534,10 +541,12 @@ class ClienteProvider extends ChangeNotifier {
         items: detalles
             .map<DebtItem>(
               (d) => DebtItem(
-                productName:
-                    (d['producto']?['nombre'] ?? 'Producto').toString(),
+                productName: (d['producto']?['nombre'] ?? 'Producto')
+                    .toString(),
                 quantity: _toDouble(d['cantidad'], 1.0),
                 unitPrice: _toDouble(d['precio_unitario']),
+                unit: (d['producto']?['unidad_medida'] ?? d['unidad_medida'])
+                    ?.toString(),
               ),
             )
             .toList(),
@@ -581,8 +590,9 @@ class ClienteProvider extends ChangeNotifier {
           'fiado_id': fiadoId,
           'monto': monto,
           'metodo_pago': metodoPago,
-          'referencia':
-              (referencia == null || referencia.trim().isEmpty) ? null : referencia,
+          'referencia': (referencia == null || referencia.trim().isEmpty)
+              ? null
+              : referencia,
         },
       );
       await cargarFiadosCliente(clienteId, tiendaId);

@@ -30,10 +30,25 @@ class Debt {
   // ✅ NUEVO: Calcula el saldo pendiente automáticamente
   double get remainingAmount => amount - paidAmount;
 
+  /// Regla central para saber si un estado de fiado sigue activo.
+  /// Vencido es pendiente con fecha vencida, así que también cuenta.
+  static bool isActiveStatus(String estado) {
+    final value = estado.trim().toLowerCase();
+    return value != 'pagado' && value != 'cancelado';
+  }
+
+  /// Un fiado está activo mientras no esté pagado ni cancelado.
+  bool get isActive => !isCancelled && isActiveStatus(status.name);
+
+  /// Regla única de selección para cobros: un fiado pagado o cancelado
+  /// no puede seleccionarse. Pendiente, parcial y vencido sí.
+  bool get isSelectable => isActive;
+
   String get initials {
     final parts = customerName.trim().split(RegExp(r'\s+'));
     if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-    return (parts.first.substring(0, 1) + parts.last.substring(0, 1)).toUpperCase();
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+        .toUpperCase();
   }
 }
 
@@ -42,11 +57,13 @@ class DebtItem {
     required this.productName,
     required this.quantity,
     required this.unitPrice,
+    this.unit,
   });
 
   final String productName;
   final double quantity;
   final double unitPrice;
+  final String? unit;
 
   double get subtotal => quantity * unitPrice;
 }

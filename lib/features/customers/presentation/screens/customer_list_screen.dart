@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:fiamas_app/core/constants/app_colors.dart';
+
 import '../../../../core/widgets/app_header.dart';
-import '../../../../main.dart'; 
+import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/data/models/cliente_model.dart';
@@ -17,7 +18,8 @@ class CustomerListScreen extends StatefulWidget {
   State<CustomerListScreen> createState() => _CustomerListScreenState();
 }
 
-class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware {
+class _CustomerListScreenState extends State<CustomerListScreen>
+    with RouteAware {
   String _selectedFilter = 'Todos';
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -48,7 +50,8 @@ class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware
       if (route != null) routeObserver.subscribe(this, route);
     }
 
-    final tiendaId = context.watch<TiendaProvider>().tiendaSeleccionadaId ??
+    final tiendaId =
+        context.watch<TiendaProvider>().tiendaSeleccionadaId ??
         context.watch<AuthProvider>().user?.tiendaId;
     if (tiendaId != null && tiendaId != _lastLoadedTiendaId) {
       _lastLoadedTiendaId = tiendaId;
@@ -60,7 +63,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware
 
   @override
   void dispose() {
-    routeObserver.unsubscribe(this); 
+    routeObserver.unsubscribe(this);
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -72,7 +75,8 @@ class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware
   }
 
   void _cargarClientesTiendaActual() {
-    final tiendaId = context.read<TiendaProvider>().tiendaSeleccionadaId ??
+    final tiendaId =
+        context.read<TiendaProvider>().tiendaSeleccionadaId ??
         context.read<AuthProvider>().user?.tiendaId;
     if (tiendaId != null && mounted) {
       final provider = context.read<ClienteProvider>();
@@ -82,7 +86,8 @@ class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware
   }
 
   Future<void> _onRefresh() async {
-    final tiendaId = context.read<TiendaProvider>().tiendaSeleccionadaId ??
+    final tiendaId =
+        context.read<TiendaProvider>().tiendaSeleccionadaId ??
         context.read<AuthProvider>().user?.tiendaId;
     if (tiendaId != null) {
       await context.read<ClienteProvider>().cargarClientes(tiendaId);
@@ -90,9 +95,22 @@ class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware
   }
 
   String _getStatus(ClienteModel c) {
-    if (c.vinculacion.saldoActual <= 0) return 'Al día';
+    final activos = c.vinculacion.fiadosActivos;
+    final saldo = c.vinculacion.saldoActual;
+    final conDeuda = activos != null ? activos > 0 : saldo > 0;
+    if (!conDeuda) return 'Al día';
     if (c.vinculacion.cantidadFiadosMora > 0) return 'Vencido';
     return 'Con deuda';
+  }
+
+  String _getExtraInfo(ClienteModel c) {
+    final activos = c.vinculacion.fiadosActivos;
+    if (activos == null) {
+      return c.vinculacion.saldoActual > 0 ? 'Con deuda' : 'Sin fiados activos';
+    }
+    if (activos <= 0) return 'Sin fiados activos';
+    if (activos == 1) return '1 fiado activo';
+    return '$activos fiados activos';
   }
 
   @override
@@ -138,15 +156,18 @@ class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware
                   AppHeaderPillAction(
                     label: 'scoring',
                     backgroundColor: AppColors.teal,
-                    onTap: () => Navigator.of(context)
-                        .pushNamed(AppRoutes.scoringHistory),
+                    onTap: () =>
+                        Navigator.of(context)
+                            .pushNamed(AppRoutes.scoringHistory),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
@@ -199,8 +220,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware
                     ),
                     if (_searchController.text.isNotEmpty)
                       GestureDetector(
-                        onTap: () =>
-                            setState(() => _searchController.clear()),
+                        onTap: () => setState(() => _searchController.clear()),
                         child: const Icon(
                           Icons.close,
                           color: AppColors.inkMuted,
@@ -238,7 +258,9 @@ class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware
                   child: Text(
                     'Error del servidor: ${provider.error}',
                     style: const TextStyle(
-                        color: Colors.red, fontWeight: FontWeight.bold),
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 )
               else if (provider.isLoading && provider.clientes.isEmpty)
@@ -262,9 +284,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware
                       imageUrl: cliente.fotoPerfilUrl,
                       status: status,
                       debtAmount: cliente.vinculacion.saldoActual,
-                      extraInfo: status == 'Al día'
-                          ? 'Sin fiados activos'
-                          : '${cliente.vinculacion.totalFiados} fiados activos',
+                      extraInfo: _getExtraInfo(cliente),
                       onTapProfile: () {
                         Navigator.pushNamed(
                           context,
@@ -281,7 +301,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware
                           'debt': cliente.vinculacion.saldoActual,
                           'creditLimit': cliente.vinculacion.limiteCredito,
                           'status': status,
-                          'activeDebts': cliente.vinculacion.totalFiados,
+                          'activeDebts': cliente.vinculacion.fiadosActivos,
                         };
                         Navigator.pushNamed(
                           context,
@@ -308,9 +328,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> with RouteAware
         decoration: BoxDecoration(
           color: isActive ? AppColors.teal : Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isActive ? AppColors.teal : AppColors.mist,
-          ),
+          border: Border.all(color: isActive ? AppColors.teal : AppColors.mist),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
