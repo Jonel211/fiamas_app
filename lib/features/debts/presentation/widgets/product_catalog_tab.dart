@@ -36,37 +36,15 @@ class ProductCatalogTab extends StatefulWidget {
 }
 
 class _ProductCatalogTabState extends State<ProductCatalogTab> {
-  static const double _gridBottomPadding = 64;
-  static const Duration _panelAnimationDuration = Duration(milliseconds: 200);
-  final FocusNode _searchFocusNode = FocusNode();
-  double _panelHeight = 320;
+  // ✅ Eliminamos la lógica que ocultaba el panel al buscar
   final double _minHeight = 200;
   final double _maxHeight = 500;
+  double _panelHeight = 200; // ✅ Iniciamos en altura mínima (cerrado pero visible)
   String _searchQuery = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _searchFocusNode.addListener(_handleSearchFocusChange);
-  }
-
-  void _handleSearchFocusChange() {
-    if (mounted) setState(() {});
-  }
-
-  @override
-  void dispose() {
-    _searchFocusNode
-      ..removeListener(_handleSearchFocusChange)
-      ..dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final inventory = context.watch<InventoryProvider>();
-    // El panel se oculta por completo mientras el buscador tiene el foco.
-    final buscando = _searchFocusNode.hasFocus;
 
     final productos = inventory.activeProducts
         .where(
@@ -76,7 +54,7 @@ class _ProductCatalogTabState extends State<ProductCatalogTab> {
 
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
-      onTap: () => FocusScope.of(context).unfocus(),
+      onTap: () => FocusScope.of(context).unfocus(), // Cierra teclado al tocar fuera
       child: Column(
         children: [
           Expanded(
@@ -87,9 +65,7 @@ class _ProductCatalogTabState extends State<ProductCatalogTab> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
                     child: TextField(
-                      focusNode: _searchFocusNode,
                       onChanged: (val) => setState(() => _searchQuery = val),
-                      // Usa el InputDecoration del tema (borde mist, foco teal).
                       decoration: const InputDecoration(
                         hintText: 'Buscar producto...',
                         hintStyle: TextStyle(
@@ -100,36 +76,49 @@ class _ProductCatalogTabState extends State<ProductCatalogTab> {
                           Icons.search_rounded,
                           color: AppColors.inkMuted,
                         ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                          borderSide: BorderSide(color: AppColors.mist),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                          borderSide: BorderSide(color: AppColors.teal, width: 2),
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
 
                   if (inventory.isLoading)
-                    const Center(child: CircularProgressIndicator())
+                    const Expanded(child: Center(child: CircularProgressIndicator()))
                   else if (productos.isEmpty)
-                    const Center(
-                      child: Text(
-                        'No hay productos registrados',
-                        style: TextStyle(color: AppColors.inkMuted),
+                    const Expanded(
+                      child: Center(
+                        child: Text(
+                          'No hay productos registrados',
+                          style: TextStyle(color: AppColors.inkMuted),
+                        ),
                       ),
                     )
                   else
                     Expanded(
                       child: GridView.builder(
+                        // ✅ FIX: El padding inferior ahora depende de la altura del panel
+                        // para que los últimos productos no queden tapados por el carrito.
                         padding: EdgeInsets.fromLTRB(
                           20,
                           0,
                           20,
-                          buscando ? 0 : _gridBottomPadding,
+                          _panelHeight + 20, 
                         ),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              mainAxisSpacing: 12,
-                              crossAxisSpacing: 8,
-                              childAspectRatio: 0.72,
-                            ),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 8,
+                          childAspectRatio: 0.72,
+                        ),
                         itemCount: productos.length,
                         itemBuilder: (context, index) {
                           final p = productos[index];
@@ -137,16 +126,12 @@ class _ProductCatalogTabState extends State<ProductCatalogTab> {
                             product: p,
                             onAdd: () async {
                               if (p.tipoVenta == SaleUnit.kilo) {
-                                final result =
-                                    await showModalBottomSheet<
-                                      Map<String, dynamic>
-                                    >(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      backgroundColor: Colors.transparent,
-                                      builder: (_) =>
-                                          WeightProductBottomSheet(product: p),
-                                    );
+                                final result = await showModalBottomSheet<Map<String, dynamic>>(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (_) => WeightProductBottomSheet(product: p),
+                                );
                                 if (result != null) {
                                   widget.onAddWithQuantity(result);
                                 }
@@ -156,6 +141,7 @@ class _ProductCatalogTabState extends State<ProductCatalogTab> {
                                   SnackBar(
                                     content: Text('${p.nombre} agregado'),
                                     duration: const Duration(seconds: 1),
+                                    backgroundColor: AppColors.teal,
                                   ),
                                 );
                               }
@@ -169,56 +155,28 @@ class _ProductCatalogTabState extends State<ProductCatalogTab> {
             ),
           ),
 
-          AnimatedSwitcher(
-            duration: _panelAnimationDuration,
-            switchInCurve: Curves.easeOut,
-            switchOutCurve: Curves.easeIn,
-            transitionBuilder: (child, animation) {
-              final slide = Tween<Offset>(
-                begin: const Offset(0, 1),
-                end: Offset.zero,
-              ).animate(animation);
-              return SizeTransition(
-                sizeFactor: animation,
-                alignment: Alignment.topLeft,
-                child: FadeTransition(
-                  opacity: animation,
-                  child: SlideTransition(position: slide, child: child),
-                ),
-              );
-            },
-            child: buscando
-                ? const SizedBox(
-                    width: double.infinity,
-                    key: ValueKey('order-panel-hidden'),
-                  )
-                : KeyedSubtree(
-                    key: const ValueKey('order-panel-visible'),
-                    child: _buildOrderPanel(),
-                  ),
+          // ✅ FIX: El panel SIEMPRE se renderiza. Ya no desaparece al buscar.
+          // El usuario puede arrastrarlo hacia abajo (_minHeight) si necesita ver más productos.
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            height: _panelHeight,
+            child: ScannerBottomSheet(
+              cartItems: widget.cartItems,
+              onUpdateQuantity: widget.onUpdateQuantity,
+              cliente: widget.cliente,
+              onEditWeightItem: widget.onEditWeightItem,
+              onRemoveItem: widget.onRemoveItem,
+              onDrag: (deltaY) {
+                setState(() {
+                  _panelHeight -= deltaY;
+                  if (_panelHeight < _minHeight) _panelHeight = _minHeight;
+                  if (_panelHeight > _maxHeight) _panelHeight = _maxHeight;
+                });
+              },
+            ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildOrderPanel() {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 50),
-      height: _panelHeight,
-      child: ScannerBottomSheet(
-        cartItems: widget.cartItems,
-        onUpdateQuantity: widget.onUpdateQuantity,
-        cliente: widget.cliente,
-        onEditWeightItem: widget.onEditWeightItem,
-        onRemoveItem: widget.onRemoveItem,
-        onDrag: (deltaY) {
-          setState(() {
-            _panelHeight -= deltaY;
-            if (_panelHeight < _minHeight) _panelHeight = _minHeight;
-            if (_panelHeight > _maxHeight) _panelHeight = _maxHeight;
-          });
-        },
       ),
     );
   }

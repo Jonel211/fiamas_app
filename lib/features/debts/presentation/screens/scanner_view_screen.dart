@@ -133,8 +133,25 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
                 controller: _pageController,
                 onPageChanged: (index) => setState(() => _currentIndex = index),
                 children: [
-                  ScannerTab(cliente: widget.cliente, cartItems: _cartItems, onUpdateQuantity: _updateQuantity, onProductScanned: _addToCart, onEditWeightItem: _editWeightItem, onRemoveItem: _removeItem),
-                  ProductCatalogTab(cliente: widget.cliente, cartItems: _cartItems, onAdd: _addToCart, onAddWithQuantity: _addToCartWithQuantity, onUpdateQuantity: _updateQuantity, onEditWeightItem: _editWeightItem, onRemoveItem: _removeItem),
+                  //  Se pasa onAddWithQuantity para soportar productos por kilo desde el scanner
+                  ScannerTab(
+                    cliente: widget.cliente,
+                    cartItems: _cartItems,
+                    onUpdateQuantity: _updateQuantity,
+                    onProductScanned: _addToCart,
+                    onAddWithQuantity: _addToCartWithQuantity, // NUEVO
+                    onEditWeightItem: _editWeightItem,
+                    onRemoveItem: _removeItem,
+                  ),
+                  ProductCatalogTab(
+                    cliente: widget.cliente,
+                    cartItems: _cartItems,
+                    onAdd: _addToCart,
+                    onAddWithQuantity: _addToCartWithQuantity,
+                    onUpdateQuantity: _updateQuantity,
+                    onEditWeightItem: _editWeightItem,
+                    onRemoveItem: _removeItem,
+                  ),
                 ],
               ),
             ),
@@ -150,9 +167,24 @@ class _ScannerViewScreenState extends State<ScannerViewScreen> {
       child: GestureDetector(
         onTap: () => _changeTab(index),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300), margin: const EdgeInsets.all(4),
-          decoration: BoxDecoration(color: isActive ? (isDark ? Colors.white : AppColors.teal) : Colors.transparent, borderRadius: BorderRadius.circular(18)),
-          child: Center(child: Text(text, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: isActive ? (isDark ? AppColors.ink : Colors.white) : (isDark ? Colors.white70 : AppColors.inkMuted)))),
+          duration: const Duration(milliseconds: 300),
+          margin: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: isActive ? (isDark ? Colors.white : AppColors.teal) : Colors.transparent,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Center(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 13, //  Corregido (antes estaba roto con "fonimport")
+                color: isActive
+                    ? (isDark ? AppColors.ink : Colors.white)
+                    : (isDark ? Colors.white70 : AppColors.inkMuted),
+              ),
+            ),
+          ),
         ),
       ),
     );
