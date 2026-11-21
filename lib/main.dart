@@ -38,6 +38,7 @@ import 'features/help/presentation/screens/terms_screen.dart';
 import 'features/help/presentation/screens/privacy_screen.dart';
 import 'features/customers/presentation/screens/customer_profile_screen.dart';
 import 'features/customers/presentation/screens/scoring_history_screen.dart';
+import 'features/customers/presentation/screens/scoring_ranking_screen.dart';
 import 'features/debts/domain/debt.dart';
 import 'features/debts/presentation/screens/debt_detail_multiple_screen.dart';
 import 'features/debts/presentation/screens/debt_history_screen.dart';
@@ -165,6 +166,7 @@ class AppRoutes {
   static const customers = '/customers';
   static const customerProfile = '/customer-profile';
   static const scoringHistory = '/scoring-history';
+  static const scoringRanking = '/scoring-ranking';
 
   static const help = '/help';
   static const about = '/about';
@@ -284,9 +286,26 @@ class FiamasApp extends StatelessWidget {
         },
         AppRoutes.scoringHistory: (context) {
           final args = ModalRoute.of(context)?.settings.arguments;
-          final customer = args is Map<String, dynamic> ? args : null;
+          Map<String, dynamic>? customer;
+          if (args is Map<String, dynamic>) {
+            customer = args;
+          } else if (args is ClienteModel) {
+            customer = {
+              'id': args.id,
+              'name': args.nombreCompleto,
+              'phone': args.telefono,
+              'imageUrl': args.fotoPerfilUrl,
+              'score': args.vinculacion.scorePagador,
+              'score_pagador': args.vinculacion.scorePagador,
+              'category': args.vinculacion.categoriaPagador,
+              'categoria_pagador': args.vinculacion.categoriaPagador,
+              'debt': args.vinculacion.saldoActual,
+              'creditLimit': args.vinculacion.limiteCredito,
+            };
+          }
           return ScoringHistoryScreen(customer: customer);
         },
+        AppRoutes.scoringRanking: (_) => const ScoringRankingScreen(),
         AppRoutes.moreOptions: (_) => const MainShellScreen(initialIndex: 4),
         AppRoutes.reports: (_) => const ReportsScreen(),
         AppRoutes.storeProfile: (_) => const StoreProfileScreen(),

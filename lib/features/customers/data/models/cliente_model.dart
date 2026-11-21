@@ -50,8 +50,9 @@ class VinculacionModel {
   final int totalFiados;
   final int totalPagos;
   final int cantidadFiadosMora;
-
-  final int? fiadosActivos;
+  
+  // ✅ RESUELTO: Se deja una sola declaración, no nullable, con default 0
+  final int fiadosActivos;
 
   VinculacionModel({
     required this.id,
@@ -62,35 +63,22 @@ class VinculacionModel {
     required this.totalFiados,
     required this.totalPagos,
     required this.cantidadFiadosMora,
-    this.fiadosActivos,
+    this.fiadosActivos = 0,
   });
 
   factory VinculacionModel.fromJson(Map<String, dynamic> json) {
     return VinculacionModel(
       id: json['id'] ?? '',
-      limiteCredito:
-          double.tryParse(json['limite_credito']?.toString() ?? '') ?? 500.0,
-      saldoActual:
-          double.tryParse(json['saldo_actual']?.toString() ?? '') ?? 0.0,
-      scorePagador:
-          int.tryParse(json['score_pagador']?.toString() ?? '') ?? 100,
+      limiteCredito: double.tryParse(json['limite_credito']?.toString() ?? '') ?? 500.0,
+      saldoActual: double.tryParse(json['saldo_actual']?.toString() ?? '') ?? 0.0,
+      scorePagador: int.tryParse(json['score_pagador']?.toString() ?? '') ?? 100,
       categoriaPagador: json['categoria_pagador'] ?? 'nuevo',
       totalFiados: int.tryParse(json['total_fiados']?.toString() ?? '') ?? 0,
       totalPagos: int.tryParse(json['total_pagos']?.toString() ?? '') ?? 0,
-      cantidadFiadosMora:
-          int.tryParse(json['cantidad_fiados_mora']?.toString() ?? '') ?? 0,
-      fiadosActivos: _parseFiadosActivos(json['fiados_activos']),
+      cantidadFiadosMora: int.tryParse(json['cantidad_fiados_mora']?.toString() ?? '') ?? 0,
+      // ✅ RESUELTO: Se usa el parseo limpio y consistente con el resto del archivo
+      fiadosActivos: int.tryParse(json['fiados_activos']?.toString() ?? '') ?? 0,
     );
-  }
-
-  static int? _parseFiadosActivos(dynamic value) {
-    if (value == null) return null;
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-
-    final text = value.toString().trim();
-    if (text.isEmpty) return null;
-    return int.tryParse(text) ?? double.tryParse(text)?.toInt();
   }
 
   /// Nivel de scoring según lo que calcula el backend.

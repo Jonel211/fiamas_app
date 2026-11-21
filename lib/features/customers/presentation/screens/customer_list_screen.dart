@@ -80,7 +80,6 @@ class _CustomerListScreenState extends State<CustomerListScreen>
         context.read<AuthProvider>().user?.tiendaId;
     if (tiendaId != null && mounted) {
       final provider = context.read<ClienteProvider>();
-      // FORZAMOS LA CARGA
       provider.cargarClientes(tiendaId);
     }
   }
@@ -94,20 +93,17 @@ class _CustomerListScreenState extends State<CustomerListScreen>
     }
   }
 
+  // Lógica mejorada de status (sin chequeo de nulos, ya que fiadosActivos es int)
   String _getStatus(ClienteModel c) {
-    final activos = c.vinculacion.fiadosActivos;
-    final saldo = c.vinculacion.saldoActual;
-    final conDeuda = activos != null ? activos > 0 : saldo > 0;
-    if (!conDeuda) return 'Al día';
     if (c.vinculacion.cantidadFiadosMora > 0) return 'Vencido';
-    return 'Con deuda';
+    if (c.vinculacion.saldoActual > 0 || c.vinculacion.fiadosActivos > 0) {
+      return 'Con deuda';
+    }
+    return 'Al día';
   }
 
   String _getExtraInfo(ClienteModel c) {
     final activos = c.vinculacion.fiadosActivos;
-    if (activos == null) {
-      return c.vinculacion.saldoActual > 0 ? 'Con deuda' : 'Sin fiados activos';
-    }
     if (activos <= 0) return 'Sin fiados activos';
     if (activos == 1) return '1 fiado activo';
     return '$activos fiados activos';
@@ -156,9 +152,8 @@ class _CustomerListScreenState extends State<CustomerListScreen>
                   AppHeaderPillAction(
                     label: 'scoring',
                     backgroundColor: AppColors.teal,
-                    onTap: () =>
-                        Navigator.of(context)
-                            .pushNamed(AppRoutes.scoringHistory),
+                    onTap: () => Navigator.of(context)
+                        .pushNamed(AppRoutes.scoringRanking),
                   ),
                 ],
               ),

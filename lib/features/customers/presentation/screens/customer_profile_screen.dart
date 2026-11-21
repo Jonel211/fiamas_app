@@ -200,6 +200,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                                     context,
                                     '/scoring-history',
                                     arguments: {
+                                      'id': widget.customer.id, // <-- ¡AQUÍ ESTÁ LA CORRECCIÓN!
                                       'name': name,
                                       'score': score,
                                       'categoria': categoria,
