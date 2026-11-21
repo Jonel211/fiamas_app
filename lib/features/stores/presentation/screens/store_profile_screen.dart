@@ -103,6 +103,7 @@ class _StoreProfileScreenState extends State<StoreProfileScreen> {
           children: [
             StoreProfileHeader(
               logoUrl: tienda?.logoUrl,
+              nombre: tienda?.nombre ?? '',
             ),
 
             // 1. INFORMACIÓN DEL NEGOCIO

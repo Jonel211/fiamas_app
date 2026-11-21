@@ -37,27 +37,9 @@ class TenderoModel {
       nombres: json['nombres'] ?? '',
       apellidos: json['apellidos'] ?? '',
       telefono: json['telefono'] ?? '',
-      fotoUrl: _firstNonEmpty(json, const [
-        'foto_perfil_url',
-        'foto_perfil',
-        'foto_url',
-        'foto',
-        'avatar_url',
-        'imagen_url',
-        'profile_image',
-        'profileImage',
-        'photo_url',
-      ]),
+      fotoUrl: json['foto_perfil_url'] as String?,
       tiendas: tiendasList,
       isPremium: json['es_premium'] == true,
     );
-  }
-
-  static String? _firstNonEmpty(Map<String, dynamic> json, List<String> keys) {
-    for (final key in keys) {
-      final value = json[key];
-      if (value is String && value.trim().isNotEmpty) return value.trim();
-    }
-    return null;
   }
 }

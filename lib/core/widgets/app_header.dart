@@ -43,12 +43,10 @@ class AppHeader extends StatelessWidget {
             : GestureDetector(
                 onTap: onStoreTap,
                 behavior: HitTestBehavior.opaque,
-                child: AppAvatar(
+                child: AppAvatar.tienda(
                   imageUrl: tienda?.logoUrl,
                   name: tienda?.nombre ?? '',
                   size: 40,
-                  backgroundColor: AppColors.gold,
-                  foregroundColor: AppColors.ink,
                 ),
               ));
 

@@ -30,14 +30,7 @@ class ClienteModel {
       nombres: json['nombres'] ?? '',
       apellidos: json['apellidos'] ?? '',
       direccion: json['direccion'],
-      fotoPerfilUrl:
-          json['foto_perfil_url'] ??
-          json['foto_url'] ??
-          json['foto'] ??
-          json['avatar_url'] ??
-          json['imagen_url'] ??
-          json['profile_image'] ??
-          json['photo_url'],
+      fotoPerfilUrl: json['foto_perfil_url'] as String?,
       creadoEn: json['creado_en'] != null
           ? DateTime.tryParse(json['creado_en'].toString())
           : null,

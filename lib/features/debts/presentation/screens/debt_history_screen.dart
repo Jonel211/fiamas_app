@@ -134,9 +134,9 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
     final nivel = nivelScore(score, categoria);
     final badgeText = nivel.etiqueta;
     final badgeColor = nivel.color;
-    final photoUrl =
-        clienteCompleto?.fotoPerfilUrl ??
-        (widget.customer['imageUrl'] as String?);
+    final photoUrl = clienteCompleto != null
+        ? clienteCompleto.fotoPerfilUrl
+        : (widget.customer['imageUrl'] as String?);
 
     final fiados = provider.fiadosCliente;
 
@@ -234,12 +234,10 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                       ),
                       child: Row(
                         children: [
-                          AppAvatar(
+                          AppAvatar.cliente(
                             imageUrl: photoUrl,
                             name: name,
                             size: 56,
-                            backgroundColor: AppColors.teal,
-                            foregroundColor: Colors.white,
                             fontSize: 22,
                           ),
                           const SizedBox(width: 12),
@@ -715,6 +713,7 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
             'id': widget.customer['id'],
             'name': debt.customerName,
             'phone': debt.phone,
+            'imageUrl': widget.customer['imageUrl'],
           },
           debts: [debt],
         ),

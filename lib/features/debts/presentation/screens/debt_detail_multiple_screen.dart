@@ -7,6 +7,7 @@ import 'package:fiamas_app/core/widgets/app_header_config.dart';
 import 'package:fiamas_app/core/widgets/modal_bottom_sheet_layout.dart';
 
 import '../../../auth/presentation/providers/tienda_provider.dart';
+import '../../../customers/data/models/cliente_model.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../../domain/debt.dart';
 import 'collect_multiple_payment_screen.dart';
@@ -97,6 +98,26 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     }
 
     return '';
+  }
+
+  String? _resolverFoto(List<ClienteModel> clientes) {
+    final clienteId = customer['id']?.toString();
+    if (clienteId != null && clienteId.isNotEmpty) {
+      for (final cliente in clientes) {
+        if (cliente.id == clienteId) return cliente.fotoPerfilUrl;
+      }
+    }
+
+    final nombre = (customer['name'] as String? ?? '').trim().toLowerCase();
+    if (nombre.isNotEmpty) {
+      for (final cliente in clientes) {
+        if (cliente.nombreCompleto.trim().toLowerCase() == nombre) {
+          return cliente.fotoPerfilUrl;
+        }
+      }
+    }
+
+    return customer['imageUrl'] as String?;
   }
 
   List<String> _detalleFiados() {
@@ -257,7 +278,8 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     final rawName = customer['name'] as String? ?? '';
     final name = rawName.trim().isEmpty ? 'Cliente' : rawName;
 
-    final photoUrl = customer['imageUrl'] as String?;
+    final clientes = context.watch<ClienteProvider>().clientes;
+    final photoUrl = _resolverFoto(clientes);
     final tienda = context.watch<TiendaProvider>().tiendaSeleccionada;
     final nombreTienda = (tienda?.nombre.isNotEmpty ?? false)
         ? tienda!.nombre
@@ -306,12 +328,10 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    AppAvatar(
+                    AppAvatar.cliente(
                       imageUrl: photoUrl,
                       name: name,
                       size: 44,
-                      backgroundColor: AppColors.teal,
-                      foregroundColor: Colors.white,
                       fontSize: 14,
                     ),
                     const SizedBox(width: 12),

@@ -6,8 +6,13 @@ import '../../../../core/widgets/zoomable_image.dart';
 
 class StoreProfileHeader extends StatelessWidget {
   final String? logoUrl;
+  final String nombre;
 
-  const StoreProfileHeader({super.key, this.logoUrl});
+  const StoreProfileHeader({
+    super.key,
+    this.logoUrl,
+    this.nombre = '',
+  });
 
   static const double _logoSize = 80;
 
@@ -15,17 +20,12 @@ class StoreProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final logoWidget = AppAvatar(
       imageUrl: logoUrl,
-      name: '',
+      name: nombre,
       size: _logoSize,
       backgroundColor: Colors.white,
       foregroundColor: AppColors.teal,
       borderColor: AppColors.teal.withValues(alpha: 0.45),
       borderWidth: 1,
-      fallback: const Icon(
-        Icons.storefront_rounded,
-        size: 40,
-        color: AppColors.teal,
-      ),
     );
 
     if (logoUrl == null || logoUrl!.isEmpty) {

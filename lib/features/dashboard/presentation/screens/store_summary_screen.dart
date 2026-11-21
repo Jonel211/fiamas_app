@@ -185,11 +185,8 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen>
     MovimientoReciente movimiento,
     List<ClienteModel> clientes,
   ) {
-    if (movimiento.clienteFotoUrl != null &&
-        movimiento.clienteFotoUrl!.trim().isNotEmpty) {
-      return movimiento.clienteFotoUrl;
-    }
-
+    // La lista de clientes es la fuente más fresca: si la foto se borró,
+    // no debe resucitar desde el movimiento.
     if (movimiento.clienteId != null) {
       for (final cliente in clientes) {
         if (cliente.id == movimiento.clienteId) {
@@ -204,7 +201,8 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen>
         return cliente.fotoPerfilUrl;
       }
     }
-    return null;
+
+    return movimiento.clienteFotoUrl;
   }
 
   Future<void> _openNotifications() async {
@@ -266,12 +264,10 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen>
                   children: [
                     Row(
                       children: [
-                        AppAvatar(
+                        AppAvatar.tienda(
                           imageUrl: tiendaProvider.tiendaSeleccionada?.logoUrl,
                           name: nombre,
                           size: 56,
-                          backgroundColor: AppColors.gold,
-                          foregroundColor: AppColors.ink,
                         ),
                         const SizedBox(width: 12),
                         Expanded(

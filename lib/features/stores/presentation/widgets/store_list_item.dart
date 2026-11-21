@@ -38,11 +38,6 @@ class StoreListItem extends StatelessWidget {
                   size: _circleSize,
                   backgroundColor: AppColors.skyBlue,
                   foregroundColor: AppColors.ink,
-                  fallback: const Icon(
-                    Icons.storefront_rounded,
-                    color: AppColors.ink,
-                    size: 54,
-                  ),
                 ),
                 Positioned(
                   top: 4,

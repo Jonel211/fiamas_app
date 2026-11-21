@@ -30,6 +30,30 @@ class AppAvatar extends StatelessWidget {
   }) : backgroundColor = AppColors.teal,
        foregroundColor = Colors.white;
 
+  const AppAvatar.cliente({
+    super.key,
+    this.imageUrl,
+    required this.name,
+    this.size = 40,
+    this.borderColor,
+    this.borderWidth = 0,
+    this.fontSize,
+    this.fallback,
+  }) : backgroundColor = AppColors.teal,
+       foregroundColor = Colors.white;
+
+  const AppAvatar.tienda({
+    super.key,
+    this.imageUrl,
+    required this.name,
+    this.size = 40,
+    this.borderColor,
+    this.borderWidth = 0,
+    this.fontSize,
+    this.fallback,
+  }) : backgroundColor = AppColors.gold,
+       foregroundColor = AppColors.ink;
+
   final String? imageUrl;
   final String name;
   final double size;

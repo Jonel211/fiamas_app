@@ -110,14 +110,18 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     final badgeText = nivel.etiqueta;
     final badgeColor = nivel.color;
     final fechaTexto = _getFormattedDate(widget.customer.creadoEn);
-    final photoUrl = widget.customer.fotoPerfilUrl ??
-        (resumen?['cliente'] != null
-            ? (resumen!['cliente']['foto_perfil_url'] ??
-                resumen['cliente']['foto_url'] ??
-                resumen['cliente']['foto'])
-            : (resumen?['foto_perfil_url'] ??
-                resumen?['foto_url'] ??
-                resumen?['foto']));
+    // Si el resumen ya cargó, manda su valor (aunque sea null) para no
+    // resucitar una foto borrada con el modelo recibido por navegación.
+    final resumenCliente = resumen?['cliente'];
+    final String? photoUrl;
+    if (resumenCliente is Map &&
+        resumenCliente.containsKey('foto_perfil_url')) {
+      photoUrl = resumenCliente['foto_perfil_url'] as String?;
+    } else if (resumen != null && resumen.containsKey('foto_perfil_url')) {
+      photoUrl = resumen['foto_perfil_url'] as String?;
+    } else {
+      photoUrl = widget.customer.fotoPerfilUrl;
+    }
 
     final tieneFoto = resolveImageUrl(photoUrl) != null;
     final used = debt;
@@ -155,12 +159,10 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                                 child: Stack(
                                   clipBehavior: Clip.none,
                                   children: [
-                                    AppAvatar(
+                                    AppAvatar.cliente(
                                       imageUrl: photoUrl,
                                       name: name,
                                       size: 90,
-                                      backgroundColor: AppColors.teal,
-                                      foregroundColor: Colors.white,
                                       fontSize: 36,
                                     ),
                                     // Ícono de lupa en la esquina (solo si hay foto)

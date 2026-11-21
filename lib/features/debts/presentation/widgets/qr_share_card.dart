@@ -178,11 +178,6 @@ class QrShareCard extends StatelessWidget {
       borderColor: Colors.white,
       borderWidth: 2,
       fontSize: 14,
-      fallback: const Icon(
-        Icons.storefront_rounded,
-        size: 20,
-        color: AppColors.teal,
-      ),
     );
   }
 }

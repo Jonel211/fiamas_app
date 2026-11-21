@@ -107,7 +107,7 @@ class MovimientoReciente {
     return _firstNonEmpty(json, _fotoKeys);
   }
 
-  static const _fotoKeys = <String>[];
+  static const _fotoKeys = <String>['foto_perfil_url'];
 
   static String? _firstNonEmpty(Map<String, dynamic> json, List<String> keys) {
     for (final key in keys) {
