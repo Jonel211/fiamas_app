@@ -36,10 +36,10 @@ class ProductCatalogTab extends StatefulWidget {
 }
 
 class _ProductCatalogTabState extends State<ProductCatalogTab> {
-  // ✅ Eliminamos la lógica que ocultaba el panel al buscar
+  //  Eliminamos la lógica que ocultaba el panel al buscar
   final double _minHeight = 200;
   final double _maxHeight = 500;
-  double _panelHeight = 200; // ✅ Iniciamos en altura mínima (cerrado pero visible)
+  double _panelHeight = 200; // Iniciamos en altura mínima (cerrado pero visible)
   String _searchQuery = '';
 
   @override
@@ -105,7 +105,7 @@ class _ProductCatalogTabState extends State<ProductCatalogTab> {
                   else
                     Expanded(
                       child: GridView.builder(
-                        // ✅ FIX: El padding inferior ahora depende de la altura del panel
+                        //  FIX: El padding inferior ahora depende de la altura del panel
                         // para que los últimos productos no queden tapados por el carrito.
                         padding: EdgeInsets.fromLTRB(
                           20,
@@ -155,7 +155,7 @@ class _ProductCatalogTabState extends State<ProductCatalogTab> {
             ),
           ),
 
-          // ✅ FIX: El panel SIEMPRE se renderiza. Ya no desaparece al buscar.
+          //  FIX: El panel SIEMPRE se renderiza. Ya no desaparece al buscar.
           // El usuario puede arrastrarlo hacia abajo (_minHeight) si necesita ver más productos.
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),

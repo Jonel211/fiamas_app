@@ -68,7 +68,7 @@ class _ScannerTabState extends State<ScannerTab> {
     );
   }
 
-  // ✅ FIX AQUÍ: .toString() para evitar el error de Object
+  //  FIX AQUÍ: .toString() para evitar el error de Object
   bool _esPorKilo(Product p) {
     final t = (p.tipoVenta?.toString() ?? '').toLowerCase();
     return t.contains('kilo') || t.contains('peso');
