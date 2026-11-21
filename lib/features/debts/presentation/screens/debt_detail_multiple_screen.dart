@@ -14,10 +14,13 @@ class DebtDetailMultipleScreen extends StatelessWidget {
   final Map<String, dynamic> customer;
   final List<Debt> debts;
 
+  final bool isCollectFlow;
+
   const DebtDetailMultipleScreen({
     super.key,
     required this.customer,
     required this.debts,
+    this.isCollectFlow = false,
   });
 
   String _getInitials(String name) {
@@ -52,7 +55,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
       case DebtStatus.pendiente:
         return AppColors.gold;
       case DebtStatus.parcial:
-        return AppColors.skyBlue;
+        return AppColors.parcial;
       case DebtStatus.pagado:
         return AppColors.success;
     }
@@ -63,10 +66,32 @@ class DebtDetailMultipleScreen extends StatelessWidget {
       case DebtStatus.pendiente:
         return AppColors.gold.withValues(alpha: 0.15);
       case DebtStatus.parcial:
-        return AppColors.skyBlue.withValues(alpha: 0.15);
+        return AppColors.parcialSoft;
       case DebtStatus.pagado:
         return AppColors.success.withValues(alpha: 0.15);
     }
+  }
+
+  /// Formatea cantidad + unidad: enteros sin decimales y peso/volumen con
+  /// hasta 3 decimales sin ceros sobrantes.
+  String _formatQuantityWithUnit(double quantity, String? unit) {
+    final rounded = double.parse(quantity.toStringAsFixed(3));
+    final quantityText = rounded == rounded.roundToDouble()
+        ? rounded.toStringAsFixed(0)
+        : rounded.toStringAsFixed(3).replaceFirst(RegExp(r'\.?0+$'), '');
+
+    final rawUnit = (unit ?? '').trim();
+    final unitKey = rawUnit.toLowerCase();
+    final unitText =
+        rawUnit.isEmpty ||
+            unitKey == 'unidad' ||
+            unitKey == 'unidades' ||
+            unitKey == 'und' ||
+            unitKey == 'u'
+        ? 'und'
+        : rawUnit;
+
+    return '$quantityText $unitText';
   }
 
   String _resolverTelefono(BuildContext context) {
@@ -253,12 +278,22 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     final nombreTienda = (tienda?.nombre.isNotEmpty ?? false)
         ? tienda!.nombre
         : 'Mi tienda';
-    final allPaid = debts.every((d) => d.status == DebtStatus.pagado);
+    final allPaid =
+        debts.isEmpty || debts.every((d) => d.status == DebtStatus.pagado);
 
-    // Calculos reales basados en el modelo Debt actualizado
+    // Calculos reales sobre los fiados recibidos
     final totalOriginal = debts.fold(0.0, (sum, d) => sum + d.amount);
     final totalPagado = debts.fold(0.0, (sum, d) => sum + d.paidAmount);
-    final totalRestante = debts.fold(0.0, (sum, d) => sum + d.remainingAmount);
+    final totalRestante = totalOriginal - totalPagado;
+
+    // Solo se puede cobrar si queda saldo y hay fiados seleccionables.
+    final canCollect = totalRestante > 0 && debts.any((d) => d.isSelectable);
+
+    final fiadosCount = debts.length;
+    final fiadosLabel = '$fiadosCount fiado${fiadosCount == 1 ? '' : 's'}';
+    final fiadosSubtitle = isCollectFlow
+        ? '$fiadosLabel seleccionado${fiadosCount == 1 ? '' : 's'}'
+        : fiadosLabel;
 
     final Map<String, List<DebtItem>> productsByDate = {};
     for (final debt in debts) {
@@ -324,33 +359,13 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '${debts.length} fiado${debts.length == 1 ? '' : 's'} '
-                            'seleccionado${debts.length == 1 ? '' : 's'}',
+                            fiadosSubtitle,
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.inkMuted,
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: (allPaid ? AppColors.success : AppColors.gold)
-                            .withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        allPaid ? 'Pagado' : 'Pendiente',
-                        style: TextStyle(
-                          color: allPaid ? AppColors.success : AppColors.gold,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
                       ),
                     ),
                   ],
@@ -457,12 +472,12 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                         color: AppColors.teal,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     ...productsByDate.entries.map((entry) {
                       final date = entry.key;
                       final items = entry.value;
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.only(bottom: 12),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -475,35 +490,28 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                                 letterSpacing: 0.5,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            ...items.map(
-                              (item) => Padding(
-                                padding: const EdgeInsets.only(bottom: 6),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        item.productName,
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          color: AppColors.ink,
-                                        ),
-                                      ),
-                                    ),
-                                    Text(
-                                      'S/ ${item.subtotal.toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.ink,
-                                      ),
-                                    ),
-                                  ],
+                            const SizedBox(height: 6),
+                            const _ProductReceiptHeaderRow(),
+                            const SizedBox(height: 2),
+                            for (var i = 0; i < items.length; i++) ...[
+                              _ProductReceiptRow(
+                                quantityLabel: _formatQuantityWithUnit(
+                                  items[i].quantity,
+                                  items[i].unit,
                                 ),
+                                productName: items[i].productName,
+                                unitPrice:
+                                    'S/ ${items[i].unitPrice.toStringAsFixed(2)}',
+                                amount:
+                                    'S/ ${items[i].subtotal.toStringAsFixed(2)}',
                               ),
-                            ),
+                              if (i < items.length - 1)
+                                const Divider(
+                                  height: 1,
+                                  thickness: 0.6,
+                                  color: AppColors.mist,
+                                ),
+                            ],
                           ],
                         ),
                       );
@@ -580,7 +588,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              if (!allPaid) ...[
+              if (canCollect) ...[
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -678,6 +686,143 @@ class DebtDetailMultipleScreen extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+const double _receiptQuantityWidth = 54;
+const double _receiptUnitPriceWidth = 76;
+const double _receiptAmountWidth = 76;
+const double _receiptColumnGap = 6;
+const double _receiptProductUnitGap = 12;
+const double _receiptUnitAmountGap = 12;
+
+const List<FontFeature> _receiptTabularFigures = [FontFeature.tabularFigures()];
+
+const TextStyle _receiptHeaderStyle = TextStyle(
+  fontSize: 11,
+  fontWeight: FontWeight.w600,
+  color: AppColors.inkMuted,
+);
+
+const TextStyle _receiptNumericHeaderStyle = TextStyle(
+  fontSize: 11,
+  fontWeight: FontWeight.w600,
+  color: AppColors.inkMuted,
+  fontFeatures: _receiptTabularFigures,
+);
+
+const TextStyle _receiptUnitPriceStyle = TextStyle(
+  fontSize: 14,
+  color: AppColors.ink,
+  fontFeatures: _receiptTabularFigures,
+);
+
+const TextStyle _receiptAmountStyle = TextStyle(
+  fontSize: 14,
+  fontWeight: FontWeight.w600,
+  color: AppColors.ink,
+  fontFeatures: _receiptTabularFigures,
+);
+
+class _ProductReceiptHeaderRow extends StatelessWidget {
+  const _ProductReceiptHeaderRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      children: [
+        SizedBox(
+          width: _receiptQuantityWidth,
+          child: Text('Cant.', style: _receiptHeaderStyle),
+        ),
+        SizedBox(width: _receiptColumnGap),
+        Expanded(child: Text('Producto', style: _receiptHeaderStyle)),
+        SizedBox(width: _receiptProductUnitGap),
+        SizedBox(
+          width: _receiptUnitPriceWidth,
+          child: Text(
+            'P. Unit.',
+            textAlign: TextAlign.right,
+            style: _receiptNumericHeaderStyle,
+          ),
+        ),
+        SizedBox(width: _receiptUnitAmountGap),
+        SizedBox(
+          width: _receiptAmountWidth,
+          child: Text(
+            'Importe',
+            textAlign: TextAlign.right,
+            style: _receiptNumericHeaderStyle,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProductReceiptRow extends StatelessWidget {
+  const _ProductReceiptRow({
+    required this.quantityLabel,
+    required this.productName,
+    required this.unitPrice,
+    required this.amount,
+  });
+
+  final String quantityLabel;
+  final String productName;
+  final String unitPrice;
+  final String amount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: _receiptQuantityWidth,
+            child: Text(
+              quantityLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 14, color: AppColors.ink),
+            ),
+          ),
+          const SizedBox(width: _receiptColumnGap),
+          Expanded(
+            child: Text(
+              productName,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 14, color: AppColors.ink),
+            ),
+          ),
+          const SizedBox(width: _receiptProductUnitGap),
+          SizedBox(
+            width: _receiptUnitPriceWidth,
+            child: Text(
+              unitPrice,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: _receiptUnitPriceStyle,
+            ),
+          ),
+          const SizedBox(width: _receiptUnitAmountGap),
+          SizedBox(
+            width: _receiptAmountWidth,
+            child: Text(
+              amount,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: _receiptAmountStyle,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
