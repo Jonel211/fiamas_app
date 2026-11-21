@@ -6,42 +6,36 @@ class Debt {
     required this.customerName,
     required this.phone,
     required this.amount,
-    required this.paidAmount, // ✅ NUEVO: Monto pagado
+    required this.paidAmount,
     required this.status,
     required this.dateLabel,
+    this.dueDate,
+    this.paidDate,
     this.items = const [],
     this.isCancelled = false,
+    
   });
 
   final String id;
   final String customerName;
   final String phone;
-  final double amount; // Monto total original
-  final double paidAmount; // ✅ NUEVO: Monto pagado hasta ahora
+  final double amount;
+  final double paidAmount;
   final DebtStatus status;
-
-  /// Indica si el fiado fue cancelado (no se cuenta en los totales).
-  final bool isCancelled;
-
-  /// Fecha ya formateada para mostrar (ej: "Hoy, 10:30 AM").
   final String dateLabel;
+  final String? dueDate; 
   final List<DebtItem> items;
+  final bool isCancelled;
+  final String? paidDate;
 
-  // ✅ NUEVO: Calcula el saldo pendiente automáticamente
   double get remainingAmount => amount - paidAmount;
 
-  /// Regla central para saber si un estado de fiado sigue activo.
-  /// Vencido es pendiente con fecha vencida, así que también cuenta.
   static bool isActiveStatus(String estado) {
     final value = estado.trim().toLowerCase();
     return value != 'pagado' && value != 'cancelado';
   }
 
-  /// Un fiado está activo mientras no esté pagado ni cancelado.
   bool get isActive => !isCancelled && isActiveStatus(status.name);
-
-  /// Regla única de selección para cobros: un fiado pagado o cancelado
-  /// no puede seleccionarse. Pendiente, parcial y vencido sí.
   bool get isSelectable => isActive;
 }
 

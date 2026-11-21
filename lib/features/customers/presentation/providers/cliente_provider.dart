@@ -18,55 +18,55 @@ class ClienteProvider extends ChangeNotifier {
   List<ClienteModel> _clientesConDeuda = [];
   List<ClienteModel> _recientes = [];
   List<Debt> _fiadosCliente = [];
+
   bool _isLoading = false;
   bool _isLoadingConDeuda = false;
   bool _isLoadingRecientes = false;
   bool _isCreating = false;
   bool _isLoadingFiados = false;
+  bool _isLoadingResumen = false;
+
   String? _error;
   String? _errorConDeuda;
   String? _errorFiados;
 
   String? _tiendaClientesId;
   String? _tiendaConDeudaId;
+  String? _tiendaIdCargada;
 
-  // Nombre y teléfono del cliente cuyos fiados se están viendo.
   String _fiadosNombre = 'Cliente';
   String _fiadosTelefono = '';
 
   Map<String, dynamic>? _resumenCliente;
-  bool _isLoadingResumen = false;
-  String? _tiendaIdCargada;
 
   List<ClienteModel> get clientes => _clientes;
   List<ClienteModel> get clientesConDeuda => _clientesConDeuda;
   List<ClienteModel> get recientes => _recientes;
   List<Debt> get fiadosCliente => _fiadosCliente;
 
-  /// Fiados que cuentan para los totales (excluye los cancelados).
   List<Debt> get fiadosParaTotales =>
       _fiadosCliente.where((d) => !d.isCancelled).toList();
 
-  /// Suma de `monto_total` de los fiados del cliente en la tienda.
   double get totalFiadoCliente =>
       fiadosParaTotales.fold(0.0, (sum, d) => sum + d.amount);
 
-  /// Suma de `monto_pagado` (pagos registrados) de los fiados del cliente.
   double get totalPagadoCliente =>
       fiadosParaTotales.fold(0.0, (sum, d) => sum + d.paidAmount);
 
-  /// Saldo pendiente = Total fiado - Total pagado.
   double get saldoPendienteCliente => totalFiadoCliente - totalPagadoCliente;
+
   bool get isLoading => _isLoading;
   bool get isLoadingConDeuda => _isLoadingConDeuda;
   bool get isLoadingRecientes => _isLoadingRecientes;
   bool get isCreating => _isCreating;
   bool get isLoadingFiados => _isLoadingFiados;
+  bool get isLoadingResumen => _isLoadingResumen;
+
   String? get error => _error;
   String? get errorConDeuda => _errorConDeuda;
   String? get errorFiados => _errorFiados;
+
   Map<String, dynamic>? get resumenCliente => _resumenCliente;
-  bool get isLoadingResumen => _isLoadingResumen;
   String? get tiendaIdCargada => _tiendaIdCargada;
   String? get tiendaConDeudaId => _tiendaConDeudaId;
 
@@ -76,22 +76,30 @@ class ClienteProvider extends ChangeNotifier {
     _recientes = [];
     _fiadosCliente = [];
     _resumenCliente = null;
+
     _tiendaIdCargada = null;
     _tiendaConDeudaId = null;
+
     _error = null;
     _errorConDeuda = null;
+
     notifyListeners();
   }
 
-  static double _toDouble(dynamic v, [double fallback = 0.0]) {
-    if (v == null) return fallback;
-    if (v is num) return v.toDouble();
-    return double.tryParse(v.toString()) ?? fallback;
+  static double _toDouble(dynamic value, [double fallback = 0.0]) {
+    if (value == null) return fallback;
+    if (value is num) return value.toDouble();
+
+    return double.tryParse(value.toString()) ?? fallback;
   }
 
   static String _mensajeError(DioException e, String porDefecto) {
     final data = e.response?.data;
-    if (data is Map && data['error'] != null) return data['error'].toString();
+
+    if (data is Map && data['error'] != null) {
+      return data['error'].toString();
+    }
+
     return porDefecto;
   }
 
@@ -100,26 +108,32 @@ class ClienteProvider extends ChangeNotifier {
       _clientes = [];
       _recientes = [];
     }
+
     _tiendaClientesId = tiendaId;
     _tiendaIdCargada = tiendaId;
     _isLoading = true;
     _error = null;
 
     Future.microtask(() {
-      if (_tiendaClientesId == tiendaId) notifyListeners();
+      if (_tiendaClientesId == tiendaId) {
+        notifyListeners();
+      }
     });
 
     try {
       final isConnected = await _connectivity.isConnected();
+
       if (isConnected) {
         final response = await _dio.get(
           '/clientes',
           queryParameters: {'tienda_id': tiendaId},
         );
+
         if (_tiendaClientesId != tiendaId) return;
 
         if (response.data['clientes'] != null) {
           final List<dynamic> data = response.data['clientes'];
+
           _clientes = data.map((json) => ClienteModel.fromJson(json)).toList();
 
           await _dbHelper.saveClientes(
@@ -152,6 +166,7 @@ class ClienteProvider extends ChangeNotifier {
     } on DioException catch (e) {
       if (_tiendaClientesId == tiendaId) {
         await _cargarDesdeCache(tiendaId);
+
         if (_clientes.isEmpty) {
           _error = _mensajeError(e, 'Error de conexión.');
         }
@@ -159,6 +174,7 @@ class ClienteProvider extends ChangeNotifier {
     } catch (e) {
       if (_tiendaClientesId == tiendaId) {
         await _cargarDesdeCache(tiendaId);
+
         if (_clientes.isEmpty) {
           _error = 'Error: $e';
         }
@@ -174,6 +190,7 @@ class ClienteProvider extends ChangeNotifier {
   Future<void> _cargarDesdeCache(String tiendaId) async {
     try {
       final cached = await _dbHelper.getClientes(tiendaId);
+
       _clientes = cached
           .map(
             (c) => ClienteModel(
@@ -206,9 +223,11 @@ class ClienteProvider extends ChangeNotifier {
     if (_tiendaConDeudaId != tiendaId) {
       _clientesConDeuda = [];
     }
+
     _tiendaConDeudaId = tiendaId;
     _isLoadingConDeuda = true;
     _errorConDeuda = null;
+
     notifyListeners();
 
     try {
@@ -224,6 +243,7 @@ class ClienteProvider extends ChangeNotifier {
       if (_tiendaConDeudaId != tiendaId) return;
 
       final List<dynamic> data = response.data['clientes'] ?? [];
+
       _clientesConDeuda = data
           .map((json) => ClienteModel.fromJson(json))
           .toList();
@@ -233,6 +253,7 @@ class ClienteProvider extends ChangeNotifier {
           e,
           'Error al cargar los clientes con deuda',
         );
+
         _clientesConDeuda = [];
       }
     } catch (e) {
@@ -250,12 +271,15 @@ class ClienteProvider extends ChangeNotifier {
 
   Future<void> cargarRecientes(String tiendaId, {int limit = 4}) async {
     _isLoadingRecientes = true;
+
     Future.microtask(() => notifyListeners());
+
     try {
       final response = await _dio.get(
         '/clientes/recientes',
         queryParameters: {'tienda_id': tiendaId, 'limit': limit},
       );
+
       _recientes = (response.data['clientes'] ?? [])
           .map<ClienteModel>((json) => ClienteModel.fromJson(json))
           .toList();
@@ -277,6 +301,7 @@ class ClienteProvider extends ChangeNotifier {
   }) async {
     _isCreating = true;
     _error = null;
+
     notifyListeners();
 
     try {
@@ -295,13 +320,15 @@ class ClienteProvider extends ChangeNotifier {
               'direccion': direccion,
             },
           );
+
           await cargarClientes(tiendaId);
           await cargarRecientes(tiendaId);
+
           _isCreating = false;
           notifyListeners();
+
           return true;
         } catch (_) {
-          // Si falla la red, caemos a offline
           return await _crearClienteOffline(
             nombres,
             apellidos,
@@ -311,20 +338,22 @@ class ClienteProvider extends ChangeNotifier {
             direccion,
           );
         }
-      } else {
-        return await _crearClienteOffline(
-          nombres,
-          apellidos,
-          telefono,
-          limiteCredito,
-          tiendaId,
-          direccion,
-        );
       }
+
+      return await _crearClienteOffline(
+        nombres,
+        apellidos,
+        telefono,
+        limiteCredito,
+        tiendaId,
+        direccion,
+      );
     } catch (e) {
       _error = 'Error: $e';
       _isCreating = false;
+
       notifyListeners();
+
       return false;
     }
   }
@@ -406,11 +435,14 @@ class ClienteProvider extends ChangeNotifier {
 
       _isCreating = false;
       notifyListeners();
+
       return true;
     } catch (e) {
       _error = 'Error al crear cliente local: $e';
       _isCreating = false;
+
       notifyListeners();
+
       return false;
     }
   }
@@ -418,12 +450,15 @@ class ClienteProvider extends ChangeNotifier {
   Future<void> cargarResumenCliente(String clienteId, String tiendaId) async {
     _isLoadingResumen = true;
     _resumenCliente = null;
+
     notifyListeners();
+
     try {
       final response = await _dio.get(
         '/clientes/$clienteId/resumen',
         queryParameters: {'tienda_id': tiendaId},
       );
+
       _resumenCliente = response.data;
     } catch (_) {
       _resumenCliente = null;
@@ -439,32 +474,37 @@ class ClienteProvider extends ChangeNotifier {
     String? nombre,
     String? telefono,
   }) async {
-    if (nombre != null && nombre.trim().isNotEmpty) _fiadosNombre = nombre;
-    if (telefono != null) _fiadosTelefono = telefono;
+    if (nombre != null && nombre.trim().isNotEmpty) {
+      _fiadosNombre = nombre;
+    }
+
+    if (telefono != null) {
+      _fiadosTelefono = telefono;
+    }
 
     _isLoadingFiados = true;
     _errorFiados = null;
+
     Future.microtask(() => notifyListeners());
 
     try {
-      // Primero intentamos cargar desde cache (offline-first)
       await _cargarFiadosDesdeCache(clienteId);
 
       final isConnected = await _connectivity.isConnected();
+
       if (isConnected) {
         try {
           final response = await _dio.get(
             '/clientes/$clienteId/fiados',
             queryParameters: {'tienda_id': tiendaId},
           );
+
           final data = response.data['fiados'] ?? [];
 
           if (data.isNotEmpty) {
             _parseAndSetFiados(data);
           }
-        } catch (_) {
-          // Si falla la red, nos quedamos con lo que había en cache
-        }
+        } catch (_) {}
       }
     } catch (e) {
       _errorFiados = 'Error al cargar los fiados: $e';
@@ -477,6 +517,7 @@ class ClienteProvider extends ChangeNotifier {
   Future<void> _cargarFiadosDesdeCache(String clienteId) async {
     try {
       final cached = await _dbHelper.getFiados();
+
       final misFiados = cached
           .where((f) => f['cliente_id'] == clienteId)
           .toList();
@@ -484,16 +525,27 @@ class ClienteProvider extends ChangeNotifier {
       if (misFiados.isNotEmpty) {
         _fiadosCliente = misFiados.map<Debt>((json) {
           final estadoString = json['estado']?.toString() ?? 'pendiente';
+
           final DebtStatus estadoEnum = estadoString == 'pagado'
               ? DebtStatus.pagado
-              : (estadoString == 'parcial'
-                    ? DebtStatus.parcial
-                    : DebtStatus.pendiente);
+              : estadoString == 'parcial'
+              ? DebtStatus.parcial
+              : DebtStatus.pendiente;
+
           final fecha =
               json['fecha_fiado']?.toString() ?? json['creado_en']?.toString();
-          final fechaLabel = (fecha != null && fecha.length >= 10)
+
+          final fechaLabel = fecha != null && fecha.length >= 10
               ? 'Creado: ${fecha.substring(0, 10)}'
               : 'Sin fecha';
+
+          String? fechaPago;
+
+          final pagos = json['pagos'] as List?;
+
+          if (pagos != null && pagos.isNotEmpty) {
+            fechaPago = pagos.last['fecha_pago']?.toString();
+          }
 
           return Debt(
             id: (json['id'] ?? '').toString(),
@@ -503,6 +555,8 @@ class ClienteProvider extends ChangeNotifier {
             paidAmount: _toDouble(json['monto_pagado']),
             status: estadoEnum,
             dateLabel: fechaLabel,
+            dueDate: json['fecha_vencimiento']?.toString(),
+            paidDate: estadoString == 'pagado' ? fechaPago : null,
             items: const [],
             isCancelled: estadoString == 'cancelado',
           );
@@ -518,17 +572,29 @@ class ClienteProvider extends ChangeNotifier {
   void _parseAndSetFiados(List<dynamic> data) {
     _fiadosCliente = data.map<Debt>((json) {
       final estadoString = json['estado']?.toString() ?? 'pendiente';
+
       final DebtStatus estadoEnum = estadoString == 'pagado'
           ? DebtStatus.pagado
-          : (estadoString == 'parcial'
-                ? DebtStatus.parcial
-                : DebtStatus.pendiente);
+          : estadoString == 'parcial'
+          ? DebtStatus.parcial
+          : DebtStatus.pendiente;
+
       final fecha =
           json['fecha_creacion']?.toString() ?? json['fecha_fiado']?.toString();
-      final fechaLabel = (fecha != null && fecha.length >= 10)
+
+      final fechaLabel = fecha != null && fecha.length >= 10
           ? 'Creado: ${fecha.substring(0, 10)}'
           : 'Sin fecha';
+
       final detalles = (json['detalles'] as List?) ?? [];
+
+      String? fechaPago;
+
+      final pagos = json['pagos'] as List?;
+
+      if (pagos != null && pagos.isNotEmpty) {
+        fechaPago = pagos.last['fecha_pago']?.toString();
+      }
 
       return Debt(
         id: (json['id'] ?? '').toString(),
@@ -538,6 +604,8 @@ class ClienteProvider extends ChangeNotifier {
         paidAmount: _toDouble(json['monto_pagado']),
         status: estadoEnum,
         dateLabel: fechaLabel,
+        dueDate: json['fecha_vencimiento']?.toString(),
+        paidDate: estadoString == 'pagado' ? fechaPago : null,
         items: detalles
             .map<DebtItem>(
               (d) => DebtItem(
@@ -565,10 +633,13 @@ class ClienteProvider extends ChangeNotifier {
         '/clientes/$clienteId/tiendas/$tiendaId',
         data: {'limite_credito': nuevoLimite},
       );
+
       await cargarClientes(tiendaId);
+
       if (_resumenCliente != null) {
         await cargarResumenCliente(clienteId, tiendaId);
       }
+
       return true;
     } catch (_) {
       return false;
@@ -590,14 +661,16 @@ class ClienteProvider extends ChangeNotifier {
           'fiado_id': fiadoId,
           'monto': monto,
           'metodo_pago': metodoPago,
-          'referencia': (referencia == null || referencia.trim().isEmpty)
+          'referencia': referencia == null || referencia.trim().isEmpty
               ? null
               : referencia,
         },
       );
+
       await cargarFiadosCliente(clienteId, tiendaId);
       await cargarResumenCliente(clienteId, tiendaId);
       await cargarClientes(tiendaId);
+
       return true;
     } on DioException {
       return false;
@@ -608,7 +681,9 @@ class ClienteProvider extends ChangeNotifier {
 
   List<ClienteModel> buscarClienteLocal(String query) {
     if (query.isEmpty) return _clientes;
+
     final queryLower = query.toLowerCase();
+
     return _clientes
         .where(
           (cliente) =>

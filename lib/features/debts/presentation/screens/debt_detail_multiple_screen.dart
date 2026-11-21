@@ -12,10 +12,59 @@ import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../../domain/debt.dart';
 import 'collect_multiple_payment_screen.dart';
 
+String _formatearFechaHoraPago(String? fechaIso) {
+  if (fechaIso == null || fechaIso.isEmpty) return '';
+  try {
+    final date = DateTime.parse(fechaIso).toLocal();
+    final months = [
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
+    ];
+    final hora = date.hour.toString().padLeft(2, '0');
+    final minuto = date.minute.toString().padLeft(2, '0');
+    return '${date.day} ${months[date.month - 1]} ${date.year}, $hora:$minuto';
+  } catch (e) {
+    return fechaIso;
+  }
+}
+
+String _formatearFechaVencimiento(String? fechaIso) {
+  if (fechaIso == null || fechaIso.isEmpty) return '';
+  try {
+    final date = DateTime.parse(fechaIso);
+    final months = [
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  } catch (e) {
+    return fechaIso;
+  }
+}
+
 class DebtDetailMultipleScreen extends StatelessWidget {
   final Map<String, dynamic> customer;
   final List<Debt> debts;
-
   final bool isCollectFlow;
 
   const DebtDetailMultipleScreen({
@@ -24,6 +73,19 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     required this.debts,
     this.isCollectFlow = false,
   });
+
+  String _getInitials(String name) {
+    final cleanName = name.trim();
+    if (cleanName.isEmpty) return 'C';
+    final parts = cleanName.split(RegExp(r'\s+'));
+    if (parts.length == 1) {
+      if (parts.first.isEmpty) return 'C';
+      return parts.first.substring(0, 1).toUpperCase();
+    }
+    final first = parts.first.isNotEmpty ? parts.first.substring(0, 1) : '';
+    final last = parts.last.isNotEmpty ? parts.last.substring(0, 1) : '';
+    return (first + last).toUpperCase();
+  }
 
   String _getStatusText(DebtStatus status) {
     switch (status) {
@@ -58,14 +120,11 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     }
   }
 
-  /// Formatea cantidad + unidad: enteros sin decimales y peso/volumen con
-  /// hasta 3 decimales sin ceros sobrantes.
   String _formatQuantityWithUnit(double quantity, String? unit) {
     final rounded = double.parse(quantity.toStringAsFixed(3));
     final quantityText = rounded == rounded.roundToDouble()
         ? rounded.toStringAsFixed(0)
         : rounded.toStringAsFixed(3).replaceFirst(RegExp(r'\.?0+$'), '');
-
     final rawUnit = (unit ?? '').trim();
     final unitKey = rawUnit.toLowerCase();
     final unitText =
@@ -76,14 +135,12 @@ class DebtDetailMultipleScreen extends StatelessWidget {
             unitKey == 'u'
         ? 'und'
         : rawUnit;
-
     return '$quantityText $unitText';
   }
 
   String _resolverTelefono(BuildContext context) {
     final directo = customer['phone']?.toString().trim() ?? '';
     if (directo.isNotEmpty) return directo;
-
     final clienteId = customer['id']?.toString();
     if (clienteId != null && clienteId.isNotEmpty) {
       for (final cliente in context.read<ClienteProvider>().clientes) {
@@ -92,11 +149,9 @@ class DebtDetailMultipleScreen extends StatelessWidget {
         }
       }
     }
-
     for (final debt in debts) {
       if (debt.phone.trim().isNotEmpty) return debt.phone;
     }
-
     return '';
   }
 
@@ -128,24 +183,19 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     final visibles = pendientes.length > maximoLineas
         ? pendientes.take(maximoLineas - 1)
         : pendientes;
-
     final lineas = visibles.map((debt) {
       final productos = debt.items.isEmpty
           ? 'Sin detalle de productos'
           : debt.items.map((item) => item.productName).join(', ');
       final restante = debt.remainingAmount < 0 ? 0.0 : debt.remainingAmount;
       final monto = (debt.paidAmount > 0 && restante > 0)
-          ? 'S/ ${restante.toStringAsFixed(2)} '
-                '(resta S/ ${restante.toStringAsFixed(2)} de '
-                'S/ ${debt.amount.toStringAsFixed(2)})'
+          ? 'S/ ${restante.toStringAsFixed(2)} (resta S/ ${restante.toStringAsFixed(2)} de S/ ${debt.amount.toStringAsFixed(2)})'
           : 'S/ ${restante.toStringAsFixed(2)}';
       return '• ${debt.dateLabel} — $productos — $monto';
     }).toList();
-
     if (pendientes.length > maximoLineas) {
       lineas.add('y ${pendientes.length - (maximoLineas - 1)} fiados más');
     }
-
     return lineas;
   }
 
@@ -179,7 +229,6 @@ class DebtDetailMultipleScreen extends StatelessWidget {
       );
       return;
     }
-
     final telefono = _resolverTelefono(context);
     if (telefono.isEmpty) {
       _mostrarSnackBar(
@@ -189,7 +238,6 @@ class DebtDetailMultipleScreen extends StatelessWidget {
       );
       return;
     }
-
     final tono = await showModalBottomSheet<TonoRecordatorio>(
       context: context,
       backgroundColor: AppColors.surface,
@@ -251,25 +299,19 @@ class DebtDetailMultipleScreen extends StatelessWidget {
         );
       },
     );
-
     if (tono == null || !context.mounted) return;
-
     final mensaje = tono.mensaje(
       nombreCliente: nombreCliente,
       deuda: totalRestante.toStringAsFixed(2),
       nombreTienda: nombreTienda,
       detalle: _detalleFiados(),
     );
-
     final abierto = await abrirWhatsapp(telefono: telefono, mensaje: mensaje);
-
     if (!context.mounted) return;
-
     if (!abierto) {
       _mostrarSnackBar(context, 'No se pudo abrir WhatsApp', error: true);
       return;
     }
-
     _mostrarSnackBar(context, 'Recordatorio preparado para $nombreCliente');
   }
 
@@ -277,9 +319,8 @@ class DebtDetailMultipleScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final rawName = customer['name'] as String? ?? '';
     final name = rawName.trim().isEmpty ? 'Cliente' : rawName;
-
-    final clientes = context.watch<ClienteProvider>().clientes;
-    final photoUrl = _resolverFoto(clientes);
+    final initials = _getInitials(name);
+    final photoUrl = customer['imageUrl'] as String?;
     final tienda = context.watch<TiendaProvider>().tiendaSeleccionada;
     final nombreTienda = (tienda?.nombre.isNotEmpty ?? false)
         ? tienda!.nombre
@@ -287,12 +328,9 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     final allPaid =
         debts.isEmpty || debts.every((d) => d.status == DebtStatus.pagado);
 
-    // Calculos reales sobre los fiados recibidos
     final totalOriginal = debts.fold(0.0, (sum, d) => sum + d.amount);
     final totalPagado = debts.fold(0.0, (sum, d) => sum + d.paidAmount);
     final totalRestante = totalOriginal - totalPagado;
-
-    // Solo se puede cobrar si queda saldo y hay fiados seleccionables.
     final canCollect = totalRestante > 0 && debts.any((d) => d.isSelectable);
 
     final fiadosCount = debts.length;
@@ -328,11 +366,26 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    AppAvatar.cliente(
-                      imageUrl: photoUrl,
-                      name: name,
-                      size: 44,
-                      fontSize: 14,
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: AppColors.teal,
+                      backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
+                          ? NetworkImage(photoUrl)
+                          : null,
+                      onBackgroundImageError:
+                          (photoUrl != null && photoUrl.isNotEmpty)
+                          ? (_, _) {}
+                          : null,
+                      child: (photoUrl != null && photoUrl.isNotEmpty)
+                          ? null
+                          : Text(
+                              initials,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -402,25 +455,75 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                                       color: AppColors.inkMuted,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 3,
+
+                                  if (debt.status == DebtStatus.pagado &&
+                                      debt.paidDate != null &&
+                                      debt.paidDate!.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.check_circle_outline,
+                                          size: 14,
+                                          color: AppColors.success,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Pagado: ${_formatearFechaHoraPago(debt.paidDate)}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: AppColors.success,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    decoration: BoxDecoration(
-                                      color: _getStatusBgColor(debt.status),
-                                      borderRadius: BorderRadius.circular(10),
+                                  ]
+                                  else if (debt.dueDate != null &&
+                                      debt.dueDate!.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.event_outlined,
+                                          size: 14,
+                                          color: AppColors.gold,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Vence: ${_formatearFechaVencimiento(debt.dueDate)}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: AppColors.gold,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    child: Text(
-                                      _getStatusText(debt.status),
-                                      style: TextStyle(
-                                        color: _getStatusColor(debt.status),
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
+                                  ],
+
+                                  //  El chip de estado SOLO se muestra si NO está pagado
+                                  if (debt.status != DebtStatus.pagado) ...[
+                                    const SizedBox(height: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 3,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: _getStatusBgColor(debt.status),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        _getStatusText(debt.status),
+                                        style: TextStyle(
+                                          color: _getStatusColor(debt.status),
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                  ],
                                 ],
                               ),
                             ),
@@ -592,9 +695,6 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                           ),
                         ),
                       );
-
-                      // Si el pago se registro con exito, cerramos esta pantalla
-                      // para volver al historial ya actualizado.
                       if (result == true && context.mounted) {
                         Navigator.pop(context);
                       }
@@ -616,9 +716,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 12),
-
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
