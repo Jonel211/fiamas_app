@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart'; //  Agregado para formateo profesional de fechas
 import 'package:fiamas_app/core/constants/app_colors.dart';
 import 'package:fiamas_app/core/utils/whatsapp_reminder.dart';
 import 'package:fiamas_app/core/widgets/app_avatar.dart';
@@ -12,10 +13,60 @@ import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../../domain/debt.dart';
 import 'collect_multiple_payment_screen.dart';
 
+///  FUNCIÓN GENÉRICA DE FORMATEO DE FECHAS (con fallback en español)
+/// Usa 'intl' cuando el locale 'es' está disponible; si no, formatea
+/// manualmente en español. Nunca devuelve la cadena ISO cruda.
+String _formatearFecha(
+  String? fechaIso, {
+  String patron = 'd MMM yyyy',
+  bool toLocal = false,
+}) {
+  if (fechaIso == null || fechaIso.isEmpty) return '';
+
+  // 1. Parsear la fecha (con conversión a hora local si aplica)
+  DateTime? date;
+  try {
+    date = DateTime.parse(fechaIso);
+    if (toLocal) date = date.toLocal();
+  } catch (_) {
+    // Fecha inválida: último recurso dd/mm/yyyy
+    if (fechaIso.length >= 10) {
+      final partes = fechaIso.substring(0, 10).split('-');
+      if (partes.length == 3) {
+        return '${partes[2]}/${partes[1]}/${partes[0]}';
+      }
+    }
+    return fechaIso;
+  }
+
+  // 2. Intentar intl con locale español
+  try {
+    return DateFormat(patron, 'es').format(date!);
+  } catch (_) {
+    // 3. Fallback manual en español (sin depender de main.dart)
+    return _formatearManual(
+      date!,
+      conHora: patron.contains('HH:mm'),
+    );
+  }
+}
+
+/// Formateo manual en español, idéntico al resultado de intl 'es'.
+String _formatearManual(DateTime date, {bool conHora = false}) {
+  const meses = [
+    'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
+  ];
+  final base = '${date.day} ${meses[date.month - 1]} ${date.year}';
+  if (!conHora) return base;
+  final hora = date.hour.toString().padLeft(2, '0');
+  final minuto = date.minute.toString().padLeft(2, '0');
+  return '$base, $hora:$minuto';
+}
+
 class DebtDetailMultipleScreen extends StatelessWidget {
   final Map<String, dynamic> customer;
   final List<Debt> debts;
-
   final bool isCollectFlow;
 
   const DebtDetailMultipleScreen({
@@ -24,6 +75,19 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     required this.debts,
     this.isCollectFlow = false,
   });
+
+  String _getInitials(String name) {
+    final cleanName = name.trim();
+    if (cleanName.isEmpty) return 'C';
+    final parts = cleanName.split(RegExp(r'\s+'));
+    if (parts.length == 1) {
+      if (parts.first.isEmpty) return 'C';
+      return parts.first.substring(0, 1).toUpperCase();
+    }
+    final first = parts.first.isNotEmpty ? parts.first.substring(0, 1) : '';
+    final last = parts.last.isNotEmpty ? parts.last.substring(0, 1) : '';
+    return (first + last).toUpperCase();
+  }
 
   String _getStatusText(DebtStatus status) {
     switch (status) {
@@ -58,14 +122,11 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     }
   }
 
-  /// Formatea cantidad + unidad: enteros sin decimales y peso/volumen con
-  /// hasta 3 decimales sin ceros sobrantes.
   String _formatQuantityWithUnit(double quantity, String? unit) {
     final rounded = double.parse(quantity.toStringAsFixed(3));
     final quantityText = rounded == rounded.roundToDouble()
         ? rounded.toStringAsFixed(0)
         : rounded.toStringAsFixed(3).replaceFirst(RegExp(r'\.?0+$'), '');
-
     final rawUnit = (unit ?? '').trim();
     final unitKey = rawUnit.toLowerCase();
     final unitText =
@@ -76,14 +137,12 @@ class DebtDetailMultipleScreen extends StatelessWidget {
             unitKey == 'u'
         ? 'und'
         : rawUnit;
-
     return '$quantityText $unitText';
   }
 
   String _resolverTelefono(BuildContext context) {
     final directo = customer['phone']?.toString().trim() ?? '';
     if (directo.isNotEmpty) return directo;
-
     final clienteId = customer['id']?.toString();
     if (clienteId != null && clienteId.isNotEmpty) {
       for (final cliente in context.read<ClienteProvider>().clientes) {
@@ -92,11 +151,9 @@ class DebtDetailMultipleScreen extends StatelessWidget {
         }
       }
     }
-
     for (final debt in debts) {
       if (debt.phone.trim().isNotEmpty) return debt.phone;
     }
-
     return '';
   }
 
@@ -122,38 +179,27 @@ class DebtDetailMultipleScreen extends StatelessWidget {
 
   List<String> _detalleFiados() {
     const maximoLineas = 8;
-    final pendientes = debts
-        .where((debt) => debt.status != DebtStatus.pagado)
-        .toList();
+    final pendientes = debts.where((debt) => debt.status != DebtStatus.pagado).toList();
     final visibles = pendientes.length > maximoLineas
         ? pendientes.take(maximoLineas - 1)
         : pendientes;
-
     final lineas = visibles.map((debt) {
       final productos = debt.items.isEmpty
           ? 'Sin detalle de productos'
           : debt.items.map((item) => item.productName).join(', ');
       final restante = debt.remainingAmount < 0 ? 0.0 : debt.remainingAmount;
       final monto = (debt.paidAmount > 0 && restante > 0)
-          ? 'S/ ${restante.toStringAsFixed(2)} '
-                '(resta S/ ${restante.toStringAsFixed(2)} de '
-                'S/ ${debt.amount.toStringAsFixed(2)})'
+          ? 'S/ ${restante.toStringAsFixed(2)} (resta S/ ${restante.toStringAsFixed(2)} de S/ ${debt.amount.toStringAsFixed(2)})'
           : 'S/ ${restante.toStringAsFixed(2)}';
       return '• ${debt.dateLabel} — $productos — $monto';
     }).toList();
-
     if (pendientes.length > maximoLineas) {
       lineas.add('y ${pendientes.length - (maximoLineas - 1)} fiados más');
     }
-
     return lineas;
   }
 
-  void _mostrarSnackBar(
-    BuildContext context,
-    String mensaje, {
-    bool error = false,
-  }) {
+  void _mostrarSnackBar(BuildContext context, String mensaje, {bool error = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -172,24 +218,14 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     required double totalRestante,
   }) async {
     if (totalRestante <= 0) {
-      _mostrarSnackBar(
-        context,
-        'Este cliente no tiene saldo pendiente',
-        error: true,
-      );
+      _mostrarSnackBar(context, 'Este cliente no tiene saldo pendiente', error: true);
       return;
     }
-
     final telefono = _resolverTelefono(context);
     if (telefono.isEmpty) {
-      _mostrarSnackBar(
-        context,
-        'Este cliente no tiene un teléfono registrado',
-        error: true,
-      );
+      _mostrarSnackBar(context, 'Este cliente no tiene un teléfono registrado', error: true);
       return;
     }
-
     final tono = await showModalBottomSheet<TonoRecordatorio>(
       context: context,
       backgroundColor: AppColors.surface,
@@ -213,10 +249,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       onTap: () => Navigator.pop(sheetContext, opcion),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                         child: Row(
                           children: [
                             const Icon(
@@ -251,25 +284,19 @@ class DebtDetailMultipleScreen extends StatelessWidget {
         );
       },
     );
-
     if (tono == null || !context.mounted) return;
-
     final mensaje = tono.mensaje(
       nombreCliente: nombreCliente,
       deuda: totalRestante.toStringAsFixed(2),
       nombreTienda: nombreTienda,
       detalle: _detalleFiados(),
     );
-
     final abierto = await abrirWhatsapp(telefono: telefono, mensaje: mensaje);
-
     if (!context.mounted) return;
-
     if (!abierto) {
       _mostrarSnackBar(context, 'No se pudo abrir WhatsApp', error: true);
       return;
     }
-
     _mostrarSnackBar(context, 'Recordatorio preparado para $nombreCliente');
   }
 
@@ -277,29 +304,20 @@ class DebtDetailMultipleScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final rawName = customer['name'] as String? ?? '';
     final name = rawName.trim().isEmpty ? 'Cliente' : rawName;
-
-    final clientes = context.watch<ClienteProvider>().clientes;
-    final photoUrl = _resolverFoto(clientes);
+    final initials = _getInitials(name);
+    final photoUrl = customer['imageUrl'] as String?;
     final tienda = context.watch<TiendaProvider>().tiendaSeleccionada;
-    final nombreTienda = (tienda?.nombre.isNotEmpty ?? false)
-        ? tienda!.nombre
-        : 'Mi tienda';
-    final allPaid =
-        debts.isEmpty || debts.every((d) => d.status == DebtStatus.pagado);
+    final nombreTienda = (tienda?.nombre.isNotEmpty ?? false) ? tienda!.nombre : 'Mi tienda';
+    final allPaid = debts.isEmpty || debts.every((d) => d.status == DebtStatus.pagado);
 
-    // Calculos reales sobre los fiados recibidos
     final totalOriginal = debts.fold(0.0, (sum, d) => sum + d.amount);
     final totalPagado = debts.fold(0.0, (sum, d) => sum + d.paidAmount);
     final totalRestante = totalOriginal - totalPagado;
-
-    // Solo se puede cobrar si queda saldo y hay fiados seleccionables.
     final canCollect = totalRestante > 0 && debts.any((d) => d.isSelectable);
 
     final fiadosCount = debts.length;
     final fiadosLabel = '$fiadosCount fiado${fiadosCount == 1 ? '' : 's'}';
-    final fiadosSubtitle = isCollectFlow
-        ? '$fiadosLabel seleccionado${fiadosCount == 1 ? '' : 's'}'
-        : fiadosLabel;
+    final fiadosSubtitle = isCollectFlow ? '$fiadosLabel seleccionado${fiadosCount == 1 ? '' : 's'}' : fiadosLabel;
 
     final Map<String, List<DebtItem>> productsByDate = {};
     for (final debt in debts) {
@@ -328,11 +346,17 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    AppAvatar.cliente(
-                      imageUrl: photoUrl,
-                      name: name,
-                      size: 44,
-                      fontSize: 14,
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: AppColors.teal,
+                      backgroundImage: (photoUrl != null && photoUrl.isNotEmpty) ? NetworkImage(photoUrl) : null,
+                      onBackgroundImageError: (photoUrl != null && photoUrl.isNotEmpty) ? (_, _) {} : null,
+                      child: (photoUrl != null && photoUrl.isNotEmpty)
+                          ? null
+                          : Text(
+                              initials,
+                              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                            ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -341,19 +365,12 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                         children: [
                           Text(
                             name,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.ink,
-                            ),
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             fiadosSubtitle,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.inkMuted,
-                            ),
+                            style: TextStyle(fontSize: 12, color: AppColors.inkMuted),
                           ),
                         ],
                       ),
@@ -378,11 +395,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                   children: [
                     const Text(
                       'Fiados incluidos',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.teal,
-                      ),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.teal),
                     ),
                     const SizedBox(height: 16),
                     ...debts.map(
@@ -397,40 +410,63 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     debt.dateLabel,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.inkMuted,
-                                    ),
+                                    style: TextStyle(fontSize: 12, color: AppColors.inkMuted),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 3,
+
+                                  //  Si está PAGADO: usa el formato con hora y zona horaria local
+                                  if (debt.status == DebtStatus.pagado && debt.paidDate != null && debt.paidDate!.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.check_circle_outline, size: 14, color: AppColors.success),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Pagado: ${_formatearFecha(debt.paidDate, patron: 'd MMM yyyy, HH:mm', toLocal: true)}',
+                                          style: const TextStyle(fontSize: 12, color: AppColors.success, fontWeight: FontWeight.w600),
+                                        ),
+                                      ],
                                     ),
-                                    decoration: BoxDecoration(
-                                      color: _getStatusBgColor(debt.status),
-                                      borderRadius: BorderRadius.circular(10),
+                                  ]
+                                  //  Si NO está pagado: usa el formato solo de fecha
+                                  else if (debt.dueDate != null && debt.dueDate!.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.event_outlined, size: 14, color: AppColors.gold),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Vence: ${_formatearFecha(debt.dueDate)}',
+                                          style: const TextStyle(fontSize: 12, color: AppColors.gold, fontWeight: FontWeight.w600),
+                                        ),
+                                      ],
                                     ),
-                                    child: Text(
-                                      _getStatusText(debt.status),
-                                      style: TextStyle(
-                                        color: _getStatusColor(debt.status),
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
+                                  ],
+
+                                  // El chip de estado SOLO se muestra si NO está pagado
+                                  if (debt.status != DebtStatus.pagado) ...[
+                                    const SizedBox(height: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: _getStatusBgColor(debt.status),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        _getStatusText(debt.status),
+                                        style: TextStyle(
+                                          color: _getStatusColor(debt.status),
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                  ],
                                 ],
                               ),
                             ),
                             Text(
                               'S/ ${debt.amount.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.ink,
-                              ),
+                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink),
                             ),
                           ],
                         ),
@@ -456,11 +492,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                   children: [
                     const Text(
                       'Productos',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.teal,
-                      ),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.teal),
                     ),
                     const SizedBox(height: 12),
                     ...productsByDate.entries.map((entry) {
@@ -473,34 +505,20 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                           children: [
                             Text(
                               date.toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.inkMuted,
-                                letterSpacing: 0.5,
-                              ),
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.inkMuted, letterSpacing: 0.5),
                             ),
                             const SizedBox(height: 6),
                             const _ProductReceiptHeaderRow(),
                             const SizedBox(height: 2),
                             for (var i = 0; i < items.length; i++) ...[
                               _ProductReceiptRow(
-                                quantityLabel: _formatQuantityWithUnit(
-                                  items[i].quantity,
-                                  items[i].unit,
-                                ),
+                                quantityLabel: _formatQuantityWithUnit(items[i].quantity, items[i].unit),
                                 productName: items[i].productName,
-                                unitPrice:
-                                    'S/ ${items[i].unitPrice.toStringAsFixed(2)}',
-                                amount:
-                                    'S/ ${items[i].subtotal.toStringAsFixed(2)}',
+                                unitPrice: 'S/ ${items[i].unitPrice.toStringAsFixed(2)}',
+                                amount: 'S/ ${items[i].subtotal.toStringAsFixed(2)}',
                               ),
                               if (i < items.length - 1)
-                                const Divider(
-                                  height: 1,
-                                  thickness: 0.6,
-                                  color: AppColors.mist,
-                                ),
+                                const Divider(height: 1, thickness: 0.6, color: AppColors.mist),
                             ],
                           ],
                         ),
@@ -526,28 +544,14 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                   children: [
                     const Text(
                       'Resumen de cuenta',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.teal,
-                      ),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.teal),
                     ),
                     const SizedBox(height: 12),
-                    _buildSummaryRow(
-                      'Total Deuda Original',
-                      'S/ ${totalOriginal.toStringAsFixed(2)}',
-                    ),
+                    _buildSummaryRow('Total Deuda Original', 'S/ ${totalOriginal.toStringAsFixed(2)}'),
                     const SizedBox(height: 8),
-                    _buildSummaryRow(
-                      'Total Pagado',
-                      'S/ ${totalPagado.toStringAsFixed(2)}',
-                    ),
+                    _buildSummaryRow('Total Pagado', 'S/ ${totalPagado.toStringAsFixed(2)}'),
                     const Divider(height: 16, color: AppColors.mist),
-                    _buildSummaryRow(
-                      'Total Deuda Actual Restante',
-                      'S/ ${totalRestante.toStringAsFixed(2)}',
-                      isBold: true,
-                    ),
+                    _buildSummaryRow('Total Deuda Actual Restante', 'S/ ${totalRestante.toStringAsFixed(2)}', isBold: true),
                   ],
                 ),
               ),
@@ -557,21 +561,10 @@ class DebtDetailMultipleScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'TOTAL DEUDA',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.ink,
-                    ),
-                  ),
+                  const Text('TOTAL DEUDA', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.ink)),
                   Text(
                     'S/${totalRestante.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: allPaid ? AppColors.success : AppColors.gold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: allPaid ? AppColors.success : AppColors.gold),
                   ),
                 ],
               ),
@@ -592,9 +585,6 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                           ),
                         ),
                       );
-
-                      // Si el pago se registro con exito, cerramos esta pantalla
-                      // para volver al historial ya actualizado.
                       if (result == true && context.mounted) {
                         Navigator.pop(context);
                       }
@@ -603,22 +593,12 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                       backgroundColor: AppColors.teal,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: const Text(
-                      'Cobrar esta deuda',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: const Text('Cobrar esta deuda', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   ),
                 ),
-
                 const SizedBox(height: 12),
-
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
@@ -632,17 +612,9 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                       foregroundColor: AppColors.teal,
                       side: const BorderSide(color: AppColors.teal),
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: const Text(
-                      'Enviar recordatorio',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: const Text('Enviar recordatorio', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   ),
                 ),
               ],
@@ -659,22 +631,8 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.ink,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.ink,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 14, color: AppColors.ink, fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
+        Text(value, style: TextStyle(fontSize: 14, color: AppColors.ink, fontWeight: isBold ? FontWeight.bold : FontWeight.w600)),
       ],
     );
   }
@@ -689,31 +647,13 @@ const double _receiptUnitAmountGap = 12;
 
 const List<FontFeature> _receiptTabularFigures = [FontFeature.tabularFigures()];
 
-const TextStyle _receiptHeaderStyle = TextStyle(
-  fontSize: 11,
-  fontWeight: FontWeight.w600,
-  color: AppColors.inkMuted,
-);
+const TextStyle _receiptHeaderStyle = TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.inkMuted);
 
-const TextStyle _receiptNumericHeaderStyle = TextStyle(
-  fontSize: 11,
-  fontWeight: FontWeight.w600,
-  color: AppColors.inkMuted,
-  fontFeatures: _receiptTabularFigures,
-);
+const TextStyle _receiptNumericHeaderStyle = TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.inkMuted, fontFeatures: _receiptTabularFigures);
 
-const TextStyle _receiptUnitPriceStyle = TextStyle(
-  fontSize: 14,
-  color: AppColors.ink,
-  fontFeatures: _receiptTabularFigures,
-);
+const TextStyle _receiptUnitPriceStyle = TextStyle(fontSize: 14, color: AppColors.ink, fontFeatures: _receiptTabularFigures);
 
-const TextStyle _receiptAmountStyle = TextStyle(
-  fontSize: 14,
-  fontWeight: FontWeight.w600,
-  color: AppColors.ink,
-  fontFeatures: _receiptTabularFigures,
-);
+const TextStyle _receiptAmountStyle = TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink, fontFeatures: _receiptTabularFigures);
 
 class _ProductReceiptHeaderRow extends StatelessWidget {
   const _ProductReceiptHeaderRow();
@@ -722,30 +662,13 @@ class _ProductReceiptHeaderRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Row(
       children: [
-        SizedBox(
-          width: _receiptQuantityWidth,
-          child: Text('Cant.', style: _receiptHeaderStyle),
-        ),
+        SizedBox(width: _receiptQuantityWidth, child: Text('Cant.', style: _receiptHeaderStyle)),
         SizedBox(width: _receiptColumnGap),
         Expanded(child: Text('Producto', style: _receiptHeaderStyle)),
         SizedBox(width: _receiptProductUnitGap),
-        SizedBox(
-          width: _receiptUnitPriceWidth,
-          child: Text(
-            'P. Unit.',
-            textAlign: TextAlign.right,
-            style: _receiptNumericHeaderStyle,
-          ),
-        ),
+        SizedBox(width: _receiptUnitPriceWidth, child: Text('P. Unit.', textAlign: TextAlign.right, style: _receiptNumericHeaderStyle)),
         SizedBox(width: _receiptUnitAmountGap),
-        SizedBox(
-          width: _receiptAmountWidth,
-          child: Text(
-            'Importe',
-            textAlign: TextAlign.right,
-            style: _receiptNumericHeaderStyle,
-          ),
-        ),
+        SizedBox(width: _receiptAmountWidth, child: Text('Importe', textAlign: TextAlign.right, style: _receiptNumericHeaderStyle)),
       ],
     );
   }
@@ -773,43 +696,21 @@ class _ProductReceiptRow extends StatelessWidget {
         children: [
           SizedBox(
             width: _receiptQuantityWidth,
-            child: Text(
-              quantityLabel,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 14, color: AppColors.ink),
-            ),
+            child: Text(quantityLabel, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, color: AppColors.ink)),
           ),
           const SizedBox(width: _receiptColumnGap),
           Expanded(
-            child: Text(
-              productName,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 14, color: AppColors.ink),
-            ),
+            child: Text(productName, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, color: AppColors.ink)),
           ),
           const SizedBox(width: _receiptProductUnitGap),
           SizedBox(
             width: _receiptUnitPriceWidth,
-            child: Text(
-              unitPrice,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.right,
-              style: _receiptUnitPriceStyle,
-            ),
+            child: Text(unitPrice, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: _receiptUnitPriceStyle),
           ),
           const SizedBox(width: _receiptUnitAmountGap),
           SizedBox(
             width: _receiptAmountWidth,
-            child: Text(
-              amount,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.right,
-              style: _receiptAmountStyle,
-            ),
+            child: Text(amount, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: _receiptAmountStyle),
           ),
         ],
       ),

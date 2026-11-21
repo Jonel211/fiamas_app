@@ -39,8 +39,7 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
   }
 
   void _cargarFiados() {
-    final tiendaId =
-        context.read<TiendaProvider>().tiendaSeleccionadaId ??
+    final tiendaId = context.read<TiendaProvider>().tiendaSeleccionadaId ??
         context.read<AuthProvider>().user?.tiendaId;
     final clienteId = widget.customer['id'];
     if (tiendaId != null && clienteId != null) {
@@ -55,13 +54,8 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
 
   bool _esVigente(Debt d) => d.isActive;
 
-  /// Quita de la selección los fiados que dejaron de ser seleccionables
-  /// (pagados o cancelados). Debe llamarse dentro de un setState.
   void _pruneSelection(List<Debt> fiados) {
-    final selectableIds = fiados
-        .where((d) => d.isSelectable)
-        .map((d) => d.id)
-        .toSet();
+    final selectableIds = fiados.where((d) => d.isSelectable).map((d) => d.id).toSet();
     _selectedDebtIds.removeWhere((id) => !selectableIds.contains(id));
   }
 
@@ -107,12 +101,21 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
     });
   }
 
+  String _formatearFechaLimite(String fechaIso) {
+    try {
+      final date = DateTime.parse(fechaIso);
+      final months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      return '${date.day} ${months[date.month - 1]} ${date.year}';
+    } catch (e) {
+      return fechaIso;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ClienteProvider>();
     final clienteId = widget.customer['id'] as String;
 
-    // Busca el cliente sin romper si la lista aún no cargó
     ClienteModel? clienteCompleto;
     for (final c in provider.clientes) {
       if (c.id == clienteId) {
@@ -121,22 +124,18 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
       }
     }
 
-    final name =
-        clienteCompleto?.nombreCompleto ??
-        (widget.customer['name']?.toString() ?? 'Cliente');
-    final phone =
-        clienteCompleto?.telefono ??
-        (widget.customer['phone']?.toString() ?? '');
+    final name = clienteCompleto?.nombreCompleto ?? (widget.customer['name']?.toString() ?? 'Cliente');
+    final phone = clienteCompleto?.telefono ?? (widget.customer['phone']?.toString() ?? '');
     final debtAmount = provider.saldoPendienteCliente;
     final score = clienteCompleto?.vinculacion.scorePagador ?? 100;
     final categoria = clienteCompleto?.vinculacion.categoriaPagador ?? 'nuevo';
 
+    final initial = name.trim().isNotEmpty ? name.trim().split(' ').last[0].toUpperCase() : 'C';
     final nivel = nivelScore(score, categoria);
     final badgeText = nivel.etiqueta;
     final badgeColor = nivel.color;
-    final photoUrl = clienteCompleto != null
-        ? clienteCompleto.fotoPerfilUrl
-        : (widget.customer['imageUrl'] as String?);
+    final photoUrl = clienteCompleto?.fotoPerfilUrl ?? (widget.customer['imageUrl'] as String?);
+    final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
 
     final fiados = provider.fiadosCliente;
 
@@ -144,54 +143,33 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
       if (_selectedFilter == 'Todos') return true;
       if (_selectedFilter == 'Vigentes') return _esVigente(d);
       if (_selectedFilter == 'Pagados') return d.status == DebtStatus.pagado;
-      if (_selectedFilter == 'Vencidos') {
-        return _esVigente(d) && d.dateLabel.contains('Vencido');
-      }
+      if (_selectedFilter == 'Vencidos') return _esVigente(d) && d.dateLabel.contains('Vencido');
       return true;
     }).toList();
 
-    // Misma lógica compartida con el Perfil del Cliente (excluye cancelados)
     final totalFiado = provider.totalFiadoCliente;
     final totalPagado = provider.totalPagadoCliente;
-
     final tieneDeudasPendientes = fiados.any((d) => d.isSelectable);
 
-    // Solo se consideran seleccionables (regla central del modelo).
-    final selectedDebts = fiados
-        .where((d) => d.isSelectable && _selectedDebtIds.contains(d.id))
-        .toList();
+    final selectedDebts = fiados.where((d) => d.isSelectable && _selectedDebtIds.contains(d.id)).toList();
     final hasSelection = selectedDebts.isNotEmpty;
-    final selectedTotal = selectedDebts.fold<double>(
-      0.0,
-      (sum, debt) => sum + debt.remainingAmount,
-    );
+    final selectedTotal = selectedDebts.fold<double>(0.0, (sum, debt) => sum + debt.remainingAmount);
 
     return AppHeaderConfig(
-      title: _isSelectionMode
-          ? '${selectedDebts.length} seleccionado${selectedDebts.length == 1 ? '' : 's'}'
-          : 'Historial de Cliente',
+      title: _isSelectionMode ? '${selectedDebts.length} seleccionado${selectedDebts.length == 1 ? '' : 's'}' : 'Historial de Cliente',
       centerTitle: true,
       showBack: !_isSelectionMode,
       leading: _isSelectionMode
           ? TextButton(
               onPressed: _exitSelectionMode,
               style: TextButton.styleFrom(padding: EdgeInsets.zero),
-              child: const Text(
-                'Cancelar',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
             )
           : null,
       actions: _isSelectionMode
           ? [
               IconButton(
-                icon: Icon(
-                  Icons.check_circle,
-                  color: hasSelection ? Colors.white : Colors.white54,
-                ),
+                icon: Icon(Icons.check_circle, color: hasSelection ? Colors.white : Colors.white54),
                 onPressed: hasSelection ? _goToDetail : null,
               ),
             ]
@@ -200,7 +178,6 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
         backgroundColor: AppColors.background,
         body: CustomScrollView(
           slivers: [
-            // Tarjeta del cliente + tarjeta de saldo (se desplazan)
             SliverToBoxAdapter(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -208,59 +185,34 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                   GestureDetector(
                     onTap: () {
                       if (clienteCompleto != null) {
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.customerProfile,
-                          arguments: clienteCompleto,
-                        );
+                        Navigator.pushNamed(context, AppRoutes.customerProfile, arguments: clienteCompleto);
                       }
                     },
                     child: Container(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 16,
-                      ),
+                      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
                       ),
                       child: Row(
                         children: [
-                          AppAvatar.cliente(
-                            imageUrl: photoUrl,
-                            name: name,
-                            size: 56,
-                            fontSize: 22,
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundColor: AppColors.teal,
+                            backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
+                            onBackgroundImageError: hasPhoto ? (_, _) {} : null,
+                            child: hasPhoto ? null : Text(initial, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  name,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.ink,
-                                  ),
-                                ),
+                                Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.ink)),
                                 const SizedBox(height: 4),
-                                Text(
-                                  phone,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: AppColors.inkMuted,
-                                  ),
-                                ),
+                                Text(phone, style: TextStyle(fontSize: 13, color: AppColors.inkMuted)),
                               ],
                             ),
                           ),
@@ -268,41 +220,15 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.gold.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  'Score $score',
-                                  style: const TextStyle(
-                                    color: AppColors.gold,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(color: AppColors.gold.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+                                child: Text('Score $score', style: const TextStyle(color: AppColors.gold, fontSize: 11, fontWeight: FontWeight.w600)),
                               ),
                               const SizedBox(height: 4),
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: badgeColor,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  badgeText,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(8)),
+                                child: Text(badgeText, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
                               ),
                             ],
                           ),
@@ -313,31 +239,13 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 20),
                     padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AppColors.teal,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                    decoration: BoxDecoration(color: AppColors.teal, borderRadius: BorderRadius.circular(16)),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'SALDO ACTUAL PENDIENTE',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 1,
-                          ),
-                        ),
+                        const Text('SALDO ACTUAL PENDIENTE', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
                         const SizedBox(height: 8),
-                        Text(
-                          'S/ ${debtAmount.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        Text('S/ ${debtAmount.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 16),
                         const Divider(color: Colors.white24, height: 1),
                         const SizedBox(height: 12),
@@ -347,22 +255,9 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Total fiado',
-                                    style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 12,
-                                    ),
-                                  ),
+                                  const Text('Total fiado', style: TextStyle(color: Colors.white70, fontSize: 12)),
                                   const SizedBox(height: 4),
-                                  Text(
-                                    'S/ ${totalFiado.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                                  Text('S/ ${totalFiado.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
                                 ],
                               ),
                             ),
@@ -370,22 +265,9 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Total pagado',
-                                    style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 12,
-                                    ),
-                                  ),
+                                  const Text('Total pagado', style: TextStyle(color: Colors.white70, fontSize: 12)),
                                   const SizedBox(height: 4),
-                                  Text(
-                                    'S/ ${totalPagado.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                                  Text('S/ ${totalPagado.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
                                 ],
                               ),
                             ),
@@ -398,8 +280,6 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                 ],
               ),
             ),
-
-            // Filtros fijos al hacer scroll
             SliverPersistentHeader(
               pinned: true,
               delegate: _FilterHeaderDelegate(
@@ -411,81 +291,35 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     children: [
-                      _buildFilterChip(
-                        'Todos',
-                        fiados.length,
-                        _selectedFilter == 'Todos',
-                      ),
+                      _buildFilterChip('Todos', fiados.length, _selectedFilter == 'Todos'),
                       const SizedBox(width: 8),
-                      _buildFilterChip(
-                        'Vigentes',
-                        fiados.where(_esVigente).length,
-                        _selectedFilter == 'Vigentes',
-                      ),
+                      _buildFilterChip('Vigentes', fiados.where(_esVigente).length, _selectedFilter == 'Vigentes'),
                       const SizedBox(width: 8),
-                      _buildFilterChip(
-                        'Pagados',
-                        fiados
-                            .where((d) => d.status == DebtStatus.pagado)
-                            .length,
-                        _selectedFilter == 'Pagados',
-                      ),
+                      _buildFilterChip('Pagados', fiados.where((d) => d.status == DebtStatus.pagado).length, _selectedFilter == 'Pagados'),
                       const SizedBox(width: 8),
-                      _buildFilterChip(
-                        'Vencidos',
-                        fiados
-                            .where(
-                              (d) =>
-                                  _esVigente(d) &&
-                                  d.dateLabel.contains('Vencido'),
-                            )
-                            .length,
-                        _selectedFilter == 'Vencidos',
-                      ),
+                      _buildFilterChip('Vencidos', fiados.where((d) => _esVigente(d) && d.dateLabel.contains('Vencido')).length, _selectedFilter == 'Vencidos'),
                     ],
                   ),
                 ),
               ),
             ),
-
-            // Lista de fiados
             if (provider.isLoadingFiados)
-              const SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(child: CircularProgressIndicator()),
-              )
+              const SliverFillRemaining(hasScrollBody: false, child: Center(child: CircularProgressIndicator()))
             else if (provider.errorFiados != null)
               SliverFillRemaining(
                 hasScrollBody: false,
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(
-                      provider.errorFiados!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ),
-                ),
+                child: Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(provider.errorFiados!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)))),
               )
             else if (fiadosFiltrados.isEmpty)
               const SliverFillRemaining(
                 hasScrollBody: false,
-                child: Center(
-                  child: Text(
-                    'Este cliente no tiene fiados registrados.',
-                    style: TextStyle(color: AppColors.inkMuted, fontSize: 15),
-                  ),
-                ),
+                child: Center(child: Text('Este cliente no tiene fiados registrados.', style: TextStyle(color: AppColors.inkMuted, fontSize: 15))),
               )
             else
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
                 sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) => _buildDebtCard(fiadosFiltrados[index]),
-                    childCount: fiadosFiltrados.length,
-                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) => _buildDebtCard(fiadosFiltrados[index]), childCount: fiadosFiltrados.length),
                 ),
               ),
           ],
@@ -494,36 +328,14 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
             ? SafeArea(
                 child: Container(
                   padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 8,
-                        offset: const Offset(0, -2),
-                      ),
-                    ],
-                  ),
+                  decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, -2))]),
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: _goToDetail,
                       icon: const Icon(Icons.account_balance_wallet, size: 20),
-                      label: Text(
-                        'Cobrar S/ ${selectedTotal.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.teal,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
+                      label: Text('Cobrar S/ ${selectedTotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.teal, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                     ),
                   ),
                 ),
@@ -534,18 +346,12 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                 onPressed: _enterSelectionMode,
                 backgroundColor: AppColors.teal,
                 icon: const Icon(Icons.checklist, color: Colors.white),
-                label: const Text(
-                  'Seleccionar fiados',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                label: const Text('Seleccionar fiados', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
               )
             : null,
       ),
     );
-  }
+    }
 
   Widget _buildFilterChip(String label, int count, bool isActive) {
     return GestureDetector(
@@ -557,19 +363,12 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: isActive ? AppColors.teal : AppColors.mist),
         ),
-        child: Text(
-          '$label ($count)',
-          style: TextStyle(
-            color: isActive ? Colors.white : AppColors.ink,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        child: Text('$label ($count)', style: TextStyle(color: isActive ? Colors.white : AppColors.ink, fontSize: 13, fontWeight: FontWeight.w600)),
       ),
     );
   }
 
-  Widget _buildDebtCard(Debt debt) {
+     Widget _buildDebtCard(Debt debt) {
     final pagado = debt.status == DebtStatus.pagado;
     final parcial = debt.status == DebtStatus.parcial;
     final selectable = debt.isSelectable;
@@ -672,6 +471,55 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
+
+                    //  LÓGICA ACTUALIZADA: Pagado vs Vencimiento
+                    if (pagado &&
+                        debt.paidDate != null &&
+                        debt.paidDate!.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.check_circle_outline,
+                            size: 14,
+                            color: AppColors.success,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Pagado: ${_formatearFechaLimite(debt.paidDate!)}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color:
+                                  AppColors.success, // Verde para confirmación
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else if (!pagado &&
+                        debt.dueDate != null &&
+                        debt.dueDate!.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.event_outlined,
+                            size: 14,
+                            color: AppColors.gold,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Vence: ${_formatearFechaLimite(debt.dueDate!)}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.gold, // Dorado para alerta
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+
                     const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -719,16 +567,13 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
         ),
       ),
     );
-    // Al volver (por ejemplo tras cobrar) se refresca la lista
     if (!mounted) return;
     _cargarFiados();
   }
 
   void _goToDetail() {
     final fiados = context.read<ClienteProvider>().fiadosCliente;
-    final selectedDebts = fiados
-        .where((d) => d.isSelectable && _selectedDebtIds.contains(d.id))
-        .toList();
+    final selectedDebts = fiados.where((d) => d.isSelectable && _selectedDebtIds.contains(d.id)).toList();
 
     if (selectedDebts.isEmpty) {
       _mostrarSinFiadosPendientes();
@@ -756,29 +601,16 @@ class _FilterHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Color backgroundColor;
   final Widget child;
 
-  const _FilterHeaderDelegate({
-    required this.extent,
-    required this.backgroundColor,
-    required this.child,
-  });
+  const _FilterHeaderDelegate({required this.extent, required this.backgroundColor, required this.child});
 
   @override
   double get minExtent => extent;
-
   @override
   double get maxExtent => extent;
 
   @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return Container(
-      height: extent,
-      color: backgroundColor,
-      child: Center(child: child),
-    );
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(height: extent, color: backgroundColor, child: Center(child: child));
   }
 
   @override
