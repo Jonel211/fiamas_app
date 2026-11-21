@@ -1,10 +1,5 @@
 import '../network/dio_client.dart';
 
-/// Devuelve una URL absoluta lista para `Image.network`.
-///
-/// El backend puede responder rutas relativas (por ejemplo
-/// `/uploads/foto.jpg`). En ese caso se resuelven contra el origen del API.
-/// Las URLs absolutas (Cloudinary, http, https, data) se devuelven intactas.
 String? resolveImageUrl(String? raw) {
   final value = raw?.trim();
   if (value == null || value.isEmpty) return null;

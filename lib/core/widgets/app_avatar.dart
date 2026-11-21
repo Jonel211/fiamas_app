@@ -4,9 +4,6 @@ import '../constants/app_colors.dart';
 import '../utils/image_url.dart';
 
 /// Avatar circular reutilizable para tenderos, tiendas y clientes.
-///
-/// Muestra la imagen cuando [imageUrl] es válida. Si falta, está vacía o la
-/// carga falla, muestra las iniciales calculadas a partir de [name].
 class AppAvatar extends StatelessWidget {
   const AppAvatar({
     super.key,
