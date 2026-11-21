@@ -130,7 +130,7 @@ class _NuevoClienteQrScreenState extends State<NuevoClienteQrScreen> {
           qrData: qrToken!,
           logoUrl: tiendaActual?.logoUrl,
           size: 320,
-        ),
+        ),  
       );
     } else if (tiendaProvider.isLoading || (tiendaProvider.tiendas.isEmpty && tiendaProvider.error == null)) {
       contenidoQr = const SizedBox(

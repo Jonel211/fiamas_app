@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart'; //  Agregado para formateo profesional de fechas
+import 'package:intl/intl.dart';
 import 'package:fiamas_app/core/constants/app_colors.dart';
+import 'package:fiamas_app/core/offline/database/database_helper.dart';
 import 'package:fiamas_app/core/utils/whatsapp_reminder.dart';
 import 'package:fiamas_app/core/widgets/app_avatar.dart';
 import 'package:fiamas_app/core/widgets/app_header_config.dart';
 import 'package:fiamas_app/core/widgets/modal_bottom_sheet_layout.dart';
+import 'package:fiamas_app/features/auth/presentation/providers/auth_provider.dart';
 
 import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/data/models/cliente_model.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../../domain/debt.dart';
 import 'collect_multiple_payment_screen.dart';
+import '../../data/services/reminder_voucher_service.dart';
+import '../widgets/reminder_voucher_card.dart';
 
-///  FUNCIÓN GENÉRICA DE FORMATEO DE FECHAS (con fallback en español)
+/// FUNCIÓN GENÉRICA DE FORMATEO DE FECHAS (con fallback en español)
 /// Usa 'intl' cuando el locale 'es' está disponible; si no, formatea
 /// manualmente en español. Nunca devuelve la cadena ISO cruda.
 String _formatearFecha(
@@ -23,13 +27,11 @@ String _formatearFecha(
 }) {
   if (fechaIso == null || fechaIso.isEmpty) return '';
 
-  // 1. Parsear la fecha (con conversión a hora local si aplica)
   DateTime? date;
   try {
     date = DateTime.parse(fechaIso);
     if (toLocal) date = date.toLocal();
   } catch (_) {
-    // Fecha inválida: último recurso dd/mm/yyyy
     if (fechaIso.length >= 10) {
       final partes = fechaIso.substring(0, 10).split('-');
       if (partes.length == 3) {
@@ -39,15 +41,10 @@ String _formatearFecha(
     return fechaIso;
   }
 
-  // 2. Intentar intl con locale español
   try {
     return DateFormat(patron, 'es').format(date!);
   } catch (_) {
-    // 3. Fallback manual en español (sin depender de main.dart)
-    return _formatearManual(
-      date!,
-      conHora: patron.contains('HH:mm'),
-    );
+    return _formatearManual(date!, conHora: patron.contains('HH:mm'));
   }
 }
 
@@ -64,7 +61,8 @@ String _formatearManual(DateTime date, {bool conHora = false}) {
   return '$base, $hora:$minuto';
 }
 
-class DebtDetailMultipleScreen extends StatelessWidget {
+// ✅ DEBE SER StatefulWidget para mantener la lógica de WhatsApp (setState)
+class DebtDetailMultipleScreen extends StatefulWidget {
   final Map<String, dynamic> customer;
   final List<Debt> debts;
   final bool isCollectFlow;
@@ -73,17 +71,58 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     super.key,
     required this.customer,
     required this.debts,
-    this.isCollectFlow = false,
+    this.isCollectFlow = false, 
   });
+
+  @override
+  State<DebtDetailMultipleScreen> createState() =>
+      _DebtDetailMultipleScreenState();
+}
+
+class _DebtDetailMultipleScreenState extends State<DebtDetailMultipleScreen> {
+  bool _bienvenidaEnviada = true;
+  bool _cargando = true;
+  bool _enviandoBienvenida = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _cargarFlag());
+  }
+
+  Future<void> _cargarFlag() async {
+    if (!mounted) return;
+    final telefono = _resolverTelefono(context);
+    final tiendaId = context.read<TiendaProvider>().tiendaSeleccionadaId ??
+        context.read<AuthProvider>().user?.tiendaId;
+
+    if (telefono.isEmpty || tiendaId == null) {
+      if (mounted) setState(() => _cargando = false);
+      return;
+    }
+
+    final enviada = await DatabaseHelper.instance.getWhatsappBienvenida(
+      telefono,
+      tiendaId,
+    );
+    if (!mounted) return;
+    setState(() {
+      _bienvenidaEnviada = enviada;
+      _cargando = false;
+    });
+  }
 
   String _getInitials(String name) {
     final cleanName = name.trim();
     if (cleanName.isEmpty) return 'C';
+
     final parts = cleanName.split(RegExp(r'\s+'));
+
     if (parts.length == 1) {
       if (parts.first.isEmpty) return 'C';
       return parts.first.substring(0, 1).toUpperCase();
     }
+
     final first = parts.first.isNotEmpty ? parts.first.substring(0, 1) : '';
     final last = parts.last.isNotEmpty ? parts.last.substring(0, 1) : '';
     return (first + last).toUpperCase();
@@ -141,9 +180,10 @@ class DebtDetailMultipleScreen extends StatelessWidget {
   }
 
   String _resolverTelefono(BuildContext context) {
-    final directo = customer['phone']?.toString().trim() ?? '';
+    final directo = widget.customer['phone']?.toString().trim() ?? '';
     if (directo.isNotEmpty) return directo;
-    final clienteId = customer['id']?.toString();
+
+    final clienteId = widget.customer['id']?.toString();
     if (clienteId != null && clienteId.isNotEmpty) {
       for (final cliente in context.read<ClienteProvider>().clientes) {
         if (cliente.id == clienteId && cliente.telefono.trim().isNotEmpty) {
@@ -151,21 +191,22 @@ class DebtDetailMultipleScreen extends StatelessWidget {
         }
       }
     }
-    for (final debt in debts) {
+
+    for (final debt in widget.debts) {
       if (debt.phone.trim().isNotEmpty) return debt.phone;
     }
     return '';
   }
 
   String? _resolverFoto(List<ClienteModel> clientes) {
-    final clienteId = customer['id']?.toString();
+    final clienteId = widget.customer['id']?.toString();
     if (clienteId != null && clienteId.isNotEmpty) {
       for (final cliente in clientes) {
         if (cliente.id == clienteId) return cliente.fotoPerfilUrl;
       }
     }
 
-    final nombre = (customer['name'] as String? ?? '').trim().toLowerCase();
+    final nombre = (widget.customer['name'] as String? ?? '').trim().toLowerCase();
     if (nombre.isNotEmpty) {
       for (final cliente in clientes) {
         if (cliente.nombreCompleto.trim().toLowerCase() == nombre) {
@@ -174,12 +215,14 @@ class DebtDetailMultipleScreen extends StatelessWidget {
       }
     }
 
-    return customer['imageUrl'] as String?;
+    return widget.customer['imageUrl'] as String?;
   }
 
   List<String> _detalleFiados() {
     const maximoLineas = 8;
-    final pendientes = debts.where((debt) => debt.status != DebtStatus.pagado).toList();
+    final pendientes = widget.debts
+        .where((debt) => debt.status != DebtStatus.pagado)
+        .toList();
     final visibles = pendientes.length > maximoLineas
         ? pendientes.take(maximoLineas - 1)
         : pendientes;
@@ -211,6 +254,82 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     );
   }
 
+  void _mostrarAyuda() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('¿Cómo funciona?'),
+        content: const Text(
+          'El primer envío abre WhatsApp con un mensaje de bienvenida. '
+          'Después, los recordatorios con imagen se envían solos.\n\n'
+          'Si borraste el chat, envía un mensaje desde el perfil del cliente.',
+          style: TextStyle(fontSize: 14, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Entendido'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _onEnviarBienvenida() async {
+    if (_enviandoBienvenida) return;
+
+    final telefono = _resolverTelefono(context);
+    if (telefono.isEmpty) {
+      _mostrarSnackBar(context, 'Este cliente no tiene un teléfono registrado', error: true);
+      return;
+    }
+
+    final tiendaId = context.read<TiendaProvider>().tiendaSeleccionadaId ??
+        context.read<AuthProvider>().user?.tiendaId;
+    if (tiendaId == null) {
+      _mostrarSnackBar(context, 'No se pudo identificar la tienda', error: true);
+      return;
+    }
+
+    final tienda = context.read<TiendaProvider>().tiendaSeleccionada;
+    final nombreTienda = (tienda?.nombre.isNotEmpty ?? false) ? tienda!.nombre : 'Mi tienda';
+    final nombreCliente = (widget.customer['name'] as String?)?.trim() ?? 'Cliente';
+
+    setState(() => _enviandoBienvenida = true);
+
+    try {
+      final mensaje = construirMensajeBienvenida(
+        nombreCliente: nombreCliente,
+        nombreTienda: nombreTienda,
+      );
+
+      final ok = await abrirWhatsapp(telefono: telefono, mensaje: mensaje);
+
+      if (!ok) {
+        if (mounted) {
+          setState(() => _enviandoBienvenida = false);
+          _mostrarSnackBar(context, 'No se pudo abrir WhatsApp', error: true);
+        }
+        return;
+      }
+
+      await DatabaseHelper.instance.setWhatsappBienvenida(telefono, tiendaId, enviada: true);
+
+      if (!mounted) return;
+      setState(() {
+        _bienvenidaEnviada = true;
+        _enviandoBienvenida = false;
+      });
+
+      _mostrarSnackBar(context, 'Toca "Enviar" en WhatsApp. Después podrás enviar recordatorios con imagen.');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _enviandoBienvenida = false);
+      _mostrarSnackBar(context, 'Error al abrir WhatsApp', error: true);
+    }
+  }
+
   Future<void> _enviarRecordatorio(
     BuildContext context, {
     required String nombreCliente,
@@ -226,6 +345,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
       _mostrarSnackBar(context, 'Este cliente no tiene un teléfono registrado', error: true);
       return;
     }
+    
     final tono = await showModalBottomSheet<TonoRecordatorio>(
       context: context,
       backgroundColor: AppColors.surface,
@@ -252,27 +372,15 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                         child: Row(
                           children: [
-                            const Icon(
-                              Icons.chat_bubble_outline_rounded,
-                              color: AppColors.teal,
-                              size: 20,
-                            ),
+                            const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.teal, size: 20),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 opcion.label,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.ink,
-                                ),
+                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
                               ),
                             ),
-                            const Icon(
-                              Icons.chevron_right_rounded,
-                              color: AppColors.inkMuted,
-                              size: 20,
-                            ),
+                            const Icon(Icons.chevron_right_rounded, color: AppColors.inkMuted, size: 20),
                           ],
                         ),
                       ),
@@ -284,46 +392,75 @@ class DebtDetailMultipleScreen extends StatelessWidget {
         );
       },
     );
+    
     if (tono == null || !context.mounted) return;
-    final mensaje = tono.mensaje(
-      nombreCliente: nombreCliente,
-      deuda: totalRestante.toStringAsFixed(2),
-      nombreTienda: nombreTienda,
-      detalle: _detalleFiados(),
-    );
-    final abierto = await abrirWhatsapp(telefono: telefono, mensaje: mensaje);
-    if (!context.mounted) return;
-    if (!abierto) {
-      _mostrarSnackBar(context, 'No se pudo abrir WhatsApp', error: true);
-      return;
+
+    final tienda = context.read<TiendaProvider>().tiendaSeleccionada;
+    final pendientes = widget.debts.where((d) => d.status != DebtStatus.pagado).toList();
+    final lineas = VoucherLinea.desdeDeudas(pendientes);
+
+    try {
+      final resultado = await ReminderVoucherService.enviarRecordatorio(
+        context,
+        tienda: tienda,
+        nombreCliente: nombreCliente,
+        telefono: telefono,
+        lineas: lineas,
+        total: totalRestante,
+        tono: tono,
+      );
+      if (!context.mounted) return;
+
+      if (resultado == ResultadoEnvio.error) {
+        _mostrarSnackBar(context, 'No se pudo generar la imagen', error: true);
+        return;
+      }
+      _mostrarSnackBar(
+        context,
+        resultado == ResultadoEnvio.directo
+            ? 'Revisa la imagen en el chat de $nombreCliente y pulsa enviar'
+            : 'Elige el chat de $nombreCliente en WhatsApp para enviarla',
+      );
+    } catch (e) {
+      debugPrint('ERROR RECORDATORIO: $e');
+      if (context.mounted) {
+        _mostrarSnackBar(context, 'No se pudo preparar el recordatorio', error: true);
+      }
     }
-    _mostrarSnackBar(context, 'Recordatorio preparado para $nombreCliente');
   }
 
   @override
   Widget build(BuildContext context) {
-    final rawName = customer['name'] as String? ?? '';
+    final rawName = widget.customer['name'] as String? ?? '';
     final name = rawName.trim().isEmpty ? 'Cliente' : rawName;
+
+    final clientes = context.watch<ClienteProvider>().clientes;
+    final photoUrl = _resolverFoto(clientes);
     final initials = _getInitials(name);
-    final photoUrl = customer['imageUrl'] as String?;
+
     final tienda = context.watch<TiendaProvider>().tiendaSeleccionada;
     final nombreTienda = (tienda?.nombre.isNotEmpty ?? false) ? tienda!.nombre : 'Mi tienda';
-    final allPaid = debts.isEmpty || debts.every((d) => d.status == DebtStatus.pagado);
+    
+    final allPaid = widget.debts.isEmpty || widget.debts.every((d) => d.status == DebtStatus.pagado);
 
-    final totalOriginal = debts.fold(0.0, (sum, d) => sum + d.amount);
-    final totalPagado = debts.fold(0.0, (sum, d) => sum + d.paidAmount);
+    final totalOriginal = widget.debts.fold(0.0, (sum, d) => sum + d.amount);
+    final totalPagado = widget.debts.fold(0.0, (sum, d) => sum + d.paidAmount);
     final totalRestante = totalOriginal - totalPagado;
-    final canCollect = totalRestante > 0 && debts.any((d) => d.isSelectable);
+    final canCollect = totalRestante > 0 && widget.debts.any((d) => d.isSelectable);
 
-    final fiadosCount = debts.length;
+    final fiadosCount = widget.debts.length;
     final fiadosLabel = '$fiadosCount fiado${fiadosCount == 1 ? '' : 's'}';
-    final fiadosSubtitle = isCollectFlow ? '$fiadosLabel seleccionado${fiadosCount == 1 ? '' : 's'}' : fiadosLabel;
+    final fiadosSubtitle = widget.isCollectFlow
+        ? '$fiadosLabel seleccionado${fiadosCount == 1 ? '' : 's'}'
+        : fiadosLabel;
 
     final Map<String, List<DebtItem>> productsByDate = {};
-    for (final debt in debts) {
+    for (final debt in widget.debts) {
       productsByDate.putIfAbsent(debt.dateLabel, () => []);
       productsByDate[debt.dateLabel]!.addAll(debt.items);
     }
+
+    final mostrarSubtitulo = !_cargando && !_bienvenidaEnviada;
 
     return AppHeaderConfig(
       title: 'Detalle de fiados',
@@ -346,17 +483,11 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 22,
-                      backgroundColor: AppColors.teal,
-                      backgroundImage: (photoUrl != null && photoUrl.isNotEmpty) ? NetworkImage(photoUrl) : null,
-                      onBackgroundImageError: (photoUrl != null && photoUrl.isNotEmpty) ? (_, _) {} : null,
-                      child: (photoUrl != null && photoUrl.isNotEmpty)
-                          ? null
-                          : Text(
-                              initials,
-                              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-                            ),
+                    AppAvatar.cliente(
+                      imageUrl: photoUrl,
+                      name: name,
+                      size: 44,
+                      fontSize: 14,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -398,7 +529,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.teal),
                     ),
                     const SizedBox(height: 16),
-                    ...debts.map(
+                    ...widget.debts.map(
                       (debt) => Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: Row(
@@ -412,8 +543,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                                     debt.dateLabel,
                                     style: TextStyle(fontSize: 12, color: AppColors.inkMuted),
                                   ),
-
-                                  //  Si está PAGADO: usa el formato con hora y zona horaria local
+                                  // Si está PAGADO: usa el formato con hora y zona horaria local
                                   if (debt.status == DebtStatus.pagado && debt.paidDate != null && debt.paidDate!.isNotEmpty) ...[
                                     const SizedBox(height: 4),
                                     Row(
@@ -427,7 +557,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                                       ],
                                     ),
                                   ]
-                                  //  Si NO está pagado: usa el formato solo de fecha
+                                  // Si NO está pagado: usa el formato solo de fecha
                                   else if (debt.dueDate != null && debt.dueDate!.isNotEmpty) ...[
                                     const SizedBox(height: 4),
                                     Row(
@@ -441,7 +571,6 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                                       ],
                                     ),
                                   ],
-
                                   // El chip de estado SOLO se muestra si NO está pagado
                                   if (debt.status != DebtStatus.pagado) ...[
                                     const SizedBox(height: 6),
@@ -580,8 +709,8 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => CollectMultiplePaymentScreen(
-                            customer: customer,
-                            selectedDebts: debts,
+                            customer: widget.customer,
+                            selectedDebts: widget.debts,
                           ),
                         ),
                       );
@@ -599,23 +728,55 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () => _enviarRecordatorio(
-                      context,
-                      nombreCliente: name,
-                      nombreTienda: nombreTienda,
-                      totalRestante: totalRestante,
+                
+                if (mostrarSubtitulo)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      'Enviar recordatorio',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.inkMuted),
                     ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.teal,
-                      side: const BorderSide(color: AppColors.teal),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: const Text('Enviar recordatorio', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   ),
+                  
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _enviandoBienvenida
+                            ? null
+                            : (_bienvenidaEnviada
+                                ? () => _enviarRecordatorio(
+                                      context,
+                                      nombreCliente: name,
+                                      nombreTienda: nombreTienda,
+                                      totalRestante: totalRestante,
+                                    )
+                                : _onEnviarBienvenida),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.teal,
+                          side: const BorderSide(color: AppColors.teal),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: _enviandoBienvenida
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.teal),
+                              )
+                            : Text(
+                                _bienvenidaEnviada ? 'Enviar recordatorio' : 'Enviar bienvenida',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.help_outline_rounded, color: AppColors.inkMuted),
+                      tooltip: '¿Cómo funciona?',
+                      onPressed: _mostrarAyuda,
+                    ),
+                  ],
                 ),
               ],
 
@@ -638,6 +799,7 @@ class DebtDetailMultipleScreen extends StatelessWidget {
   }
 }
 
+// ✅ Se mantienen estos widgets al final del archivo
 const double _receiptQuantityWidth = 54;
 const double _receiptUnitPriceWidth = 76;
 const double _receiptAmountWidth = 76;

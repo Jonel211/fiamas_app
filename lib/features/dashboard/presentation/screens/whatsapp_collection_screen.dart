@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/offline/database/database_helper.dart';
 import '../../../../core/utils/whatsapp_reminder.dart';
 import '../../../../core/widgets/app_header_config.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/data/models/cliente_model.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
+import '../../../debts/data/services/reminder_voucher_service.dart';
+import '../../../debts/presentation/widgets/reminder_voucher_card.dart';
 
 class WhatsappCollectionScreen extends StatefulWidget {
   const WhatsappCollectionScreen({super.key});
@@ -55,56 +58,83 @@ class _WhatsappCollectionScreenState extends State<WhatsappCollectionScreen> {
   }
 
   Future<void> _recordar(ClienteModel cliente, String nombreTienda) async {
-    final telefono = normalizarTelefonoWhatsapp(cliente.telefono);
-    if (telefono.isEmpty) {
+    void aviso(String texto, {bool error = false}) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Este cliente no tiene un teléfono registrado',
-            style: TextStyle(color: AppColors.danger),
+            texto,
+            style: TextStyle(color: error ? AppColors.danger : AppColors.onBrand),
           ),
-          backgroundColor: AppColors.dangerSoft,
+          backgroundColor: error ? AppColors.dangerSoft : AppColors.success,
         ),
       );
+    }
+
+    if (normalizarTelefonoWhatsapp(cliente.telefono).isEmpty) {
+      aviso('Este cliente no tiene un teléfono registrado', error: true);
       return;
     }
 
-    final deudaActual = cliente.vinculacion.saldoActual.toStringAsFixed(2);
-    final mensaje = _tono.mensaje(
-      nombreCliente: cliente.nombreCompleto,
-      deuda: deudaActual,
-      nombreTienda: nombreTienda,
-    );
-    final abierto = await abrirWhatsapp(
-      telefono: cliente.telefono,
-      mensaje: mensaje,
-    );
-
-    if (!mounted) return;
-
-    if (!abierto) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'No se pudo abrir WhatsApp',
-            style: TextStyle(color: AppColors.danger),
-          ),
-          backgroundColor: AppColors.dangerSoft,
-        ),
-      );
+    final tiendaId = _tiendaIdActual;
+    if (tiendaId == null) {
+      aviso('No se pudo identificar la tienda', error: true);
       return;
     }
 
-    setState(() => _recordados.add(cliente.id));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Recordatorio preparado para ${cliente.nombreCompleto}',
-          style: const TextStyle(color: AppColors.onBrand),
-        ),
-        backgroundColor: AppColors.success,
-      ),
-    );
+    final provider = context.read<ClienteProvider>();
+    final tienda = context.read<TiendaProvider>().tiendaSeleccionada;
+    aviso('Preparando recordatorio para ${cliente.nombreCompleto}…');
+
+    try {
+      final deudas = await provider.obtenerFiadosPendientes(
+        cliente.id,
+        tiendaId,
+        nombre: cliente.nombreCompleto,
+        telefono: cliente.telefono,
+      );
+      if (!mounted) return;
+
+      var lineas = VoucherLinea.desdeDeudas(deudas);
+      var total = lineas.fold<double>(0, (s, l) => s + l.monto);
+
+      if (lineas.isEmpty) {
+        total = cliente.vinculacion.saldoActual;
+        lineas = [
+          VoucherLinea(
+            fecha: '-',
+            detalle: 'Saldo pendiente',
+            monto: total,
+          ),
+        ];
+      }
+
+      final resultado = await ReminderVoucherService.enviarRecordatorio(
+        context,
+        tienda: tienda,
+        nombreCliente: cliente.nombreCompleto,
+        telefono: cliente.telefono,
+        lineas: lineas,
+        total: total,
+        tono: _tono,
+      );
+      if (!mounted) return;
+
+      if (resultado == ResultadoEnvio.error) {
+        aviso('No se pudo generar la imagen', error: true);
+        return;
+      }
+
+      setState(() => _recordados.add(cliente.id));
+      aviso(
+        resultado == ResultadoEnvio.directo
+            ? 'Revisa la imagen en el chat de ${cliente.nombreCompleto} y pulsa enviar'
+            : 'Elige el chat de ${cliente.nombreCompleto} en WhatsApp para enviarla',
+      );
+    } catch (e) {
+      debugPrint('ERROR RECORDATORIO: $e');
+      aviso('No se pudo preparar el recordatorio', error: true);
+    }
   }
 
   @override
@@ -177,7 +207,10 @@ class _WhatsappCollectionScreenState extends State<WhatsappCollectionScreen> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 14),
                     child: _DeudorCard(
+                      key: ValueKey('${cliente.id}_${tiendaId ?? ''}'),
                       cliente: cliente,
+                      tiendaId: tiendaId ?? '',
+                      nombreTienda: nombreTienda,
                       recordadoHoy: _recordados.contains(cliente.id),
                       onRecordar: () => _recordar(cliente, nombreTienda),
                     ),
@@ -263,21 +296,149 @@ class _TonoChip extends StatelessWidget {
   }
 }
 
-class _DeudorCard extends StatelessWidget {
+class _DeudorCard extends StatefulWidget {
   const _DeudorCard({
+    super.key,
     required this.cliente,
+    required this.tiendaId,
+    required this.nombreTienda,
     required this.recordadoHoy,
     required this.onRecordar,
   });
 
   final ClienteModel cliente;
+  final String tiendaId;
+  final String nombreTienda;
   final bool recordadoHoy;
   final VoidCallback onRecordar;
 
   @override
+  State<_DeudorCard> createState() => _DeudorCardState();
+}
+
+class _DeudorCardState extends State<_DeudorCard> {
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  bool _bienvenidaEnviada = true;
+  bool _cargando = true;
+  bool _enviando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarFlag();
+  }
+
+  Future<void> _cargarFlag() async {
+    final enviada = await _dbHelper.getWhatsappBienvenida(
+      widget.cliente.telefono,
+      widget.tiendaId,
+    );
+    if (!mounted) return;
+    setState(() {
+      _bienvenidaEnviada = enviada;
+      _cargando = false;
+    });
+  }
+
+  Future<void> _onPressed() async {
+    if (_enviando || _cargando) return;
+
+    if (_bienvenidaEnviada) {
+      widget.onRecordar();
+      return;
+    }
+
+    if (normalizarTelefonoWhatsapp(widget.cliente.telefono).isEmpty) {
+      _snack('Este cliente no tiene un teléfono registrado', error: true);
+      return;
+    }
+
+    setState(() => _enviando = true);
+
+    try {
+      final mensaje = construirMensajeBienvenida(
+        nombreCliente: widget.cliente.nombreCompleto,
+        nombreTienda: widget.nombreTienda,
+      );
+
+      final ok = await abrirWhatsapp(
+        telefono: widget.cliente.telefono,
+        mensaje: mensaje,
+      );
+
+      if (!ok) {
+        if (mounted) {
+          setState(() => _enviando = false);
+          _snack('No se pudo abrir WhatsApp', error: true);
+        }
+        return;
+      }
+
+      await _dbHelper.setWhatsappBienvenida(
+        widget.cliente.telefono,
+        widget.tiendaId,
+        enviada: true,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _bienvenidaEnviada = true;
+        _enviando = false;
+      });
+
+      _snack(
+        'Toca "Enviar" en WhatsApp. Después podrás enviar recordatorios con imagen.',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _enviando = false);
+      _snack('Error al abrir WhatsApp', error: true);
+    }
+  }
+
+  void _snack(String texto, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          texto,
+          style: TextStyle(color: error ? AppColors.danger : AppColors.onBrand),
+        ),
+        backgroundColor: error ? AppColors.dangerSoft : AppColors.success,
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  }
+
+  void _mostrarAyuda() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('¿Cómo funciona?'),
+        content: const Text(
+          'El primer envío abre WhatsApp con un mensaje de bienvenida. '
+          'Después, los recordatorios con imagen se envían solos.\n\n'
+          'Si borraste el chat, envía un mensaje desde el perfil del cliente.',
+          style: TextStyle(fontSize: 14, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Entendido'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final mostrarSubtitulo = !_cargando && !_bienvenidaEnviada;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      // Redujimos el padding derecho de 20 a 8 para que el (?) respire mejor
+      padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
@@ -296,7 +457,7 @@ class _DeudorCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  cliente.nombreCompleto,
+                  widget.cliente.nombreCompleto,
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -305,14 +466,14 @@ class _DeudorCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Deuda actual: S/ ${cliente.vinculacion.saldoActual.toStringAsFixed(2)}',
+                  'Deuda actual: S/ ${widget.cliente.vinculacion.saldoActual.toStringAsFixed(2)}',
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: AppColors.teal,
                   ),
                 ),
-                if (recordadoHoy) ...[
+                if (widget.recordadoHoy) ...[
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -347,25 +508,75 @@ class _DeudorCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          Material(
-            color: AppColors.teal,
-            borderRadius: BorderRadius.circular(10),
-            child: InkWell(
-              onTap: onRecordar,
-              borderRadius: BorderRadius.circular(10),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                child: Text(
-                  'Recordar',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.onBrand,
+          const SizedBox(width: 4), // Reducido de 8 a 4 para dar más espacio
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (mostrarSubtitulo)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 4, right: 18), // Alineado ópticamente sobre el botón
+                  child: Text(
+                    'Enviar recordatorio',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.inkMuted,
+                    ),
                   ),
                 ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Material(
+                    color: AppColors.teal,
+                    borderRadius: BorderRadius.circular(10),
+                    child: InkWell(
+                      onTap: _onPressed,
+                      borderRadius: BorderRadius.circular(10),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12, // Reducido de 14 a 12 para compactar el botón
+                          vertical: 10,
+                        ),
+                        child: _enviando
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.onBrand,
+                                ),
+                              )
+                            : Text(
+                                _bienvenidaEnviada
+                                    ? 'Enviar recordatorio'
+                                    : 'Enviar bienvenida',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.onBrand,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 2), // Pequeño espacio entre botón y (?)
+                  IconButton(
+                    padding: EdgeInsets.zero, // Elimina el padding interno por defecto
+                    constraints: const BoxConstraints(), // Elimina el tamaño mínimo de 48x48
+                    icon: const Icon(
+                      Icons.help_outline_rounded,
+                      size: 18,
+                      color: AppColors.inkMuted,
+                    ),
+                    tooltip: '¿Cómo funciona?',
+                    onPressed: _mostrarAyuda,
+                  ),
+                ],
               ),
-            ),
+            ],
           ),
         ],
       ),
