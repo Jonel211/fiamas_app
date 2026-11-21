@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_avatar.dart';
 
 /// Tarjeta visual del QR para captura como imagen (estilo Yape).
 /// Esta tarjeta se renderiza con RepaintBoundary y se exporta como PNG.
@@ -168,31 +169,19 @@ class QrShareCard extends StatelessWidget {
   }
 
   Widget _buildLogo() {
-    if (logoUrl == null || logoUrl!.isEmpty) {
-      return Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 2),
-        ),
-        child: const Icon(Icons.storefront_rounded, size: 20, color: AppColors.teal),
-      );
-    }
-
-    return Container(
-      width: 36,
-      height: 36,
-      clipBehavior: Clip.antiAlias,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-      ),
-      child: Image.network(
-        logoUrl!,
-        fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => const Icon(Icons.storefront_rounded, size: 20, color: AppColors.teal),
+    return AppAvatar(
+      imageUrl: logoUrl,
+      name: nombreTienda,
+      size: 36,
+      backgroundColor: Colors.white,
+      foregroundColor: AppColors.teal,
+      borderColor: Colors.white,
+      borderWidth: 2,
+      fontSize: 14,
+      fallback: const Icon(
+        Icons.storefront_rounded,
+        size: 20,
+        color: AppColors.teal,
       ),
     );
   }

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_avatar.dart';
 
 class MovementTile extends StatelessWidget {
   const MovementTile({
     super.key,
-    required this.initial,
+    this.imageUrl,
     required this.avatarBg,
     required this.avatarFg,
     required this.name,
@@ -15,7 +16,7 @@ class MovementTile extends StatelessWidget {
     required this.showBorder,
   });
 
-  final String initial;
+  final String? imageUrl;
   final Color avatarBg;
   final Color avatarFg;
   final String name;
@@ -38,17 +39,13 @@ class MovementTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 20,
+          AppAvatar(
+            imageUrl: imageUrl,
+            name: name,
+            size: 40,
             backgroundColor: avatarBg,
-            child: Text(
-              initial,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: avatarFg,
-              ),
-            ),
+            foregroundColor: avatarFg,
+            fontSize: 16,
           ),
           const SizedBox(width: 12),
           Expanded(

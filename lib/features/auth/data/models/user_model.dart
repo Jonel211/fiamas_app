@@ -36,7 +36,14 @@ class UserModel {
       tiendaId: json['tienda_id'] as String? ?? json['tiendaId'] as String?,
       //  Maneja tanto 'es_premium' (backend) como 'esPremium'
       esPremium: json['es_premium'] ?? json['esPremium'] ?? false,
-      fotoPerfilUrl: json['foto_perfil_url'] ?? json['fotoPerfilUrl'],
+      fotoPerfilUrl:
+          json['foto_perfil_url'] ??
+          json['fotoPerfilUrl'] ??
+          json['foto_url'] ??
+          json['foto'] ??
+          json['avatar_url'] ??
+          json['imagen_url'] ??
+          json['profile_image'],
     );
   }
 

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:fiamas_app/core/constants/app_colors.dart';
+import 'package:fiamas_app/core/utils/image_url.dart';
+import 'package:fiamas_app/core/widgets/app_avatar.dart';
 import 'package:fiamas_app/core/widgets/app_header_config.dart';
 import 'package:fiamas_app/core/widgets/image_zoom_screen.dart'; 
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -38,15 +40,6 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     });
   }
 
-  String _getInitial(String name) {
-    final words = name.trim().split(' ');
-    final skipTitles = {'doña', 'don', 'señor', 'señora', 'dr', 'dra', 'lic', 'ing'};
-    for (final word in words) {
-      if (!skipTitles.contains(word.toLowerCase())) return word[0].toUpperCase();
-    }
-    return name[0].toUpperCase();
-  }
-
   String _getFormattedDate(DateTime? date) {
     if (date == null) return 'Cliente registrado';
     const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -56,11 +49,12 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
 
   //  NUEVO: Abre la foto del cliente en pantalla completa con zoom
   void _abrirZoomImagen(BuildContext context, String? photoUrl, String nombreCliente) {
-    if (photoUrl == null || photoUrl.isEmpty) return;
+    final url = resolveImageUrl(photoUrl);
+    if (url == null) return;
 
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => ImageZoomScreen(imageUrl: photoUrl),
+        builder: (_) => ImageZoomScreen(imageUrl: url),
       ),
     );
   }
@@ -100,7 +94,6 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     final name = widget.customer.nombreCompleto;
     final phone = widget.customer.telefono;
     final address = widget.customer.direccion;
-    final initial = _getInitial(name);
 
     final detalleTienda = (resumen != null && resumen['detalle_por_tienda'] != null && (resumen['detalle_por_tienda'] as List).isNotEmpty)
         ? resumen['detalle_por_tienda'][0] as Map<String, dynamic>
@@ -126,7 +119,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                 resumen?['foto_url'] ??
                 resumen?['foto']));
 
-    final tieneFoto = photoUrl != null && photoUrl.isNotEmpty;
+    final tieneFoto = resolveImageUrl(photoUrl) != null;
     final used = debt;
     final available = creditLimit - used;
     final usagePercent = creditLimit > 0 ? (used / creditLimit * 100).clamp(0.0, 100.0) : 0.0;
@@ -162,14 +155,13 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                                 child: Stack(
                                   clipBehavior: Clip.none,
                                   children: [
-                                    CircleAvatar(
-                                      radius: 45,
+                                    AppAvatar(
+                                      imageUrl: photoUrl,
+                                      name: name,
+                                      size: 90,
                                       backgroundColor: AppColors.teal,
-                                      backgroundImage: tieneFoto ? NetworkImage(photoUrl!) : null,
-                                      onBackgroundImageError: tieneFoto ? (_, _) {} : null,
-                                      child: tieneFoto
-                                          ? null
-                                          : Text(initial, style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold)),
+                                      foregroundColor: Colors.white,
+                                      fontSize: 36,
                                     ),
                                     // Ícono de lupa en la esquina (solo si hay foto)
                                     if (tieneFoto)

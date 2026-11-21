@@ -262,7 +262,8 @@ class _MenuScreenState extends State<MenuScreen> {
                   UserCard(
                     name: userName,
                     phone: userPhone,
-                    imageUrl: perfil?.fotoUrl,
+                    imageUrl:
+                        perfil?.fotoUrl ?? authProvider.user?.fotoPerfilUrl,
                     onTap: () =>
                         Navigator.of(context).pushNamed(AppRoutes.profile),
                   ),

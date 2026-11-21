@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_avatar.dart';
 import '../../../../core/widgets/app_header_config.dart';
 import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -130,16 +131,12 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
     final score = clienteCompleto?.vinculacion.scorePagador ?? 100;
     final categoria = clienteCompleto?.vinculacion.categoriaPagador ?? 'nuevo';
 
-    final initial = name.trim().isNotEmpty
-        ? name.trim().split(' ').last[0].toUpperCase()
-        : 'C';
     final nivel = nivelScore(score, categoria);
     final badgeText = nivel.etiqueta;
     final badgeColor = nivel.color;
     final photoUrl =
         clienteCompleto?.fotoPerfilUrl ??
         (widget.customer['imageUrl'] as String?);
-    final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
 
     final fiados = provider.fiadosCliente;
 
@@ -237,23 +234,13 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                       ),
                       child: Row(
                         children: [
-                          CircleAvatar(
-                            radius: 28,
+                          AppAvatar(
+                            imageUrl: photoUrl,
+                            name: name,
+                            size: 56,
                             backgroundColor: AppColors.teal,
-                            backgroundImage: hasPhoto
-                                ? NetworkImage(photoUrl)
-                                : null,
-                            onBackgroundImageError: hasPhoto ? (_, _) {} : null,
-                            child: hasPhoto
-                                ? null
-                                : Text(
-                                    initial,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                            foregroundColor: Colors.white,
+                            fontSize: 22,
                           ),
                           const SizedBox(width: 12),
                           Expanded(

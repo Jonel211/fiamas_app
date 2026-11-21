@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fiamas_app/core/constants/app_colors.dart';
 import 'package:fiamas_app/core/utils/whatsapp_reminder.dart';
+import 'package:fiamas_app/core/widgets/app_avatar.dart';
 import 'package:fiamas_app/core/widgets/app_header_config.dart';
 import 'package:fiamas_app/core/widgets/modal_bottom_sheet_layout.dart';
 
@@ -22,22 +23,6 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     required this.debts,
     this.isCollectFlow = false,
   });
-
-  String _getInitials(String name) {
-    final cleanName = name.trim();
-    if (cleanName.isEmpty) return 'C';
-
-    final parts = cleanName.split(RegExp(r'\s+'));
-
-    if (parts.length == 1) {
-      if (parts.first.isEmpty) return 'C';
-      return parts.first.substring(0, 1).toUpperCase();
-    }
-
-    final first = parts.first.isNotEmpty ? parts.first.substring(0, 1) : '';
-    final last = parts.last.isNotEmpty ? parts.last.substring(0, 1) : '';
-    return (first + last).toUpperCase();
-  }
 
   String _getStatusText(DebtStatus status) {
     switch (status) {
@@ -272,7 +257,6 @@ class DebtDetailMultipleScreen extends StatelessWidget {
     final rawName = customer['name'] as String? ?? '';
     final name = rawName.trim().isEmpty ? 'Cliente' : rawName;
 
-    final initials = _getInitials(name);
     final photoUrl = customer['imageUrl'] as String?;
     final tienda = context.watch<TiendaProvider>().tiendaSeleccionada;
     final nombreTienda = (tienda?.nombre.isNotEmpty ?? false)
@@ -322,27 +306,13 @@ class DebtDetailMultipleScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 22,
+                    AppAvatar(
+                      imageUrl: photoUrl,
+                      name: name,
+                      size: 44,
                       backgroundColor: AppColors.teal,
-                      backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
-                          ? NetworkImage(photoUrl)
-                          : null,
-                      onBackgroundImageError:
-                          (photoUrl != null && photoUrl.isNotEmpty)
-                          ? (_, _) {}
-                          : null,
-
-                      child: (photoUrl != null && photoUrl.isNotEmpty)
-                          ? null
-                          : Text(
-                              initials,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                      foregroundColor: Colors.white,
+                      fontSize: 14,
                     ),
                     const SizedBox(width: 12),
                     Expanded(

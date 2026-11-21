@@ -43,13 +43,6 @@ class Debt {
   /// Regla única de selección para cobros: un fiado pagado o cancelado
   /// no puede seleccionarse. Pendiente, parcial y vencido sí.
   bool get isSelectable => isActive;
-
-  String get initials {
-    final parts = customerName.trim().split(RegExp(r'\s+'));
-    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
-        .toUpperCase();
-  }
 }
 
 class DebtItem {

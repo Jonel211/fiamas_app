@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 
+import '../utils/image_url.dart';
+
 /// Pantalla a pantalla completa con zoom, pan y doble tap para resetear.
 /// Soporta imágenes de red (URL) o archivos locales (File).
 class ImageZoomScreen extends StatefulWidget {
@@ -43,8 +45,11 @@ class _ImageZoomScreenState extends State<ImageZoomScreen> {
       );
     }
 
+    final url = resolveImageUrl(widget.imageUrl);
+    if (url == null) return _errorWidget();
+
     return Image.network(
-      widget.imageUrl!,
+      url,
       fit: BoxFit.contain,
       loadingBuilder: (context, child, progress) {
         if (progress == null) return child;

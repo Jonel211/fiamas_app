@@ -234,6 +234,12 @@ class AuthProvider with ChangeNotifier {
 
     try {
       _perfil = await authService.subirFotoPerfil(file);
+      if (_perfil != null && _user != null) {
+        _user = _user!.copyWith(
+          fotoPerfilUrl: _perfil!.fotoUrl ?? _user!.fotoPerfilUrl,
+        );
+        await _repository.saveUser(_user!);
+      }
       notifyListeners();
       return true;
     } catch (e) {

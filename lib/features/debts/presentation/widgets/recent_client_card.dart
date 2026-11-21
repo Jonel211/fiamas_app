@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_avatar.dart';
 import '../../../customers/data/models/cliente_model.dart';
 
 class RecentClientCard extends StatelessWidget {
@@ -20,13 +21,6 @@ class RecentClientCard extends StatelessWidget {
   final String categoria;
   final VoidCallback? onTap;
 
-  String get _initials {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) return 'C';
-    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-    return (parts.first.substring(0, 1) + parts.last.substring(0, 1)).toUpperCase();
-  }
-
   @override
   Widget build(BuildContext context) {
     final nivel = nivelScore(score, categoria);
@@ -43,31 +37,13 @@ class RecentClientCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.mist,
-                shape: BoxShape.circle,
-                image: (imageUrl != null && imageUrl!.isNotEmpty)
-                    ? DecorationImage(
-                        image: NetworkImage(imageUrl!),
-                        fit: BoxFit.cover,
-                        onError: (_, _) {},
-                      )
-                    : null,
-              ),
-              child: (imageUrl != null && imageUrl!.isNotEmpty)
-                  ? null
-                  : Text(
-                      _initials,
-                      style: const TextStyle(
-                        color: AppColors.ink,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
+            AppAvatar(
+              imageUrl: imageUrl,
+              name: name,
+              size: 48,
+              backgroundColor: AppColors.mist,
+              foregroundColor: AppColors.ink,
+              fontSize: 16,
             ),
             const SizedBox(width: 14),
             Expanded(
