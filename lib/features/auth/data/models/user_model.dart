@@ -75,6 +75,7 @@ class UserModel {
     String? tiendaId,
     bool? esPremium,
     String? fotoPerfilUrl,
+    bool clearFotoPerfilUrl = false,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -85,7 +86,9 @@ class UserModel {
       rol: rol ?? this.rol,
       tiendaId: tiendaId ?? this.tiendaId,
       esPremium: esPremium ?? this.esPremium,
-      fotoPerfilUrl: fotoPerfilUrl ?? this.fotoPerfilUrl,
+      fotoPerfilUrl: clearFotoPerfilUrl
+          ? null
+          : fotoPerfilUrl ?? this.fotoPerfilUrl,
     );
   }
 }

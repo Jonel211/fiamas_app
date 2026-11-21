@@ -248,9 +248,7 @@ class _MenuScreenState extends State<MenuScreen> {
           child: Consumer<AuthProvider>(
             builder: (context, authProvider, _) {
               final perfil = authProvider.perfil;
-              final userName = perfil?.fullName.isNotEmpty == true
-                  ? perfil!.fullName
-                  : (authProvider.user?.nombre ?? 'Usuario');
+              final userName = authProvider.tenderoNombreCompleto;
               final userPhone =
                   (perfil?.telefono != null && perfil!.telefono.isNotEmpty)
                   ? '+51 ${perfil.telefono}'
@@ -262,8 +260,7 @@ class _MenuScreenState extends State<MenuScreen> {
                   UserCard(
                     name: userName,
                     phone: userPhone,
-                    imageUrl:
-                        perfil?.fotoUrl ?? authProvider.user?.fotoPerfilUrl,
+                    imageUrl: authProvider.tenderoFotoUrl,
                     onTap: () =>
                         Navigator.of(context).pushNamed(AppRoutes.profile),
                   ),

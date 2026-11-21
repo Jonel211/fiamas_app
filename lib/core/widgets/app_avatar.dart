@@ -21,6 +21,18 @@ class AppAvatar extends StatelessWidget {
     this.fallback,
   });
 
+  const AppAvatar.tendero({
+    super.key,
+    this.imageUrl,
+    required this.name,
+    this.size = 40,
+    this.borderColor,
+    this.borderWidth = 0,
+    this.fontSize,
+    this.fallback,
+  }) : backgroundColor = AppColors.teal,
+       foregroundColor = Colors.white;
+
   final String? imageUrl;
   final String name;
   final double size;

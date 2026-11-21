@@ -37,12 +37,10 @@ class UserCard extends StatelessWidget {
           child: Row(
             children: [
               // Avatar circular con la foto del tendero o sus iniciales
-              AppAvatar(
+              AppAvatar.tendero(
                 imageUrl: imageUrl,
                 name: name,
                 size: _avatarSize,
-                backgroundColor: AppColors.mist,
-                foregroundColor: AppColors.ink,
               ),
               const SizedBox(width: 14),
               // Nombre + teléfono

@@ -29,12 +29,10 @@ class ProfileAvatar extends StatelessWidget {
     if (localFile != null) {
       return Image.file(localFile!, width: size, height: size, fit: BoxFit.cover);
     }
-    return AppAvatar(
+    return AppAvatar.tendero(
       imageUrl: imageUrl,
       name: name,
       size: size,
-      backgroundColor: AppColors.teal,
-      foregroundColor: Colors.white,
       fontSize: size * 0.44,
     );
   }
