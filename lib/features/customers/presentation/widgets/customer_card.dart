@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fiamas_app/core/constants/app_colors.dart';
+import 'package:fiamas_app/core/widgets/app_avatar.dart';
 import 'status_badge.dart';
 
 class CustomerCard extends StatelessWidget {
@@ -59,21 +60,13 @@ class CustomerCard extends StatelessWidget {
             onTap: onTapProfile,
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: CircleAvatar(
-                radius: 28,
+              child: AppAvatar(
+                imageUrl: imageUrl,
+                name: name,
+                size: 56,
                 backgroundColor: _getAvatarColor(),
-                backgroundImage: (imageUrl != null && imageUrl!.isNotEmpty) ? NetworkImage(imageUrl!) : null,
-                onBackgroundImageError: (imageUrl != null && imageUrl!.isNotEmpty) ? (_, _) {} : null,
-                child: (imageUrl != null && imageUrl!.isNotEmpty)
-                    ? null
-                    : Text(
-                  name[0].toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                foregroundColor: Colors.white,
+                fontSize: 20,
               ),
             ),
           ),

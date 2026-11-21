@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_avatar.dart';
 
 /// Tarjeta de usuario con avatar, nombre y teléfono.
 /// Si recibe [onTap], toda la tarjeta es tocable.
@@ -19,28 +20,6 @@ class UserCard extends StatelessWidget {
 
   static const double _avatarSize = 52;
 
-  Widget _placeholder() {
-    return Container(
-      width: _avatarSize,
-      height: _avatarSize,
-      color: AppColors.mist,
-    );
-  }
-
-  Widget _avatar() {
-    final url = imageUrl;
-    if (url == null || url.isEmpty) return _placeholder();
-
-    return Image.network(
-      url,
-      key: ValueKey(url),
-      width: _avatarSize,
-      height: _avatarSize,
-      fit: BoxFit.cover,
-      errorBuilder: (_, _, _) => _placeholder(),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -57,8 +36,12 @@ class UserCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              // Avatar circular con la foto del tendero
-              ClipOval(child: _avatar()),
+              // Avatar circular con la foto del tendero o sus iniciales
+              AppAvatar.tendero(
+                imageUrl: imageUrl,
+                name: name,
+                size: _avatarSize,
+              ),
               const SizedBox(width: 14),
               // Nombre + teléfono
               Expanded(

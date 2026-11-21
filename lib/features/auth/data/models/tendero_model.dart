@@ -37,7 +37,7 @@ class TenderoModel {
       nombres: json['nombres'] ?? '',
       apellidos: json['apellidos'] ?? '',
       telefono: json['telefono'] ?? '',
-      fotoUrl: json['foto_perfil_url'],
+      fotoUrl: json['foto_perfil_url'] as String?,
       tiendas: tiendasList,
       isPremium: json['es_premium'] == true,
     );

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+
 import '../../../core/network/dio_client.dart';
 
 class StoreSummary {
@@ -12,7 +13,7 @@ class StoreSummary {
     required this.totalCategorias,
     required this.productosStockBajo,
     required this.alertasPendientes,
-    required this.cobradoEsteMes, 
+    required this.cobradoEsteMes,
   });
 
   final String tiendaId;
@@ -24,7 +25,7 @@ class StoreSummary {
   final int totalCategorias;
   final int productosStockBajo;
   final int alertasPendientes;
-  final double cobradoEsteMes; 
+  final double cobradoEsteMes;
 
   factory StoreSummary.fromJson(Map<String, dynamic> j) {
     int i(String k) => (j[k] as num?)?.toInt() ?? 0;
@@ -38,23 +39,27 @@ class StoreSummary {
       totalCategorias: i('total_categorias'),
       productosStockBajo: i('productos_stock_bajo'),
       alertasPendientes: i('alertas_pendientes'),
-      cobradoEsteMes: (j['cobrado_este_mes'] as num?)?.toDouble() ?? 0, 
+      cobradoEsteMes: (j['cobrado_este_mes'] as num?)?.toDouble() ?? 0,
     );
   }
 }
 
 class MovimientoReciente {
   final String id;
-  final String tipo; 
+  final String? clienteId;
+  final String tipo;
   final String clienteNombre;
+  final String? clienteFotoUrl;
   final double monto;
   final DateTime fecha;
   final String detalle;
 
   MovimientoReciente({
     required this.id,
+    this.clienteId,
     required this.tipo,
     required this.clienteNombre,
+    this.clienteFotoUrl,
     required this.monto,
     required this.fecha,
     required this.detalle,
@@ -62,16 +67,54 @@ class MovimientoReciente {
 
   factory MovimientoReciente.fromJson(Map<String, dynamic> json) {
     // Se convierte la fecha a la hora local del dispositivo con .toLocal()
-    final fechaUtc = DateTime.tryParse(json['fecha']?.toString() ?? '') ?? DateTime.now();
-    
+    final fechaUtc =
+        DateTime.tryParse(json['fecha']?.toString() ?? '') ?? DateTime.now();
+
     return MovimientoReciente(
       id: json['id']?.toString() ?? '',
+      clienteId: _clienteId(json),
       tipo: json['tipo']?.toString() ?? 'fiado',
       clienteNombre: json['cliente_nombre']?.toString() ?? 'Cliente',
+      clienteFotoUrl: _clienteFotoUrl(json),
       monto: double.tryParse(json['monto']?.toString() ?? '') ?? 0.0,
-      fecha: fechaUtc.toLocal(), 
+      fecha: fechaUtc.toLocal(),
       detalle: json['detalle']?.toString() ?? '',
     );
+  }
+
+  static String? _clienteId(Map<String, dynamic> json) {
+    final direct = json['cliente_id'];
+    if (direct != null) return direct.toString();
+
+    final cliente = json['cliente'];
+    if (cliente is Map) {
+      final id = Map<String, dynamic>.from(cliente)['id'];
+      if (id != null) return id.toString();
+    }
+    return null;
+  }
+
+  static String? _clienteFotoUrl(Map<String, dynamic> json) {
+    final cliente = json['cliente'];
+    if (cliente is Map) {
+      final nested = _firstNonEmpty(
+        Map<String, dynamic>.from(cliente),
+        _fotoKeys,
+      );
+      if (nested != null) return nested;
+    }
+
+    return _firstNonEmpty(json, _fotoKeys);
+  }
+
+  static const _fotoKeys = <String>['foto_perfil_url'];
+
+  static String? _firstNonEmpty(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value is String && value.trim().isNotEmpty) return value.trim();
+    }
+    return null;
   }
 }
 
@@ -98,16 +141,17 @@ class DashboardService {
   }
 
   /// GET /tiendas/movimientos-recientes?tienda_id=...
-  Future<List<MovimientoReciente>> getMovimientosRecientes(String tiendaId) async {
+  Future<List<MovimientoReciente>> getMovimientosRecientes(
+    String tiendaId,
+  ) async {
     try {
       final res = await _dio.get(
         '/tiendas/movimientos-recientes',
         queryParameters: {'tienda_id': tiendaId},
       );
-      
+
       final List<dynamic> data = res.data['movimientos'] ?? [];
       return data.map((json) => MovimientoReciente.fromJson(json)).toList();
-      
     } on DioException catch (e) {
       final data = e.response?.data;
       if (data is Map && data['error'] is String) {

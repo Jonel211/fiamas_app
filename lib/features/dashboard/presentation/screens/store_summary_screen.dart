@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/store_avatar.dart';
-import '../../../../main.dart'; 
+import '../../../../core/widgets/app_avatar.dart';
+import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
+import '../../../customers/presentation/providers/cliente_provider.dart';
+import '../../../customers/data/models/cliente_model.dart';
 import '../../../notifications/presentation/providers/notification_provider.dart';
 import '../../data/dashboard_service.dart';
 import '../widgets/movement_tile.dart';
@@ -17,7 +19,8 @@ class StoreSummaryScreen extends StatefulWidget {
   State<StoreSummaryScreen> createState() => _StoreSummaryScreenState();
 }
 
-class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware {
+class _StoreSummaryScreenState extends State<StoreSummaryScreen>
+    with RouteAware {
   final _service = DashboardService();
 
   StoreSummary? _summary;
@@ -33,7 +36,8 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
 
     final tiendaProvider = Provider.of<TiendaProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
-    String? id = tiendaProvider.tiendaSeleccionadaId ?? authProvider.user?.tiendaId;
+    String? id =
+        tiendaProvider.tiendaSeleccionadaId ?? authProvider.user?.tiendaId;
 
     if (tiendaProvider.tiendas.isNotEmpty &&
         (id == null || !tiendaProvider.tiendas.any((t) => t.id == id))) {
@@ -45,25 +49,33 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) tiendaProvider.seleccionarTienda(primera.id);
       });
-    } else if (id == null && !tiendaProvider.isLoading && authProvider.isAuthenticated) {
+    } else if (id == null &&
+        !tiendaProvider.isLoading &&
+        authProvider.isAuthenticated) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) tiendaProvider.cargarMisTiendas();
       });
     }
 
-    if (id != null && (id != _loadedTiendaId || (_summary == null && !_loadingSummary && _summaryError == null))) {
+    if (id != null &&
+        (id != _loadedTiendaId ||
+            (_summary == null && !_loadingSummary && _summaryError == null))) {
       _loadedTiendaId = id;
-      _summary = null; 
+      _summary = null;
       _movimientos = [];
       _summaryError = null;
       _loadingSummary = true;
       _fetchSummary(id);
     }
+
+    if (id != null) {
+      _ensureClientesLoaded(id);
+    }
   }
 
   @override
   void dispose() {
-    routeObserver.unsubscribe(this); 
+    routeObserver.unsubscribe(this);
     super.dispose();
   }
 
@@ -87,7 +99,10 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
           final data = results[0] as StoreSummary;
           final movs = results[1] as List<MovimientoReciente>;
 
-          if (!mounted || (_loadedTiendaId != id && _loadedTiendaId != targetId)) return;
+          if (!mounted ||
+              (_loadedTiendaId != id && _loadedTiendaId != targetId)) {
+            return;
+          }
 
           setState(() {
             _summary = data;
@@ -96,7 +111,10 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
           });
           return;
         } catch (e) {
-          if (!mounted || (_loadedTiendaId != id && _loadedTiendaId != targetId)) return;
+          if (!mounted ||
+              (_loadedTiendaId != id && _loadedTiendaId != targetId)) {
+            return;
+          }
 
           if (attempt < maxAttempts) {
             final tiendaProvider = context.read<TiendaProvider>();
@@ -130,11 +148,61 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
   Future<void> _refresh() async {
     final id = _loadedTiendaId;
     if (id == null) return;
+    _ensureClientesLoaded(id);
     setState(() {
       _loadingSummary = true;
       _summaryError = null;
     });
     await _fetchSummary(id);
+  }
+
+  void _ensureClientesLoaded(String tiendaId) {
+    final clienteProvider = context.read<ClienteProvider>();
+    if (clienteProvider.tiendaIdCargada != tiendaId &&
+        !clienteProvider.isLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.read<ClienteProvider>().cargarClientes(tiendaId);
+        }
+      });
+    }
+  }
+
+  String _normalizeName(String value) {
+    final normalized = value
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[áàäâã]'), 'a')
+        .replaceAll(RegExp(r'[éèëê]'), 'e')
+        .replaceAll(RegExp(r'[íìïî]'), 'i')
+        .replaceAll(RegExp(r'[óòöôõ]'), 'o')
+        .replaceAll(RegExp(r'[úùüû]'), 'u')
+        .replaceAll('ñ', 'n');
+    return normalized.replaceAll(RegExp(r'\s+'), ' ');
+  }
+
+  String? _resolveMovementImageUrl(
+    MovimientoReciente movimiento,
+    List<ClienteModel> clientes,
+  ) {
+    // La lista de clientes es la fuente más fresca: si la foto se borró,
+    // no debe resucitar desde el movimiento.
+    if (movimiento.clienteId != null) {
+      for (final cliente in clientes) {
+        if (cliente.id == movimiento.clienteId) {
+          return cliente.fotoPerfilUrl;
+        }
+      }
+    }
+
+    final movementName = _normalizeName(movimiento.clienteNombre);
+    for (final cliente in clientes) {
+      if (_normalizeName(cliente.nombreCompleto) == movementName) {
+        return cliente.fotoPerfilUrl;
+      }
+    }
+
+    return movimiento.clienteFotoUrl;
   }
 
   Future<void> _openNotifications() async {
@@ -145,7 +213,9 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
 
   String _formatTime(DateTime date) {
     final now = DateTime.now();
-    if (date.year == now.year && date.month == now.month && date.day == now.day) {
+    if (date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day) {
       final hour = date.hour > 12 ? date.hour - 12 : date.hour;
       final ampm = date.hour >= 12 ? 'PM' : 'AM';
       return '${hour == 0 ? 12 : hour}:${date.minute.toString().padLeft(2, '0')} $ampm';
@@ -164,6 +234,7 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
   @override
   Widget build(BuildContext context) {
     final tiendaProvider = context.watch<TiendaProvider>();
+    final clienteProvider = context.watch<ClienteProvider>();
     final summary = _summary;
     final nombre = summary?.nombre.isNotEmpty == true
         ? summary!.nombre
@@ -183,21 +254,33 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Container(
-                decoration: BoxDecoration(color: const Color(0xFF148F8B), borderRadius: BorderRadius.circular(24)),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF148F8B),
+                  borderRadius: BorderRadius.circular(24),
+                ),
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        StoreAvatar(
+                        AppAvatar.tienda(
                           imageUrl: tiendaProvider.tiendaSeleccionada?.logoUrl,
                           name: nombre,
                           size: 56,
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Text(nombre, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                          child: Text(
+                            nombre,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                         IconButton(
                           onPressed: _openNotifications,
@@ -206,15 +289,37 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
                             label: Text(unread > 9 ? '9+' : '$unread'),
                             backgroundColor: const Color(0xFFE5A93C),
                             textColor: const Color(0xFF2C2208),
-                            child: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 24),
+                            child: const Icon(
+                              Icons.notifications_none_rounded,
+                              color: Colors.white,
+                              size: 24,
+                            ),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 20),
-                    Text('SALDO TOTAL POR COBRAR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white.withValues(alpha: 0.8), letterSpacing: 0.6)),
+                    Text(
+                      'SALDO TOTAL POR COBRAR',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white.withValues(alpha: 0.8),
+                        letterSpacing: 0.6,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text(_loadingSummary && summary == null ? '...' : _money(summary?.montoPorCobrar ?? 0), style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: Colors.white, height: 1.1)),
+                    Text(
+                      _loadingSummary && summary == null
+                          ? '...'
+                          : _money(summary?.montoPorCobrar ?? 0),
+                      style: const TextStyle(
+                        fontSize: 38,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        height: 1.1,
+                      ),
+                    ),
                     const SizedBox(height: 14),
                     Wrap(
                       spacing: 16,
@@ -224,17 +329,39 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.trending_up_rounded, color: Colors.white, size: 18),
+                            const Icon(
+                              Icons.trending_up_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
                             const SizedBox(width: 6),
-                            Text('Cobrado este mes: ${_money(summary?.cobradoEsteMes ?? 0)}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.white.withValues(alpha: 0.9))),
+                            Text(
+                              'Cobrado este mes: ${_money(summary?.cobradoEsteMes ?? 0)}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white.withValues(alpha: 0.9),
+                              ),
+                            ),
                           ],
                         ),
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.pending_actions_rounded, color: Colors.white, size: 18),
+                            const Icon(
+                              Icons.pending_actions_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
                             const SizedBox(width: 6),
-                            Text('Pendientes: ${summary?.fiadosPendientes ?? 0}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.white.withValues(alpha: 0.9))),
+                            Text(
+                              'Pendientes: ${summary?.fiadosPendientes ?? 0}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white.withValues(alpha: 0.9),
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -254,42 +381,72 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => Navigator.of(context).pushNamed(AppRoutes.whatsappCollection),
+                      onPressed: () =>
+                          Navigator.of(context)
+                              .pushNamed(AppRoutes.whatsappCollection),
                       style: OutlinedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: AppColors.ink,
                         side: const BorderSide(color: Color(0xFFD0D7DE)),
                         minimumSize: const Size(0, 50),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 14,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
-                      icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18, color: AppColors.ink),
+                      icon: const Icon(
+                        Icons.chat_bubble_outline_rounded,
+                        size: 18,
+                        color: AppColors.ink,
+                      ),
                       label: const Text(
                         'Cobro WhatsApp',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.ink),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.ink,
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () => Navigator.of(context).pushNamed(AppRoutes.newClientQr),
+                      onPressed: () =>
+                          Navigator.of(context)
+                              .pushNamed(AppRoutes.newClientQr),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFE5A93C),
                         foregroundColor: const Color(0xFF2C2208),
                         elevation: 0,
                         minimumSize: const Size(0, 50),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 14,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
-                      icon: const Icon(Icons.qr_code_2_rounded, size: 20, color: Color(0xFF2C2208)),
+                      icon: const Icon(
+                        Icons.qr_code_2_rounded,
+                        size: 20,
+                        color: Color(0xFF2C2208),
+                      ),
                       label: const Text(
                         'QR tienda',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF2C2208)),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF2C2208),
+                        ),
                       ),
                     ),
                   ),
@@ -297,17 +454,42 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
               ),
               const SizedBox(height: 16),
 
-              if ((summary?.alertasPendientes ?? 0) > 0 || (summary?.productosStockBajo ?? 0) > 0) ...[
+              if ((summary?.alertasPendientes ?? 0) > 0 ||
+                  (summary?.productosStockBajo ?? 0) > 0) ...[
                 Container(
                   padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(color: const Color(0xFFFFF7EA), borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFF3D299), width: 1)),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF7EA),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0xFFF3D299),
+                      width: 1,
+                    ),
+                  ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Padding(padding: EdgeInsets.only(top: 2), child: Icon(Icons.warning_amber_rounded, color: Color(0xFFD98A1B), size: 20)),
+                      const Padding(
+                        padding: EdgeInsets.only(top: 2),
+                        child: Icon(
+                          Icons.warning_amber_rounded,
+                          color: Color(0xFFD98A1B),
+                          size: 20,
+                        ),
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Text(_buildAlertMessage(summary?.productosStockBajo ?? 0, summary?.alertasPendientes ?? 0), style: const TextStyle(fontSize: 13, color: Color(0xFF4A3E2C), height: 1.35)),
+                        child: Text(
+                          _buildAlertMessage(
+                            summary?.productosStockBajo ?? 0,
+                            summary?.alertasPendientes ?? 0,
+                          ),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF4A3E2C),
+                            height: 1.35,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -318,14 +500,33 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Últimos movimientos', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.ink)),
+                  const Text(
+                    'Últimos movimientos',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.ink,
+                    ),
+                  ),
                   GestureDetector(
-                    onTap: () => Navigator.of(context).pushNamed(AppRoutes.customers),
+                    onTap: () =>
+                        Navigator.of(context).pushNamed(AppRoutes.customers),
                     child: const Row(
                       children: [
-                        Text('Ver clientes', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF148F8B))),
+                        Text(
+                          'Ver clientes',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF148F8B),
+                          ),
+                        ),
                         SizedBox(width: 2),
-                        Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF148F8B)),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 18,
+                          color: Color(0xFF148F8B),
+                        ),
                       ],
                     ),
                   ),
@@ -334,30 +535,61 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen> with RouteAware
               const SizedBox(height: 12),
 
               Container(
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))]),
-                child: (_loadingSummary || tiendaProvider.isLoading) && _movimientos.isEmpty
-                    ? const Padding(padding: EdgeInsets.all(24.0), child: Center(child: CircularProgressIndicator()))
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child:
+                    (_loadingSummary || tiendaProvider.isLoading) &&
+                        _movimientos.isEmpty
+                    ? const Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
                     : _movimientos.isEmpty
-                        ? const Padding(padding: EdgeInsets.all(24.0), child: Center(child: Text('Aún no hay movimientos registrados', style: TextStyle(color: AppColors.inkMuted))))
-                        : Column(
-                            children: _movimientos.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final mov = entry.value;
-                              final isFiado = mov.tipo == 'fiado';
-                              
-                              return MovementTile(
-                                initial: mov.clienteNombre.isNotEmpty ? mov.clienteNombre[0].toUpperCase() : 'C',
-                                avatarBg: isFiado ? const Color(0xFFFFECB3) : const Color(0xFFE8F5E9),
-                                avatarFg: isFiado ? const Color(0xFFB78103) : const Color(0xFF2E7D32),
-                                name: mov.clienteNombre,
-                                subtitle: mov.detalle,
-                                amount: '${isFiado ? '+' : '-'} S/ ${mov.monto.toStringAsFixed(2)}',
-                                isPositive: isFiado,
-                                time: _formatTime(mov.fecha),
-                                showBorder: index < _movimientos.length - 1,
-                              );
-                            }).toList(),
+                    ? const Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: Center(
+                          child: Text(
+                            'Aún no hay movimientos registrados',
+                            style: TextStyle(color: AppColors.inkMuted),
                           ),
+                        ),
+                      )
+                    : Column(
+                        children: _movimientos.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final mov = entry.value;
+                          final isFiado = mov.tipo == 'fiado';
+
+                          return MovementTile(
+                            imageUrl: _resolveMovementImageUrl(
+                              mov,
+                              clienteProvider.clientes,
+                            ),
+                            avatarBg: isFiado
+                                ? const Color(0xFFFFECB3)
+                                : const Color(0xFFE8F5E9),
+                            avatarFg: isFiado
+                                ? const Color(0xFFB78103)
+                                : const Color(0xFF2E7D32),
+                            name: mov.clienteNombre,
+                            subtitle: mov.detalle,
+                            amount:
+                                '${isFiado ? '+' : '-'} S/ ${mov.monto.toStringAsFixed(2)}',
+                            isPositive: isFiado,
+                            time: _formatTime(mov.fecha),
+                            showBorder: index < _movimientos.length - 1,
+                          );
+                        }).toList(),
+                      ),
               ),
             ],
           ),
@@ -377,12 +609,25 @@ class _ErrorBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(color: const Color(0xFFFFF7EA), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFF3D299))),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7EA),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFF3D299)),
+      ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded, color: Color(0xFFD98A1B), size: 20),
+          const Icon(
+            Icons.error_outline_rounded,
+            color: Color(0xFFD98A1B),
+            size: 20,
+          ),
           const SizedBox(width: 10),
-          Expanded(child: Text(message, style: const TextStyle(fontSize: 13, color: Color(0xFF4A3E2C)))),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF4A3E2C)),
+            ),
+          ),
           TextButton(onPressed: onRetry, child: const Text('Reintentar')),
         ],
       ),

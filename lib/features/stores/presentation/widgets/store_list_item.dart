@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_avatar.dart';
 import '../../../auth/data/models/tienda_model.dart';
 
 class StoreListItem extends StatelessWidget {
@@ -17,28 +18,6 @@ class StoreListItem extends StatelessWidget {
 
   static const double _circleSize = 120;
 
-  Widget _fallbackIcon() {
-    return const Icon(
-      Icons.storefront_rounded,
-      color: AppColors.ink,
-      size: 54,
-    );
-  }
-
-  Widget _circleContent() {
-    final url = store.logoUrl;
-    if (url == null || url.isEmpty) return _fallbackIcon();
-
-    return Image.network(
-      url,
-      key: ValueKey(url),
-      width: _circleSize,
-      height: _circleSize,
-      fit: BoxFit.cover,
-      errorBuilder: (_, _, _) => _fallbackIcon(),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return InkWell(
@@ -53,16 +32,12 @@ class StoreListItem extends StatelessWidget {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                Container(
-                  width: _circleSize,
-                  height: _circleSize,
-                  alignment: Alignment.center,
-                  clipBehavior: Clip.antiAlias,
-                  decoration: const BoxDecoration(
-                    color: AppColors.skyBlue,
-                    shape: BoxShape.circle,
-                  ),
-                  child: _circleContent(),
+                AppAvatar(
+                  imageUrl: store.logoUrl,
+                  name: store.nombre,
+                  size: _circleSize,
+                  backgroundColor: AppColors.skyBlue,
+                  foregroundColor: AppColors.ink,
                 ),
                 Positioned(
                   top: 4,

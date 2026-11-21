@@ -52,13 +52,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = authProvider.user;
 
     final p = UserProfile(
-      names: perfil?.nombres.isNotEmpty == true ? perfil!.nombres : (user?.nombre ?? 'Tendero'),
-      lastNames: perfil?.apellidos ?? '',
+      names: perfil?.nombres.isNotEmpty == true ? perfil!.nombres : (user?.nombres ?? ''),
+      lastNames: perfil?.apellidos ?? user?.apellidos ?? '',
       dni: perfil?.dni.isNotEmpty == true ? perfil!.dni : 'Sin DNI',
       email: '',
       phone: perfil?.telefono ?? '',
       address: perfil?.tiendas.isNotEmpty == true ? (perfil!.tiendas.first.direccion ?? '') : '',
-      photoUrl: perfil?.fotoUrl,
+      photoUrl: authProvider.tenderoFotoUrl,
     );
 
     return AppHeaderConfig(
@@ -81,7 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               ProfileHeaderCard(
-                name: p.fullName.isNotEmpty ? p.fullName : 'Tendero Fiamas',
+                name: authProvider.tenderoNombreCompleto,
                 email: p.phoneDisplay.isNotEmpty ? p.phoneDisplay : 'Sin teléfono',
                 imageUrl: p.photoUrl,
                 onChangePhoto: () => _openEdit(p),

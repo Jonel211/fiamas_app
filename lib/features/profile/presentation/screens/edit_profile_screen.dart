@@ -133,6 +133,8 @@ class _EditProfileFormState extends State<_EditProfileForm> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
         24,
@@ -147,8 +149,8 @@ class _EditProfileFormState extends State<_EditProfileForm> {
           children: [
             Center(
               child: ProfileAvatar(
-                name: widget.profile.names,
-                imageUrl: widget.profile.photoUrl,
+                name: '${_names.text} ${_lastNames.text}'.trim(),
+                imageUrl: authProvider.tenderoFotoUrl,
                 localFile: _photo,
                 loading: _uploadingPhoto,
                 onChangePhoto: _pickPhoto,
@@ -158,12 +160,14 @@ class _EditProfileFormState extends State<_EditProfileForm> {
             AuthField(
               label: 'Nombres',
               controller: _names,
+              onChanged: (_) => setState(() {}),
               textCapitalization: TextCapitalization.words,
               validator: (v) => _required(v, 'Ingresa tus nombres'),
             ),
             AuthField(
               label: 'Apellidos',
               controller: _lastNames,
+              onChanged: (_) => setState(() {}),
               textCapitalization: TextCapitalization.words,
               validator: (v) => _required(v, 'Ingresa tus apellidos'),
             ),

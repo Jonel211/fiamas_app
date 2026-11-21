@@ -27,6 +27,13 @@ class AuthProvider with ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _user != null;
   bool get isPremium => _perfil?.isPremium ?? _user?.esPremium ?? false;
+  String get tenderoNombreCompleto =>
+      (_perfil?.fullName ?? _user?.nombre ?? '').trim();
+  String? get tenderoFotoUrl {
+    final photoUrl = _perfil != null ? _perfil!.fotoUrl : _user?.fotoPerfilUrl;
+    final normalizedUrl = photoUrl?.trim();
+    return normalizedUrl == null || normalizedUrl.isEmpty ? null : normalizedUrl;
+  }
 
   AuthProvider() {
     final dio = DioClient.create();
@@ -190,15 +197,26 @@ class AuthProvider with ChangeNotifier {
   Future<void> cargarPerfil() async {
     try {
       _perfil = await authService.getPerfil();
-      if (_perfil != null && _user != null) {
-        _user = _user!.copyWith(
-          esPremium: _perfil!.isPremium,
-          fotoPerfilUrl: _perfil!.fotoUrl ?? _user!.fotoPerfilUrl,
-        );
-        await _repository.saveUser(_user!);
-      }
+      await _syncUserWithPerfil();
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '').trim();
+    } finally {
       notifyListeners();
-    } catch (_) {}
+    }
+  }
+
+  Future<void> _syncUserWithPerfil() async {
+    final perfil = _perfil;
+    final user = _user;
+    if (perfil == null || user == null) return;
+
+    final photoUrl = perfil.fotoUrl?.trim();
+    _user = user.copyWith(
+      esPremium: perfil.isPremium,
+      fotoPerfilUrl: photoUrl == null || photoUrl.isEmpty ? null : photoUrl,
+      clearFotoPerfilUrl: photoUrl == null || photoUrl.isEmpty,
+    );
+    await _repository.saveUser(_user!);
   }
 
   // Actualizar perfil del tendero
@@ -217,6 +235,7 @@ class AuthProvider with ChangeNotifier {
         apellidos: apellidos,
         telefono: telefono,
       );
+      await _syncUserWithPerfil();
       _isLoading = false;
       notifyListeners();
       return true;
@@ -234,6 +253,7 @@ class AuthProvider with ChangeNotifier {
 
     try {
       _perfil = await authService.subirFotoPerfil(file);
+      await _syncUserWithPerfil();
       notifyListeners();
       return true;
     } catch (e) {

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_avatar.dart';
 
 class StorePhotoPicker extends StatelessWidget {
   const StorePhotoPicker({
@@ -17,14 +18,6 @@ class StorePhotoPicker extends StatelessWidget {
 
   static const double _circleSize = 110;
 
-  Widget _placeholder() {
-    return const Icon(
-      Icons.photo_camera_outlined,
-      color: AppColors.ink,
-      size: 44,
-    );
-  }
-
   Widget _content() {
     if (localFile != null) {
       return Image.file(
@@ -34,17 +27,18 @@ class StorePhotoPicker extends StatelessWidget {
         fit: BoxFit.cover,
       );
     }
-    if (imageUrl != null && imageUrl!.isNotEmpty) {
-      return Image.network(
-        imageUrl!,
-        key: ValueKey(imageUrl),
-        width: _circleSize,
-        height: _circleSize,
-        fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => _placeholder(),
-      );
-    }
-    return _placeholder();
+    return AppAvatar(
+      imageUrl: imageUrl,
+      name: '',
+      size: _circleSize,
+      backgroundColor: AppColors.mist,
+      foregroundColor: AppColors.ink,
+      fallback: const Icon(
+        Icons.photo_camera_outlined,
+        color: AppColors.ink,
+        size: 44,
+      ),
+    );
   }
 
   @override

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_avatar.dart';
 import '../../domain/debt.dart';
-import 'debt_avatar.dart';
 import 'status_badge.dart';
 
 class DebtTile extends StatelessWidget {
@@ -9,6 +9,17 @@ class DebtTile extends StatelessWidget {
 
   final Debt debt;
   final VoidCallback? onTap;
+
+  Color get _accentColor {
+    switch (debt.status) {
+      case DebtStatus.pendiente:
+        return AppColors.gold;
+      case DebtStatus.parcial:
+        return AppColors.skyBlue;
+      case DebtStatus.pagado:
+        return AppColors.teal;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +30,15 @@ class DebtTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            DebtAvatar(initials: debt.initials, status: debt.status),
+            AppAvatar(
+              name: debt.customerName,
+              size: 40,
+              backgroundColor: AppColors.mist,
+              foregroundColor: AppColors.ink,
+              borderColor: _accentColor,
+              borderWidth: 2,
+              fontSize: 16,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

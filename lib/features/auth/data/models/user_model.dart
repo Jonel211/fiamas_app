@@ -36,7 +36,7 @@ class UserModel {
       tiendaId: json['tienda_id'] as String? ?? json['tiendaId'] as String?,
       //  Maneja tanto 'es_premium' (backend) como 'esPremium'
       esPremium: json['es_premium'] ?? json['esPremium'] ?? false,
-      fotoPerfilUrl: json['foto_perfil_url'] ?? json['fotoPerfilUrl'],
+      fotoPerfilUrl: json['foto_perfil_url'] as String?,
     );
   }
 
@@ -68,6 +68,7 @@ class UserModel {
     String? tiendaId,
     bool? esPremium,
     String? fotoPerfilUrl,
+    bool clearFotoPerfilUrl = false,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -78,7 +79,9 @@ class UserModel {
       rol: rol ?? this.rol,
       tiendaId: tiendaId ?? this.tiendaId,
       esPremium: esPremium ?? this.esPremium,
-      fotoPerfilUrl: fotoPerfilUrl ?? this.fotoPerfilUrl,
+      fotoPerfilUrl: clearFotoPerfilUrl
+          ? null
+          : fotoPerfilUrl ?? this.fotoPerfilUrl,
     );
   }
 }
