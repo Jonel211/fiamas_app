@@ -51,7 +51,6 @@ class VinculacionModel {
   final int totalPagos;
   final int cantidadFiadosMora;
   
-  // ✅ RESUELTO: Se deja una sola declaración, no nullable, con default 0
   final int fiadosActivos;
 
   VinculacionModel({
@@ -76,7 +75,6 @@ class VinculacionModel {
       totalFiados: int.tryParse(json['total_fiados']?.toString() ?? '') ?? 0,
       totalPagos: int.tryParse(json['total_pagos']?.toString() ?? '') ?? 0,
       cantidadFiadosMora: int.tryParse(json['cantidad_fiados_mora']?.toString() ?? '') ?? 0,
-      // ✅ RESUELTO: Se usa el parseo limpio y consistente con el resto del archivo
       fiadosActivos: int.tryParse(json['fiados_activos']?.toString() ?? '') ?? 0,
     );
   }
