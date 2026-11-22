@@ -8,6 +8,7 @@ import '../../../../core/offline/services/connectivity_service.dart';
 import '../../../../core/offline/services/sync_service.dart';
 import '../../../debts/domain/debt.dart';
 import '../../data/models/cliente_model.dart';
+import '../../data/models/scoring_historial_model.dart';
 
 class ClienteProvider extends ChangeNotifier {
   final Dio _dio = DioClient.create();
@@ -18,6 +19,14 @@ class ClienteProvider extends ChangeNotifier {
   List<ClienteModel> _clientesConDeuda = [];
   List<ClienteModel> _recientes = [];
   List<Debt> _fiadosCliente = [];
+  
+  // --- NUEVAS VARIABLES PARA SCORING ---
+  List<ScoringHistorialModel> _scoringHistorial = [];
+  bool _isLoadingScoring = false;
+  String? _errorScoring;
+  int _scoreActual = 100;
+  String _categoriaActual = 'nuevo';
+  // -------------------------------------
 
   bool _isLoading = false;
   bool _isLoadingConDeuda = false;
@@ -39,10 +48,18 @@ class ClienteProvider extends ChangeNotifier {
 
   Map<String, dynamic>? _resumenCliente;
 
+  // Getters existentes
   List<ClienteModel> get clientes => _clientes;
   List<ClienteModel> get clientesConDeuda => _clientesConDeuda;
   List<ClienteModel> get recientes => _recientes;
   List<Debt> get fiadosCliente => _fiadosCliente;
+
+  // NUEVOS GETTERS PARA SCORING
+  List<ScoringHistorialModel> get scoringHistorial => _scoringHistorial;
+  bool get isLoadingScoring => _isLoadingScoring;
+  String? get errorScoring => _errorScoring;
+  int get scoreActual => _scoreActual;
+  String get categoriaActual => _categoriaActual;
 
   List<Debt> get fiadosParaTotales =>
       _fiadosCliente.where((d) => !d.isCancelled).toList();
@@ -54,7 +71,7 @@ class ClienteProvider extends ChangeNotifier {
       fiadosParaTotales.fold(0.0, (sum, d) => sum + d.paidAmount);
 
   double get saldoPendienteCliente => totalFiadoCliente - totalPagadoCliente;
-
+  
   bool get isLoading => _isLoading;
   bool get isLoadingConDeuda => _isLoadingConDeuda;
   bool get isLoadingRecientes => _isLoadingRecientes;
@@ -76,7 +93,7 @@ class ClienteProvider extends ChangeNotifier {
     _recientes = [];
     _fiadosCliente = [];
     _resumenCliente = null;
-
+    _scoringHistorial = []; // Limpieza de scoring
     _tiendaIdCargada = null;
     _tiendaConDeudaId = null;
 
@@ -89,18 +106,45 @@ class ClienteProvider extends ChangeNotifier {
   static double _toDouble(dynamic value, [double fallback = 0.0]) {
     if (value == null) return fallback;
     if (value is num) return value.toDouble();
-
     return double.tryParse(value.toString()) ?? fallback;
   }
 
   static String _mensajeError(DioException e, String porDefecto) {
     final data = e.response?.data;
-
     if (data is Map && data['error'] != null) {
       return data['error'].toString();
     }
-
     return porDefecto;
+  }
+
+  // --- NUEVO MÉTODO PARA CARGAR EL HISTORIAL DE SCORING ---
+  Future<void> cargarScoringHistorial(String clienteId, String tiendaId) async {
+    _isLoadingScoring = true;
+    _errorScoring = null;
+    _scoringHistorial = [];
+    notifyListeners();
+
+    try {
+      final response = await _dio.get(
+        '/scoring/$clienteId',
+        queryParameters: {'tienda_id': tiendaId},
+      );
+
+      final data = response.data;
+      _scoreActual = int.tryParse(data['score_actual']?.toString() ?? '') ?? 100;
+      _categoriaActual = data['categoria_actual'] ?? 'nuevo';
+      
+      final List<dynamic> historialData = data['historial'] ?? [];
+      _scoringHistorial = historialData.map((json) => ScoringHistorialModel.fromJson(json)).toList();
+      
+    } on DioException catch (e) {
+      _errorScoring = _mensajeError(e, 'Error al cargar el historial de scoring.');
+    } catch (e) {
+      _errorScoring = 'Error inesperado: $e';
+    } finally {
+      _isLoadingScoring = false;
+      notifyListeners();
+    }
   }
 
   Future<void> cargarClientes(String tiendaId) async {
@@ -540,7 +584,6 @@ class ClienteProvider extends ChangeNotifier {
               : 'Sin fecha';
 
           String? fechaPago;
-
           final pagos = json['pagos'] as List?;
 
           if (pagos != null && pagos.isNotEmpty) {
@@ -589,7 +632,6 @@ class ClienteProvider extends ChangeNotifier {
       final detalles = (json['detalles'] as List?) ?? [];
 
       String? fechaPago;
-
       final pagos = json['pagos'] as List?;
 
       if (pagos != null && pagos.isNotEmpty) {
