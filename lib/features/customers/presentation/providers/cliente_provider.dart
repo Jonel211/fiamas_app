@@ -7,6 +7,7 @@ import '../../../../core/offline/models/sync_operation.dart';
 import '../../../../core/offline/services/connectivity_service.dart';
 import '../../../../core/offline/services/sync_service.dart';
 import '../../../debts/domain/debt.dart';
+import '../../data/models/cliente_existente_model.dart';
 import '../../data/models/cliente_model.dart';
 import '../../data/models/scoring_historial_model.dart';
 
@@ -32,12 +33,16 @@ class ClienteProvider extends ChangeNotifier {
   bool _isLoadingConDeuda = false;
   bool _isLoadingRecientes = false;
   bool _isCreating = false;
+  bool _isVerifying = false;
+  bool _isLinking = false;
   bool _isLoadingFiados = false;
   bool _isLoadingResumen = false;
 
   String? _error;
   String? _errorConDeuda;
   String? _errorFiados;
+  String? _errorVerificacion;
+  String? _errorVinculacion;
 
   String? _tiendaClientesId;
   String? _tiendaConDeudaId;
@@ -76,12 +81,16 @@ class ClienteProvider extends ChangeNotifier {
   bool get isLoadingConDeuda => _isLoadingConDeuda;
   bool get isLoadingRecientes => _isLoadingRecientes;
   bool get isCreating => _isCreating;
+  bool get isVerifying => _isVerifying;
+  bool get isLinking => _isLinking;
   bool get isLoadingFiados => _isLoadingFiados;
   bool get isLoadingResumen => _isLoadingResumen;
 
   String? get error => _error;
   String? get errorConDeuda => _errorConDeuda;
   String? get errorFiados => _errorFiados;
+  String? get errorVerificacion => _errorVerificacion;
+  String? get errorVinculacion => _errorVinculacion;
 
   Map<String, dynamic>? get resumenCliente => _resumenCliente;
   String? get tiendaIdCargada => _tiendaIdCargada;
@@ -99,6 +108,8 @@ class ClienteProvider extends ChangeNotifier {
 
     _error = null;
     _errorConDeuda = null;
+    _errorVerificacion = null;
+    _errorVinculacion = null;
 
     notifyListeners();
   }
@@ -335,6 +346,108 @@ class ClienteProvider extends ChangeNotifier {
     }
   }
 
+  Future<ClienteExistenteModel?> verificarTelefono(
+    String telefono,
+    String tiendaId,
+  ) async {
+    _isVerifying = true;
+    _errorVerificacion = null;
+
+    notifyListeners();
+
+    try {
+      final response = await _dio.get(
+        '/clientes/verificar-telefono',
+        queryParameters: {'telefono': telefono, 'tienda_id': tiendaId},
+      );
+
+      final data = response.data;
+
+      if (data is Map) {
+        return ClienteExistenteModel.fromJson(
+          Map<String, dynamic>.from(data),
+        );
+      }
+
+      _errorVerificacion = 'No se pudo verificar el teléfono.';
+      return null;
+    } on DioException catch (e) {
+      _errorVerificacion = e.response == null
+          ? 'Sin conexión. Reintenta.'
+          : _mensajeError(e, 'No se pudo verificar el teléfono.');
+      return null;
+    } catch (_) {
+      _errorVerificacion = 'No se pudo verificar el teléfono.';
+      return null;
+    } finally {
+      _isVerifying = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> vincularCliente({
+    required String clienteId,
+    required String tiendaId,
+    required double limiteCredito,
+  }) async {
+    if (_isLinking) return false;
+
+    _isLinking = true;
+    _errorVinculacion = null;
+
+    notifyListeners();
+
+    try {
+      await _dio.post(
+        '/clientes/$clienteId/vincular',
+        data: {'tienda_id': tiendaId, 'limite_credito': limiteCredito},
+      );
+
+      await cargarClientes(tiendaId);
+      await cargarRecientes(tiendaId);
+
+      return true;
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      final code = data is Map ? data['code']?.toString() : null;
+
+      switch (e.response?.statusCode) {
+        case 409:
+          _errorVinculacion = code == 'YA_VINCULADO'
+              ? 'Ya es cliente de tu tienda.'
+              : _mensajeError(e, 'El cliente ya está vinculado.');
+          break;
+        case 403:
+          _errorVinculacion = 'Este cliente no está disponible.';
+          break;
+        case 400:
+          _errorVinculacion = _mensajeError(
+            e,
+            'El límite de crédito no es válido.',
+          );
+          break;
+        case 404:
+          _errorVinculacion = _mensajeError(
+            e,
+            'No se encontró el cliente o la tienda.',
+          );
+          break;
+        default:
+          _errorVinculacion = e.response == null
+              ? 'Sin conexión. Reintenta.'
+              : _mensajeError(e, 'No se pudo vincular al cliente.');
+      }
+
+      return false;
+    } catch (_) {
+      _errorVinculacion = 'No se pudo vincular al cliente.';
+      return false;
+    } finally {
+      _isLinking = false;
+      notifyListeners();
+    }
+  }
+
   Future<bool> crearCliente({
     required String nombres,
     required String apellidos,
@@ -353,7 +466,7 @@ class ClienteProvider extends ChangeNotifier {
 
       if (isConnected) {
         try {
-          await _dio.post(
+          final response = await _dio.post(
             '/clientes',
             data: {
               'nombres': nombres,
@@ -365,14 +478,31 @@ class ClienteProvider extends ChangeNotifier {
             },
           );
 
-          await cargarClientes(tiendaId);
-          await cargarRecientes(tiendaId);
+          if (response.statusCode == 200 || response.statusCode == 201) {
+            await cargarClientes(tiendaId);
+            await cargarRecientes(tiendaId);
 
+            _isCreating = false;
+            notifyListeners();
+
+            return true;
+          }
+
+          _error = 'No se pudo registrar el cliente.';
           _isCreating = false;
           notifyListeners();
 
-          return true;
-        } catch (_) {
+          return false;
+        } on DioException catch (e) {
+          // Solo se crea offline cuando no hubo respuesta del servidor.
+          if (e.response != null) {
+            _error = _mensajeError(e, 'No se pudo registrar el cliente.');
+            _isCreating = false;
+            notifyListeners();
+
+            return false;
+          }
+
           return await _crearClienteOffline(
             nombres,
             apellidos,
