@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
+
 import '../../../../core/network/dio_client.dart';
 import '../database/database_helper.dart';
 import '../models/sync_operation.dart';
@@ -130,8 +132,14 @@ class SyncService {
         );
       }
     } catch (e) {
+      final statusCode = e is DioException ? e.response?.statusCode : null;
+      final isClientError =
+          statusCode != null && statusCode >= 400 && statusCode < 500;
+
       final newRetryCount = op.retryCount + 1;
-      final newStatus = newRetryCount >= 10 ? 'failed' : 'pending';
+      final newStatus = isClientError || newRetryCount >= 10
+          ? 'failed'
+          : 'pending';
 
       await db.update(
         'sync_queue',
