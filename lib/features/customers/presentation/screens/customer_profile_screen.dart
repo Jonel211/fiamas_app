@@ -47,14 +47,16 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     return 'Cliente desde $month ${date.year}';
   }
 
-  //  NUEVO: Abre la foto del cliente en pantalla completa con zoom
   void _abrirZoomImagen(BuildContext context, String? photoUrl, String nombreCliente) {
     final url = resolveImageUrl(photoUrl);
     if (url == null) return;
 
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => ImageZoomScreen(imageUrl: url),
+        builder: (_) => ImageZoomScreen(
+          imageUrl: url,
+          placeholder: AppAvatar.cliente(name: nombreCliente, size: 160),
+        ),
       ),
     );
   }

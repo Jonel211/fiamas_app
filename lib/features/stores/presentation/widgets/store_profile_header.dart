@@ -40,7 +40,11 @@ class StoreProfileHeader extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 20),
-        child: ZoomableImage(imageUrl: logoUrl!, image: logoWidget),
+        child: ZoomableImage(
+          imageUrl: logoUrl!,
+          image: logoWidget,
+          placeholder: logoWidget,
+        ),
       ),
     );
   }
