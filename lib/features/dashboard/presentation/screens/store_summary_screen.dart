@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/app_avatar.dart';
+import '../../../../core/widgets/store_avatar.dart';
 import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
@@ -256,7 +256,7 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen>
                   children: [
                     Row(
                       children: [
-                        AppAvatar.tienda(
+                        StoreAvatar(
                           imageUrl: tiendaProvider.tiendaSeleccionada?.logoUrl,
                           name: nombre,
                           size: 56,

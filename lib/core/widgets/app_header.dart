@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
 import '../../features/auth/data/models/tienda_model.dart';
 import '../../features/auth/presentation/providers/tienda_provider.dart';
-import 'app_avatar.dart';
+import 'store_avatar.dart';
 
 class AppHeader extends StatelessWidget {
   const AppHeader({
@@ -43,7 +43,7 @@ class AppHeader extends StatelessWidget {
             : GestureDetector(
                 onTap: onStoreTap,
                 behavior: HitTestBehavior.opaque,
-                child: AppAvatar.tienda(
+                child: StoreAvatar(
                   imageUrl: tienda?.logoUrl,
                   name: tienda?.nombre ?? '',
                   size: 40,
