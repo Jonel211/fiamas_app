@@ -11,8 +11,6 @@ class StoreSummary {
     required this.totalClientes,
     required this.totalProductos,
     required this.totalCategorias,
-    required this.productosStockBajo,
-    required this.alertasPendientes,
     required this.cobradoEsteMes,
   });
 
@@ -23,8 +21,6 @@ class StoreSummary {
   final int totalClientes;
   final int totalProductos;
   final int totalCategorias;
-  final int productosStockBajo;
-  final int alertasPendientes;
   final double cobradoEsteMes;
 
   factory StoreSummary.fromJson(Map<String, dynamic> j) {
@@ -37,8 +33,6 @@ class StoreSummary {
       totalClientes: i('total_clientes'),
       totalProductos: i('total_productos'),
       totalCategorias: i('total_categorias'),
-      productosStockBajo: i('productos_stock_bajo'),
-      alertasPendientes: i('alertas_pendientes'),
       cobradoEsteMes: (j['cobrado_este_mes'] as num?)?.toDouble() ?? 0,
     );
   }
