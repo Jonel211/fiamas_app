@@ -183,12 +183,12 @@ class _NuevoClienteQrScreenState extends State<NuevoClienteQrScreen> {
               ),
               const SizedBox(height: 24),
 
-              // ✅ TARJETA QR ESTILO YAPE (capturable como imagen)
+              // TARJETA QR ESTILO YAPE (capturable como imagen)
               contenidoQr,
 
               const SizedBox(height: 24),
 
-              // ✅ BOTONES DE EXPORTACIÓN
+              // BOTONES DE EXPORTACIÓN
               if (tieneQr)
                 Row(
                   children: [
@@ -228,7 +228,7 @@ class _NuevoClienteQrScreenState extends State<NuevoClienteQrScreen> {
 
               const SizedBox(height: 20),
 
-              // ✅ INSTRUCCIONES
+              // INSTRUCCIONES
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
