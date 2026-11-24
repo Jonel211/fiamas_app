@@ -16,6 +16,7 @@ class AppAvatar extends StatelessWidget {
     this.borderWidth = 0,
     this.fontSize,
     this.fallback,
+    this.borderRadius,
   });
 
   const AppAvatar.tendero({
@@ -27,6 +28,7 @@ class AppAvatar extends StatelessWidget {
     this.borderWidth = 0,
     this.fontSize,
     this.fallback,
+    this.borderRadius,
   }) : backgroundColor = AppColors.teal,
        foregroundColor = Colors.white;
 
@@ -39,6 +41,7 @@ class AppAvatar extends StatelessWidget {
     this.borderWidth = 0,
     this.fontSize,
     this.fallback,
+    this.borderRadius,
   }) : backgroundColor = AppColors.teal,
        foregroundColor = Colors.white;
 
@@ -51,6 +54,7 @@ class AppAvatar extends StatelessWidget {
     this.borderWidth = 0,
     this.fontSize,
     this.fallback,
+    this.borderRadius,
   }) : backgroundColor = AppColors.gold,
        foregroundColor = AppColors.ink;
 
@@ -66,6 +70,8 @@ class AppAvatar extends StatelessWidget {
   /// Permite conservar un ícono propio (por ejemplo, el logo de una tienda)
   /// cuando no hay imagen. Si es null se usan las iniciales.
   final Widget? fallback;
+
+  final BorderRadius? borderRadius;
 
   String get _initials {
     final parts = name
@@ -134,7 +140,8 @@ class AppAvatar extends StatelessWidget {
       padding: border == null ? null : EdgeInsets.all(borderWidth),
       decoration: BoxDecoration(
         color: background,
-        shape: BoxShape.circle,
+        shape: borderRadius == null ? BoxShape.circle : BoxShape.rectangle,
+        borderRadius: borderRadius,
         border: border,
       ),
       child: content,

@@ -1,30 +1,33 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../utils/image_url.dart';
 
-/// Pantalla a pantalla completa con zoom, pan y doble tap para resetear.
-/// Soporta imágenes de red (URL) o archivos locales (File).
+/// Visor de imágenes a pantalla completa con zoom y desplazamiento acotado.
+/// Soporta imágenes de red, archivos locales y un placeholder.
 class ImageZoomScreen extends StatefulWidget {
   const ImageZoomScreen({
     super.key,
     this.imageUrl,
     this.localFile,
-  }) : assert(
-          imageUrl != null || localFile != null,
-          'Debe proporcionar imageUrl o localFile',
-        );
+    this.placeholder,
+  });
 
   final String? imageUrl;
   final File? localFile;
+  final Widget? placeholder;
 
   @override
   State<ImageZoomScreen> createState() => _ImageZoomScreenState();
 }
 
 class _ImageZoomScreenState extends State<ImageZoomScreen> {
+  static const double _minScale = 1.0;
+  static const double _maxScale = 4.0;
+  static const double _doubleTapScale = 2.5;
+
   final TransformationController _controller = TransformationController();
-  bool _hasError = false;
 
   @override
   void dispose() {
@@ -32,8 +35,11 @@ class _ImageZoomScreenState extends State<ImageZoomScreen> {
     super.dispose();
   }
 
-  void _resetZoom() {
-    _controller.value = Matrix4.identity();
+  Widget _placeholder() {
+    return Center(
+      child: widget.placeholder ??
+          const Icon(Icons.person_rounded, color: Colors.white54, size: 96),
+    );
   }
 
   Widget _buildImage() {
@@ -41,12 +47,12 @@ class _ImageZoomScreenState extends State<ImageZoomScreen> {
       return Image.file(
         widget.localFile!,
         fit: BoxFit.contain,
-        errorBuilder: (_, _, _) => _errorWidget(),
+        errorBuilder: (_, _, _) => _placeholder(),
       );
     }
 
     final url = resolveImageUrl(widget.imageUrl);
-    if (url == null) return _errorWidget();
+    if (url == null) return _placeholder();
 
     return Image.network(
       url,
@@ -57,21 +63,28 @@ class _ImageZoomScreenState extends State<ImageZoomScreen> {
           child: CircularProgressIndicator(color: Colors.white),
         );
       },
-      errorBuilder: (_, _, _) => _errorWidget(),
+      errorBuilder: (_, _, _) => _placeholder(),
     );
   }
 
-  Widget _errorWidget() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && !_hasError) setState(() => _hasError = true);
-    });
-    return const Center(
-      child: Icon(
-        Icons.broken_image_rounded,
-        color: Colors.white54,
-        size: 64,
-      ),
-    );
+  void _handleInteractionEnd(ScaleEndDetails details) {
+    if (_controller.value.getMaxScaleOnAxis() < _minScale) {
+      _controller.value = Matrix4.identity();
+    }
+  }
+
+  void _handleDoubleTap() {
+    if (_controller.value.getMaxScaleOnAxis() > _minScale) {
+      _controller.value = Matrix4.identity();
+      return;
+    }
+
+    final size = MediaQuery.sizeOf(context);
+    final center = Offset(size.width / 2, size.height / 2);
+    _controller.value = Matrix4.identity()
+      ..translateByDouble(center.dx, center.dy, 0, 1)
+      ..scaleByDouble(_doubleTapScale, _doubleTapScale, 1, 1)
+      ..translateByDouble(-center.dx, -center.dy, 0, 1);
   }
 
   @override
@@ -81,25 +94,27 @@ class _ImageZoomScreenState extends State<ImageZoomScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 1. Imagen con zoom
           GestureDetector(
-            onDoubleTap: _resetZoom,
+            onDoubleTap: _handleDoubleTap,
             child: InteractiveViewer(
               transformationController: _controller,
-              minScale: 1.0,
-              maxScale: 5.0,
-              boundaryMargin: const EdgeInsets.all(80),
-              child: _buildImage(),
+              minScale: _minScale,
+              maxScale: _maxScale,
+              boundaryMargin: EdgeInsets.zero,
+              onInteractionEnd: _handleInteractionEnd,
+              child: SizedBox.expand(child: _buildImage()),
             ),
           ),
-
-          // 2. Botón cerrar en esquina superior izquierda
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
             left: 12,
             child: IconButton(
               onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.close_rounded, color: Colors.white, size: 26),
+              icon: const Icon(
+                Icons.close_rounded,
+                color: Colors.white,
+                size: 26,
+              ),
               style: IconButton.styleFrom(
                 backgroundColor: Colors.black.withValues(alpha: 0.55),
                 minimumSize: const Size(40, 40),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/app_avatar.dart';
+import '../../../../core/widgets/store_avatar.dart';
 import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/tienda_provider.dart';
@@ -223,14 +223,6 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen>
     return '${date.day}/${date.month}';
   }
 
-  String _buildAlertMessage(int stockBajo, int alertas) {
-    List<String> partes = [];
-    if (stockBajo > 0) partes.add('$stockBajo productos con stock bajo');
-    if (alertas > 0) partes.add('$alertas alertas pendientes');
-    if (partes.isEmpty) return '';
-    return 'Atención requerida: Tienes ${partes.join(' y ')}.';
-  }
-
   @override
   Widget build(BuildContext context) {
     final tiendaProvider = context.watch<TiendaProvider>();
@@ -264,7 +256,7 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen>
                   children: [
                     Row(
                       children: [
-                        AppAvatar.tienda(
+                        StoreAvatar(
                           imageUrl: tiendaProvider.tiendaSeleccionada?.logoUrl,
                           name: nombre,
                           size: 56,
@@ -453,49 +445,6 @@ class _StoreSummaryScreenState extends State<StoreSummaryScreen>
                 ],
               ),
               const SizedBox(height: 16),
-
-              if ((summary?.alertasPendientes ?? 0) > 0 ||
-                  (summary?.productosStockBajo ?? 0) > 0) ...[
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF7EA),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: const Color(0xFFF3D299),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.only(top: 2),
-                        child: Icon(
-                          Icons.warning_amber_rounded,
-                          color: Color(0xFFD98A1B),
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          _buildAlertMessage(
-                            summary?.productosStockBajo ?? 0,
-                            summary?.alertasPendientes ?? 0,
-                          ),
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF4A3E2C),
-                            height: 1.35,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

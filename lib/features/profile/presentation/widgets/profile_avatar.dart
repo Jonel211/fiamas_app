@@ -47,6 +47,7 @@ class ProfileAvatar extends StatelessWidget {
         builder: (_) => ImageZoomScreen(
           imageUrl: localFile != null ? null : imageUrl,
           localFile: localFile,
+          placeholder: AppAvatar.tendero(name: name, size: 160),
         ),
       ),
     );

@@ -9,11 +9,13 @@ class ZoomableImage extends StatelessWidget {
     super.key,
     required this.image,
     required this.imageUrl,
+    this.placeholder,
     this.showZoomHint = true,
   });
 
   final Widget image;
   final String imageUrl;
+  final Widget? placeholder;
   final bool showZoomHint;
 
   @override
@@ -22,7 +24,10 @@ class ZoomableImage extends StatelessWidget {
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => ImageZoomScreen(imageUrl: imageUrl),
+            builder: (_) => ImageZoomScreen(
+              imageUrl: imageUrl,
+              placeholder: placeholder,
+            ),
           ),
         );
       },
