@@ -15,7 +15,7 @@ import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/data/models/cliente_model.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../../../customers/presentation/widgets/edit_credit_limit_bottom_sheet.dart';
-import '../widgets/fiado_product_item.dart';
+import '../widgets/product_receipt_widgets.dart';
 
 class FinalizarFiadoScreen extends StatefulWidget {
   const FinalizarFiadoScreen({super.key});
@@ -49,6 +49,24 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
 
   @override
   void dispose() { _dateController.dispose(); super.dispose(); }
+
+  // Devuelve "3 und" o "0.5 kg" según el ítem del carrito.
+  String _qtyLabel(Map<String, dynamic> item) {
+    final qty = (item['qty'] as num?)?.toDouble() ?? 0.0;
+    final rounded = double.parse(qty.toStringAsFixed(3));
+    final qtyText = rounded == rounded.roundToDouble()
+        ? rounded.toStringAsFixed(0)
+        : rounded.toStringAsFixed(3).replaceFirst(RegExp(r'\.?0+$'), '');
+
+    final unit = (item['unit'] ?? '').toString().trim().toLowerCase();
+    final isWeight = item['isWeight'] == true || unit == 'kg' || unit == 'g';
+
+    if (isWeight) {
+      final unitText = unit.isEmpty ? 'kg' : unit;
+      return '$qtyText $unitText';
+    }
+    return '$qtyText und';
+  }
 
   Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
@@ -132,7 +150,7 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
           await clienteProvider.cargarClientes(tiendaId);
           await clienteProvider.cargarRecientes(tiendaId);
         } catch (_) {}
-        
+
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fiado registrado exitosamente'), backgroundColor: Colors.green));
         Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.summary, (route) => false);
@@ -276,7 +294,22 @@ class _FinalizarFiadoScreenState extends State<FinalizarFiadoScreen> {
                   children: [
                     const Text('Productos', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.teal)),
                     const SizedBox(height: 12),
-                    ..._cartItems.map((p) => FiadoProductItem(name: p['name'], price: p['price'] * p['qty'])),
+
+                    // Encabezado de columnas del recibo
+                    const ProductReceiptHeaderRow(),
+                    const SizedBox(height: 2),
+
+                    // Filas de productos con Cant. / Producto / P. Unit. / Importe
+                    for (var i = 0; i < _cartItems.length; i++) ...[
+                      ProductReceiptRow(
+                        quantityLabel: _qtyLabel(_cartItems[i]),
+                        productName: _cartItems[i]['name']?.toString() ?? 'Producto',
+                        unitPrice: 'S/ ${(double.tryParse(_cartItems[i]['price'].toString()) ?? 0.0).toStringAsFixed(2)}',
+                        amount: 'S/ ${((_cartItems[i]['price'] as num).toDouble() * (_cartItems[i]['qty'] as num).toDouble()).toStringAsFixed(2)}',
+                      ),
+                      if (i < _cartItems.length - 1)
+                        const Divider(height: 1, thickness: 0.6, color: AppColors.mist),
+                    ],
                   ],
                 ),
               ),

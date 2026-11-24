@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:fiamas_app/core/constants/app_colors.dart';
+import '../../../../core/utils/phone_or_name_input_formatter.dart';
 
 import '../../../../core/widgets/app_header.dart';
 import '../../../../main.dart';
@@ -10,6 +11,7 @@ import '../../../auth/presentation/providers/tienda_provider.dart';
 import '../../../customers/data/models/cliente_model.dart';
 import '../../../customers/presentation/providers/cliente_provider.dart';
 import '../widgets/customer_card.dart';
+import '../../../debts/presentation/widgets/register_client_suggestion.dart';
 
 class CustomerListScreen extends StatefulWidget {
   const CustomerListScreen({super.key});
@@ -25,6 +27,8 @@ class _CustomerListScreenState extends State<CustomerListScreen>
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchFocused = false;
   bool _subscribed = false;
+
+  static final _telefonoValido = RegExp(r'^\d{9}$');
 
   @override
   void initState() {
@@ -93,7 +97,6 @@ class _CustomerListScreenState extends State<CustomerListScreen>
     }
   }
 
-  // Lógica mejorada de status (sin chequeo de nulos, ya que fiadosActivos es int)
   String _getStatus(ClienteModel c) {
     if (c.vinculacion.cantidadFiadosMora > 0) return 'Vencido';
     if (c.vinculacion.saldoActual > 0 || c.vinculacion.fiadosActivos > 0) {
@@ -194,6 +197,7 @@ class _CustomerListScreenState extends State<CustomerListScreen>
                       child: TextField(
                         controller: _searchController,
                         focusNode: _searchFocusNode,
+                        inputFormatters: [PhoneOrNameInputFormatter()],
                         decoration: const InputDecoration(
                           hintText: 'Buscar por nombre o teléfono',
                           hintStyle: TextStyle(
@@ -241,6 +245,7 @@ class _CustomerListScreenState extends State<CustomerListScreen>
                 ),
               ),
               const SizedBox(height: 24),
+              
               if (provider.error != null)
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -260,13 +265,33 @@ class _CustomerListScreenState extends State<CustomerListScreen>
                 )
               else if (provider.isLoading && provider.clientes.isEmpty)
                 const Center(child: CircularProgressIndicator())
+              
               else if (filtrados.isEmpty)
-                const Center(
-                  child: Text(
-                    'No se encontraron clientes',
-                    style: TextStyle(color: AppColors.inkMuted),
-                  ),
-                )
+                if (query.isNotEmpty && _telefonoValido.hasMatch(query))
+                  RegisterClientSuggestion(
+                    phone: query,
+                    onTap: () async {
+                      await Navigator.of(context).pushNamed(
+                        AppRoutes.newClient,
+                        arguments: query,
+                      );
+                      if (!mounted) return;
+                      _searchController.clear();
+                      setState(() {});
+                    },
+                  )
+                else
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Center(
+                      child: Text(
+                        'No se encontraron clientes.\nEscribe los 9 dígitos del teléfono para registrar uno nuevo.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppColors.inkMuted),
+                      ),
+                    ),
+                  )
+              
               else
                 ...filtrados.map((cliente) {
                   final status = _getStatus(cliente);

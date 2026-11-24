@@ -456,7 +456,7 @@ class _NuevoClienteScreenState extends State<NuevoClienteScreen> {
                     const SizedBox(height: 20),
 
                     RegisterMethodCard(
-                      title: 'Generar código QR',
+                      title: 'Mostrar código QR',
                       subtitle: 'El cliente escanea y se registra solo. Tú no escribes nada.',
                       icon: Icons.qr_code_rounded,
                       isSelected: _selectedMethod == 'qr',
