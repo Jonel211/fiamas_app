@@ -6,9 +6,9 @@ import 'package:dio/dio.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/widgets/auth_field.dart';
-import '../../../../core/widgets/main_shell.dart';
 import '../../../../main.dart';
 import '../providers/auth_provider.dart';
+import '../providers/tienda_provider.dart';
 
 class RegisterTenderoForm extends StatefulWidget {
   const RegisterTenderoForm({super.key, required this.onLogin});
@@ -157,6 +157,8 @@ class _RegisterTenderoFormState extends State<RegisterTenderoForm> {
 
     if (isVerified == true && mounted) {
       final auth = context.read<AuthProvider>();
+      final tiendaProvider = context.read<TiendaProvider>();
+
       final success = await auth.registerTendero(
         dni: _dniController.text.trim(),
         nombres: _nameController.text.trim(),
@@ -164,14 +166,25 @@ class _RegisterTenderoFormState extends State<RegisterTenderoForm> {
         telefono: phone,
         password: _passwordController.text,
         nombreTienda: _storeNameController.text.trim(),
+        direccion: _addressController.text.trim(),
+        ruc: _rucController.text.trim(),
       );
 
       if (!mounted) return;
 
       if (success) {
-        Navigator.pushAndRemoveUntil(
+        await tiendaProvider.limpiarSesion();
+        try {
+          await tiendaProvider.cargarMisTiendas();
+        } catch (_) {}
+        if (tiendaProvider.tiendaSeleccionadaId == null &&
+            auth.user?.tiendaId != null) {
+          await tiendaProvider.seleccionarTienda(auth.user!.tiendaId!);
+        }
+        if (!mounted) return;
+        Navigator.pushNamedAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const MainShellScreen()),
+          AppRoutes.summary,
           (route) => false,
         );
       } else {

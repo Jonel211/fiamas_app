@@ -30,6 +30,8 @@ class AuthRemoteDataSource {
     required String telefono,
     required String password,
     required String nombreTienda,
+    String? direccion,
+    String? ruc,
   }) async {
     try {
       final response = await _dio.post(
@@ -41,37 +43,11 @@ class AuthRemoteDataSource {
           'telefono': telefono,
           'password': password,
           'nombre_tienda': nombreTienda,
+          if (direccion != null && direccion.trim().isNotEmpty)
+            'direccion': direccion.trim(),
+          if (ruc != null && ruc.trim().isNotEmpty) 'ruc': ruc.trim(),
         },
       );
-
-      return response.data as Map<String, dynamic>;
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  Future<Map<String, dynamic>> registerCliente({
-    required String telefono,
-    required String nombres,
-    required String apellidos,
-    String? password,
-    String? direccion,
-  }) async {
-    try {
-      final data = {
-        'telefono': telefono,
-        'nombres': nombres,
-        'apellidos': apellidos,
-      };
-
-      if (password != null && password.isNotEmpty) {
-        data['password'] = password;
-      }
-      if (direccion != null && direccion.isNotEmpty) {
-        data['direccion'] = direccion;
-      }
-
-      final response = await _dio.post('/auth/register/cliente', data: data);
 
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
@@ -136,14 +112,14 @@ class AuthRemoteDataSource {
 
      Future<void> resetPassword({
     required String identificador,
-    required String nuevaPassword, // ✅ Nombre corregido
+    required String nuevaPassword,
   }) async {
     try {
       final response = await _dio.post(
         '/auth/restablecer-password',
         data: {
           'identificador': identificador,
-          'nuevaPassword': nuevaPassword, // ✅ Enviamos 'nuevaPassword' exactamente como lo espera el backend
+          'nuevaPassword': nuevaPassword,
         },
       );
 

@@ -59,7 +59,6 @@ class AuthProvider with ChangeNotifier {
         _token = savedToken;
         _user = savedUser;
 
-        // ✅ IMPORTANTE: Ya NO llamamos a cargarPerfil() aquí.
         // Solo notificamos que hay sesión para que el splash pueda avanzar.
         notifyListeners();
         return true;
@@ -115,55 +114,31 @@ class AuthProvider with ChangeNotifier {
     required String telefono,
     required String password,
     required String nombreTienda,
+    String? direccion,
+    String? ruc,
   }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      await _repository.registerTendero(
+      final user = await _repository.registerTendero(
         dni: dni,
         nombres: nombres,
         apellidos: apellidos,
         telefono: telefono,
         password: password,
         nombreTienda: nombreTienda,
-      );
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _errorMessage = e.toString();
-      _isLoading = false;
-      notifyListeners();
-      return false;
-    }
-  }
-
-  Future<bool> registerCliente({
-    required String telefono,
-    required String nombres,
-    required String apellidos,
-    String? password,
-    String? direccion,
-  }) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      await _repository.registerCliente(
-        telefono: telefono,
-        nombres: nombres,
-        apellidos: apellidos,
-        password: password,
         direccion: direccion,
+        ruc: ruc,
       );
+      _user = user;
+      _token = await _repository.getToken();
       _isLoading = false;
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = e.toString().replaceAll('Exception: ', '').trim();
       _isLoading = false;
       notifyListeners();
       return false;
