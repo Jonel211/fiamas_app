@@ -43,7 +43,7 @@ class AddStoreItem extends StatelessWidget {
                 height: _circleSize,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: mostrarCandado ? AppColors.skyBlue.withOpacity(0.6) : AppColors.skyBlue,
+                  color: mostrarCandado ? AppColors.skyBlue.withValues(alpha: 0.6) : AppColors.skyBlue,
                   shape: BoxShape.circle,
                   border: mostrarCandado ? Border.all(color: AppColors.gold, width: 2.5) : null,
                 ),

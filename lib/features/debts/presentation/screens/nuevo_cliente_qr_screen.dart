@@ -127,7 +127,7 @@ class _NuevoClienteQrScreenState extends State<NuevoClienteQrScreen> {
         key: _qrCardKey,
         child: QrShareCard(
           nombreTienda: nombreTienda,
-          qrData: qrToken!,
+          qrData: qrToken,
           logoUrl: tiendaActual?.logoUrl,
           size: 320,
         ),  

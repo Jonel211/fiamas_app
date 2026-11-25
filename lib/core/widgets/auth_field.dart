@@ -54,7 +54,7 @@ class AuthField extends StatelessWidget {
     // Combina digitsOnly con los formateadores adicionales que se pasen por parámetro
     final List<TextInputFormatter> formatters = [
       if (digitsOnly) FilteringTextInputFormatter.digitsOnly,
-      if (inputFormatters != null) ...inputFormatters!,
+      ...?inputFormatters,
     ];
 
     // Adapta el color del icono frontal según el tema del campo
