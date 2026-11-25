@@ -43,7 +43,7 @@ class ClienteProvider extends ChangeNotifier {
   String? _errorFiados;
   String? _errorVerificacion;
   String? _errorVinculacion;
-  String? _errorEliminar;
+  String? _errorDesvincular;
 
   String? _tiendaClientesId;
   String? _tiendaConDeudaId;
@@ -92,7 +92,7 @@ class ClienteProvider extends ChangeNotifier {
   String? get errorFiados => _errorFiados;
   String? get errorVerificacion => _errorVerificacion;
   String? get errorVinculacion => _errorVinculacion;
-  String? get errorEliminar => _errorEliminar;
+  String? get errorDesvincular => _errorDesvincular;
 
   Map<String, dynamic>? get resumenCliente => _resumenCliente;
   String? get tiendaIdCargada => _tiendaIdCargada;
@@ -112,7 +112,7 @@ class ClienteProvider extends ChangeNotifier {
     _errorConDeuda = null;
     _errorVerificacion = null;
     _errorVinculacion = null;
-    _errorEliminar = null;
+    _errorDesvincular = null;
 
     notifyListeners();
   }
@@ -857,8 +857,8 @@ class ClienteProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> eliminarCliente(String clienteId, String tiendaId) async {
-    _errorEliminar = null;
+  Future<bool> desvincularCliente(String clienteId, String tiendaId) async {
+    _errorDesvincular = null;
     try {
       await _dio.delete('/clientes/$clienteId');
 
@@ -866,11 +866,11 @@ class ClienteProvider extends ChangeNotifier {
       await cargarClientes(tiendaId);
       return true;
     } on DioException catch (e) {
-      _errorEliminar = _mensajeError(e, 'Error al eliminar el cliente');
+      _errorDesvincular = _mensajeError(e, 'Error al desvincular el cliente');
       notifyListeners();
       return false;
     } catch (e) {
-      _errorEliminar = 'Error de conexión';
+      _errorDesvincular = 'Error de conexión';
       notifyListeners();
       return false;
     }
