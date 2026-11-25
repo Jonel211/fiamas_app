@@ -51,7 +51,8 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
     }
   }
 
-  bool _esVigente(Debt d) => d.isActive;
+  bool _esVigente(Debt d) => d.isActive && !d.isOverdue;
+  bool _esVencido(Debt d) => d.isOverdue;
 
   void _pruneSelection(List<Debt> fiados) {
     final selectableIds = fiados.where((d) => d.isSelectable).map((d) => d.id).toSet();
@@ -142,7 +143,7 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
       if (_selectedFilter == 'Todos') return true;
       if (_selectedFilter == 'Vigentes') return _esVigente(d);
       if (_selectedFilter == 'Pagados') return d.status == DebtStatus.pagado;
-      if (_selectedFilter == 'Vencidos') return _esVigente(d) && d.dateLabel.contains('Vencido');
+      if (_selectedFilter == 'Vencidos') return _esVencido(d);
       return true;
     }).toList();
 
@@ -296,7 +297,7 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                       const SizedBox(width: 8),
                       _buildFilterChip('Pagados', fiados.where((d) => d.status == DebtStatus.pagado).length, _selectedFilter == 'Pagados'),
                       const SizedBox(width: 8),
-                      _buildFilterChip('Vencidos', fiados.where((d) => _esVigente(d) && d.dateLabel.contains('Vencido')).length, _selectedFilter == 'Vencidos'),
+                      _buildFilterChip('Vencidos', fiados.where(_esVencido).length, _selectedFilter == 'Vencidos'),
                     ],
                   ),
                 ),
@@ -370,14 +371,19 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
      Widget _buildDebtCard(Debt debt) {
     final pagado = debt.status == DebtStatus.pagado;
     final parcial = debt.status == DebtStatus.parcial;
+    final vencido = debt.isOverdue;
     final selectable = debt.isSelectable;
     final isSelected = selectable && _selectedDebtIds.contains(debt.id);
 
-    final etiqueta = pagado ? 'PAGADO' : (parcial ? 'PARCIAL' : 'PENDIENTE');
+    final etiqueta = pagado
+        ? 'PAGADO'
+        : (vencido ? 'VENCIDO' : (parcial ? 'PARCIAL' : 'PENDIENTE'));
     final color = pagado
         ? AppColors.success
-        : (parcial ? AppColors.parcial : AppColors.gold);
-    final chipBackground = parcial
+        : (vencido
+            ? AppColors.danger
+            : (parcial ? AppColors.parcial : AppColors.gold));
+    final chipBackground = (!vencido && parcial)
         ? AppColors.parcialSoft
         : color.withValues(alpha: 0.15);
 
@@ -501,17 +507,21 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          const Icon(
-                            Icons.event_outlined,
+                          Icon(
+                            vencido
+                                ? Icons.event_busy_outlined
+                                : Icons.event_outlined,
                             size: 14,
-                            color: AppColors.gold,
+                            color: vencido ? AppColors.danger : AppColors.gold,
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            'Vence: ${_formatearFechaLimite(debt.dueDate!)}',
-                            style: const TextStyle(
+                            '${vencido ? 'Vencido' : 'Vence'}: ${_formatearFechaLimite(debt.dueDate!)}',
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.gold, // Dorado para alerta
+                              color: vencido
+                                  ? AppColors.danger
+                                  : AppColors.gold,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -533,9 +543,11 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                         if (!pagado)
                           Text(
                             'Resta S/ ${debt.remainingAmount.toStringAsFixed(2)}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.gold,
+                              color: vencido
+                                  ? AppColors.danger
+                                  : AppColors.gold,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
