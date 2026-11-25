@@ -20,7 +20,7 @@ class ClienteProvider extends ChangeNotifier {
   List<ClienteModel> _clientesConDeuda = [];
   List<ClienteModel> _recientes = [];
   List<Debt> _fiadosCliente = [];
-  
+
   // --- NUEVAS VARIABLES PARA SCORING ---
   List<ScoringHistorialModel> _scoringHistorial = [];
   bool _isLoadingScoring = false;
@@ -43,6 +43,7 @@ class ClienteProvider extends ChangeNotifier {
   String? _errorFiados;
   String? _errorVerificacion;
   String? _errorVinculacion;
+  String? _errorEliminar;
 
   String? _tiendaClientesId;
   String? _tiendaConDeudaId;
@@ -76,7 +77,7 @@ class ClienteProvider extends ChangeNotifier {
       fiadosParaTotales.fold(0.0, (sum, d) => sum + d.paidAmount);
 
   double get saldoPendienteCliente => totalFiadoCliente - totalPagadoCliente;
-  
+
   bool get isLoading => _isLoading;
   bool get isLoadingConDeuda => _isLoadingConDeuda;
   bool get isLoadingRecientes => _isLoadingRecientes;
@@ -91,6 +92,7 @@ class ClienteProvider extends ChangeNotifier {
   String? get errorFiados => _errorFiados;
   String? get errorVerificacion => _errorVerificacion;
   String? get errorVinculacion => _errorVinculacion;
+  String? get errorEliminar => _errorEliminar;
 
   Map<String, dynamic>? get resumenCliente => _resumenCliente;
   String? get tiendaIdCargada => _tiendaIdCargada;
@@ -110,6 +112,7 @@ class ClienteProvider extends ChangeNotifier {
     _errorConDeuda = null;
     _errorVerificacion = null;
     _errorVinculacion = null;
+    _errorEliminar = null;
 
     notifyListeners();
   }
@@ -142,14 +145,19 @@ class ClienteProvider extends ChangeNotifier {
       );
 
       final data = response.data;
-      _scoreActual = int.tryParse(data['score_actual']?.toString() ?? '') ?? 100;
+      _scoreActual =
+          int.tryParse(data['score_actual']?.toString() ?? '') ?? 100;
       _categoriaActual = data['categoria_actual'] ?? 'nuevo';
-      
+
       final List<dynamic> historialData = data['historial'] ?? [];
-      _scoringHistorial = historialData.map((json) => ScoringHistorialModel.fromJson(json)).toList();
-      
+      _scoringHistorial = historialData
+          .map((json) => ScoringHistorialModel.fromJson(json))
+          .toList();
     } on DioException catch (e) {
-      _errorScoring = _mensajeError(e, 'Error al cargar el historial de scoring.');
+      _errorScoring = _mensajeError(
+        e,
+        'Error al cargar el historial de scoring.',
+      );
     } catch (e) {
       _errorScoring = 'Error inesperado: $e';
     } finally {
@@ -364,9 +372,7 @@ class ClienteProvider extends ChangeNotifier {
       final data = response.data;
 
       if (data is Map) {
-        return ClienteExistenteModel.fromJson(
-          Map<String, dynamic>.from(data),
-        );
+        return ClienteExistenteModel.fromJson(Map<String, dynamic>.from(data));
       }
 
       _errorVerificacion = 'No se pudo verificar el teléfono.';
@@ -851,6 +857,34 @@ class ClienteProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> eliminarCliente(String clienteId, String tiendaId) async {
+    _errorEliminar = null;
+    try {
+      await _dio.delete('/clientes/$clienteId');
+
+      // Si tiene éxito, recargamos la lista para reflejar el cambio
+      await cargarClientes(tiendaId);
+      return true;
+    } on DioException catch (e) {
+      _errorEliminar = _mensajeError(e, 'Error al eliminar el cliente');
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _errorEliminar = 'Error de conexión';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Quita un cliente de la lista local sin recargar desde el servidor.
+  /// Se usa tras un swipe exitoso para que desaparezca de inmediato.
+  void removerClienteLocal(String clienteId) {
+    _clientes.removeWhere((c) => c.id == clienteId);
+    _clientesConDeuda.removeWhere((c) => c.id == clienteId);
+    _recientes.removeWhere((c) => c.id == clienteId);
+    notifyListeners();
+  }
+
   List<ClienteModel> buscarClienteLocal(String query) {
     if (query.isEmpty) return _clientes;
 
@@ -884,24 +918,28 @@ class ClienteProvider extends ChangeNotifier {
     return data
         .where((j) => j['estado'] != 'pagado' && j['estado'] != 'cancelado')
         .map<Debt>((j) {
-      final parcial = j['estado'] == 'parcial';
-      final fecha = j['fecha_creacion']?.toString() ?? '';
-      return Debt(
-        id: (j['id'] ?? '').toString(),
-        customerName: nombre,
-        phone: telefono,
-        amount: num_(j['monto_total']),
-        paidAmount: num_(j['monto_pagado']),
-        status: parcial ? DebtStatus.parcial : DebtStatus.pendiente,
-        dateLabel: fecha.length >= 10 ? 'Creado: ${fecha.substring(0, 10)}' : 'Sin fecha',
-        items: ((j['detalles'] as List?) ?? []).map<DebtItem>((d) {
-          return DebtItem(
-            productName: (d['producto']?['nombre'] ?? 'Producto').toString(),
-            quantity: num_(d['cantidad'], 1.0),
-            unitPrice: num_(d['precio_unitario']),
+          final parcial = j['estado'] == 'parcial';
+          final fecha = j['fecha_creacion']?.toString() ?? '';
+          return Debt(
+            id: (j['id'] ?? '').toString(),
+            customerName: nombre,
+            phone: telefono,
+            amount: num_(j['monto_total']),
+            paidAmount: num_(j['monto_pagado']),
+            status: parcial ? DebtStatus.parcial : DebtStatus.pendiente,
+            dateLabel: fecha.length >= 10
+                ? 'Creado: ${fecha.substring(0, 10)}'
+                : 'Sin fecha',
+            items: ((j['detalles'] as List?) ?? []).map<DebtItem>((d) {
+              return DebtItem(
+                productName: (d['producto']?['nombre'] ?? 'Producto')
+                    .toString(),
+                quantity: num_(d['cantidad'], 1.0),
+                unitPrice: num_(d['precio_unitario']),
+              );
+            }).toList(),
           );
-        }).toList(),
-      );
-    }).toList();
+        })
+        .toList();
   }
 }
