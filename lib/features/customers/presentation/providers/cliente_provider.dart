@@ -681,8 +681,46 @@ class ClienteProvider extends ChangeNotifier {
 
           final data = response.data['fiados'] ?? [];
 
-          if (data.isNotEmpty) {
+          if (data is List) {
             _parseAndSetFiados(data);
+          }
+
+          final scoring = response.data['scoring'];
+          final moraLocal = _fiadosCliente.where((d) => d.isOverdue).length;
+          final idx = _clientes.indexWhere((c) => c.id == clienteId);
+          if (idx != -1) {
+            final actual = _clientes[idx];
+            final v = actual.vinculacion;
+            final nuevoScore = (scoring is Map && scoring['score'] != null)
+                ? (int.tryParse(scoring['score'].toString()) ?? v.scorePagador)
+                : v.scorePagador;
+            final nuevaCat = (scoring is Map && scoring['categoria'] != null)
+                ? scoring['categoria'].toString()
+                : v.categoriaPagador;
+            final nuevaMora = (scoring is Map && scoring['fiadosMora'] != null)
+                ? (int.tryParse(scoring['fiadosMora'].toString()) ?? moraLocal)
+                : moraLocal;
+
+            _clientes[idx] = ClienteModel(
+              id: actual.id,
+              telefono: actual.telefono,
+              nombres: actual.nombres,
+              apellidos: actual.apellidos,
+              direccion: actual.direccion,
+              fotoPerfilUrl: actual.fotoPerfilUrl,
+              creadoEn: actual.creadoEn,
+              vinculacion: VinculacionModel(
+                id: v.id,
+                limiteCredito: v.limiteCredito,
+                saldoActual: v.saldoActual,
+                scorePagador: nuevoScore,
+                categoriaPagador: nuevaCat,
+                totalFiados: v.totalFiados,
+                totalPagos: v.totalPagos,
+                cantidadFiadosMora: nuevaMora,
+                fiadosActivos: v.fiadosActivos,
+              ),
+            );
           }
         } catch (_) {}
       }
