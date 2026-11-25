@@ -34,13 +34,15 @@ class AuthRepository {
   }
 
   // Registro Tendero
-  Future<void> registerTendero({
+  Future<UserModel> registerTendero({
     required String dni,
     required String nombres,
     required String apellidos,
     required String telefono,
     required String password,
     required String nombreTienda,
+    String? direccion,
+    String? ruc,
   }) async {
     await _remoteDataSource.registerTendero(
       dni: dni,
@@ -49,23 +51,14 @@ class AuthRepository {
       telefono: telefono,
       password: password,
       nombreTienda: nombreTienda,
-    );
-  }
-
-  // Registro Cliente
-  Future<void> registerCliente({
-    required String telefono,
-    required String nombres,
-    required String apellidos,
-    String? password,
-    String? direccion,
-  }) async {
-    await _remoteDataSource.registerCliente(
-      telefono: telefono,
-      nombres: nombres,
-      apellidos: apellidos,
-      password: password,
       direccion: direccion,
+      ruc: ruc,
+    );
+
+    // Iniciar sesión automáticamente para obtener el token JWT y la tienda creada
+    return await login(
+      identificador: telefono,
+      password: password,
     );
   }
 
