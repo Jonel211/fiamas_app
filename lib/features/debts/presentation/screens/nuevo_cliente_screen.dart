@@ -212,23 +212,16 @@ class _NuevoClienteScreenState extends State<NuevoClienteScreen> {
       if (_currentNormalizedPhone != telefono) return;
 
       if (existente != null && existente.existe) {
+        // Si el cliente existe pero está inactivo (desvinculado), lo tratamos como nuevo
+        // El backend se encargará de reactivarlo
         if (!existente.activo) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Este cliente no está disponible'),
-              backgroundColor: AppColors.danger,
-            ),
-          );
-          return;
-        }
-
-        if (existente.yaVinculado) {
+          // Continuamos con el flujo normal de creación (que reactivará al cliente)
+        } else if (existente.yaVinculado) {
           await _mostrarYaVinculado(existente, telefono);
           if (!mounted) return;
           return;
-        }
-
-        if (existente.clienteId == null || existente.clienteId!.isEmpty) {
+        } else if (existente.clienteId == null ||
+            existente.clienteId!.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('No se pudo obtener el cliente. Reintenta.'),
@@ -236,11 +229,15 @@ class _NuevoClienteScreenState extends State<NuevoClienteScreen> {
             ),
           );
           return;
+        } else {
+          await _mostrarVincularSheetParaTelefono(
+            existente,
+            tiendaId,
+            telefono,
+          );
+          if (!mounted) return;
+          return;
         }
-
-        await _mostrarVincularSheetParaTelefono(existente, tiendaId, telefono);
-        if (!mounted) return;
-        return;
       }
 
       await _crearClienteManual(telefono, tiendaId, clienteProvider);

@@ -306,22 +306,22 @@ class _CustomerListScreenState extends State<CustomerListScreen>
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: const Icon(
-                          Icons.delete_outline,
+                          Icons.link_off, // Ícono de "desvincular"
                           color: Colors.white,
                           size: 28,
                         ),
                       ),
-                      //  TODA la lógica va AQUÍ, antes de descartar
+                      // TODA la lógica va AQUÍ, antes de descartar
                       confirmDismiss: (direction) async {
                         // 1. Confirmación del usuario
                         final confirmar = await showDialog<bool>(
                           context: context,
                           builder: (ctx) => AlertDialog(
-                            title: const Text('Eliminar cliente'),
+                            title: const Text('Desvincular cliente'),
                             content: Text(
-                              '¿Estás seguro de que deseas eliminar a '
-                              '${cliente.nombreCompleto}?\n\n'
-                              'Esta acción no se puede deshacer.',
+                              '¿Estás seguro de que deseas desvincular a '
+                              '${cliente.nombreCompleto} de esta tienda?\n\n'
+                              'El cliente seguirá existiendo pero no aparecerá en tu lista.',
                             ),
                             actions: [
                               TextButton(
@@ -334,7 +334,7 @@ class _CustomerListScreenState extends State<CustomerListScreen>
                                 ),
                                 onPressed: () => Navigator.pop(ctx, true),
                                 child: const Text(
-                                  'Eliminar',
+                                  'Desvincular',
                                   style: TextStyle(color: Colors.white),
                                 ),
                               ),
@@ -352,7 +352,7 @@ class _CustomerListScreenState extends State<CustomerListScreen>
                         if (tiendaId == null) return false;
 
                         final provider = context.read<ClienteProvider>();
-                        final success = await provider.eliminarCliente(
+                        final success = await provider.desvincularCliente(
                           cliente.id,
                           tiendaId,
                         );
@@ -365,8 +365,8 @@ class _CustomerListScreenState extends State<CustomerListScreen>
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                provider.errorEliminar ??
-                                    'No se puede eliminar: el cliente tiene deudas pendientes.',
+                                provider.errorDesvincular ??
+                                    'No se puede desvincular: el cliente tiene deudas pendientes.',
                               ),
                               backgroundColor: AppColors.danger,
                             ),
@@ -377,13 +377,13 @@ class _CustomerListScreenState extends State<CustomerListScreen>
                         // 3b. ÉXITO → sí se descarta
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Cliente eliminado exitosamente'),
+                            content: Text('Cliente desvinculado de la tienda'),
                             backgroundColor: AppColors.success,
                           ),
                         );
                         return true;
                       },
-                      //  Solo remover de la lista local (síncrono, sin await)
+                      // Solo remover de la lista local (síncrono, sin await)
                       onDismissed: (_) {
                         context
                             .read<ClienteProvider>()
