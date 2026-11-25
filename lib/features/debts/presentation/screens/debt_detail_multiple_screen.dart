@@ -427,9 +427,20 @@ class _DebtDetailMultipleScreenState extends State<DebtDetailMultipleScreen> {
                                   const SizedBox(height: 4),
                                   Row(
                                     children: [
-                                      const Icon(Icons.event_outlined, size: 14, color: AppColors.gold),
+                                      Icon(
+                                        debt.isOverdue ? Icons.event_busy_outlined : Icons.event_outlined,
+                                        size: 14,
+                                        color: debt.isOverdue ? AppColors.danger : AppColors.gold,
+                                      ),
                                       const SizedBox(width: 6),
-                                      Text('Vence: ${_formatearFecha(debt.dueDate)}', style: const TextStyle(fontSize: 12, color: AppColors.gold, fontWeight: FontWeight.w600)),
+                                      Text(
+                                        '${debt.isOverdue ? 'Vencido' : 'Vence'}: ${_formatearFecha(debt.dueDate)}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: debt.isOverdue ? AppColors.danger : AppColors.gold,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -437,8 +448,20 @@ class _DebtDetailMultipleScreenState extends State<DebtDetailMultipleScreen> {
                                   const SizedBox(height: 6),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                    decoration: BoxDecoration(color: _getStatusBgColor(debt.status), borderRadius: BorderRadius.circular(10)),
-                                    child: Text(_getStatusText(debt.status), style: TextStyle(color: _getStatusColor(debt.status), fontSize: 10, fontWeight: FontWeight.w600)),
+                                    decoration: BoxDecoration(
+                                      color: debt.isOverdue
+                                          ? AppColors.danger.withValues(alpha: 0.15)
+                                          : _getStatusBgColor(debt.status),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      debt.isOverdue ? 'Vencido' : _getStatusText(debt.status),
+                                      style: TextStyle(
+                                        color: debt.isOverdue ? AppColors.danger : _getStatusColor(debt.status),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ],

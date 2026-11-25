@@ -37,6 +37,22 @@ class Debt {
 
   bool get isActive => !isCancelled && isActiveStatus(status.name);
   bool get isSelectable => isActive;
+
+  bool get isOverdue {
+    if (!isActive || remainingAmount <= 0) return false;
+    final raw = dueDate?.trim();
+    if (raw != null && raw.isNotEmpty) {
+      final ymd = raw.length >= 10 ? raw.substring(0, 10) : raw;
+      final parsed = DateTime.tryParse(ymd);
+      if (parsed != null) {
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        final dueDay = DateTime(parsed.year, parsed.month, parsed.day);
+        return dueDay.isBefore(today);
+      }
+    }
+    return dateLabel.toLowerCase().contains('vencid');
+  }
 }
 
 class DebtItem {
