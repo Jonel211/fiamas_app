@@ -38,9 +38,9 @@ String _formatearFecha(
   }
 
   try {
-    return DateFormat(patron, 'es').format(date!);
+    return DateFormat(patron, 'es').format(date);
   } catch (_) {
-    return _formatearManual(date!, conHora: patron.contains('HH:mm'));
+    return _formatearManual(date, conHora: patron.contains('HH:mm'));
   }
 }
 
@@ -98,18 +98,6 @@ class _DebtDetailMultipleScreenState extends State<DebtDetailMultipleScreen> {
       _bienvenidaEnviada = enviada;
       _cargando = false;
     });
-  }
-
-  String _getInitials(String name) {
-    final cleanName = name.trim();
-    if (cleanName.isEmpty) return 'C';
-    final parts = cleanName.split(RegExp(r'\s+'));
-    if (parts.length == 1) {
-      return parts.first.isEmpty ? 'C' : parts.first.substring(0, 1).toUpperCase();
-    }
-    final first = parts.first.isNotEmpty ? parts.first.substring(0, 1) : '';
-    final last = parts.last.isNotEmpty ? parts.last.substring(0, 1) : '';
-    return (first + last).toUpperCase();
   }
 
   String _getStatusText(DebtStatus status) {
@@ -177,26 +165,6 @@ class _DebtDetailMultipleScreenState extends State<DebtDetailMultipleScreen> {
       }
     }
     return widget.customer['imageUrl'] as String?;
-  }
-
-  List<String> _detalleFiados() {
-    const maximoLineas = 8;
-    final pendientes = widget.debts.where((debt) => debt.status != DebtStatus.pagado).toList();
-    final visibles = pendientes.length > maximoLineas ? pendientes.take(maximoLineas - 1) : pendientes;
-    
-    final lineas = visibles.map((debt) {
-      final productos = debt.items.isEmpty ? 'Sin detalle de productos' : debt.items.map((item) => item.productName).join(', ');
-      final restante = debt.remainingAmount < 0 ? 0.0 : debt.remainingAmount;
-      final monto = (debt.paidAmount > 0 && restante > 0)
-          ? 'S/ ${restante.toStringAsFixed(2)} (resta S/ ${restante.toStringAsFixed(2)} de S/ ${debt.amount.toStringAsFixed(2)})'
-          : 'S/ ${restante.toStringAsFixed(2)}';
-      return '• ${debt.dateLabel} — $productos — $monto';
-    }).toList();
-    
-    if (pendientes.length > maximoLineas) {
-      lineas.add('y ${pendientes.length - (maximoLineas - 1)} fiados más');
-    }
-    return lineas;
   }
 
   void _mostrarSnackBar(BuildContext context, String mensaje, {bool error = false}) {
@@ -276,7 +244,6 @@ class _DebtDetailMultipleScreenState extends State<DebtDetailMultipleScreen> {
   Future<void> _enviarRecordatorio(
     BuildContext context, {
     required String nombreCliente,
-    required String nombreTienda,
     required double totalRestante,
   }) async {
     if (totalRestante <= 0) {
@@ -374,10 +341,6 @@ class _DebtDetailMultipleScreenState extends State<DebtDetailMultipleScreen> {
 
     final clientes = context.watch<ClienteProvider>().clientes;
     final photoUrl = _resolverFoto(clientes);
-    final initials = _getInitials(name);
-
-    final tienda = context.watch<TiendaProvider>().tiendaSeleccionada;
-    final nombreTienda = (tienda?.nombre.isNotEmpty ?? false) ? tienda!.nombre : 'Mi tienda';
     
     final allPaid = widget.debts.isEmpty || widget.debts.every((d) => d.status == DebtStatus.pagado);
     final totalOriginal = widget.debts.fold(0.0, (sum, d) => sum + d.amount);
@@ -579,10 +542,10 @@ class _DebtDetailMultipleScreenState extends State<DebtDetailMultipleScreen> {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: _enviandoBienvenida
-                            ? null
-                            : (_bienvenidaEnviada
-                                ? () => _enviarRecordatorio(context, nombreCliente: name, nombreTienda: nombreTienda, totalRestante: totalRestante)
-                                : _onEnviarBienvenida),
+                        ? null
+                        : (_bienvenidaEnviada
+                            ? () => _enviarRecordatorio(context, nombreCliente: name, totalRestante: totalRestante)
+                            : _onEnviarBienvenida),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.teal,
                           side: const BorderSide(color: AppColors.teal),

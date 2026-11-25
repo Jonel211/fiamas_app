@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/app_avatar.dart';
 import '../../../../core/widgets/app_header_config.dart';
 import '../../../../main.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';

@@ -131,7 +131,7 @@ class _StoreFormState extends State<StoreForm> {
           '/tenderos/verificar-duplicado',
           queryParameters: {
             'telefono': valor,
-            if (tenderoId != null) 'tendero_id': tenderoId,
+            'tendero_id': ?tenderoId,
           },
         );
 

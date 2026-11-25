@@ -32,14 +32,16 @@ class _ForgotPasswordSheetState extends State<ForgotPasswordSheet> {
       final phone = _phoneController.text.trim();
 
       try {
-        //  PASO 1: Verificar en el backend ANTES de enviar el SMS
+        // PASO 1: Verificar en el backend ANTES de enviar el SMS
         final dio = DioClient.create();
         final response = await dio.post(
-          '/auth/verificar-telefono-recuperacion', // Asegúrate que la ruta coincida con tu backend
+          '/auth/verificar-telefono-recuperacion',
           data: {'telefono': phone},
         );
 
-        //  PASO 2: Si el backend dice que NO existe, mostramos error y DETENEMOS el proceso
+        if (!mounted) return;
+
+        // PASO 2: Si el backend dice que NO existe, mostramos error y DETENEMOS el proceso
         if (response.data['existe'] == false) {
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -49,10 +51,10 @@ class _ForgotPasswordSheetState extends State<ForgotPasswordSheet> {
               behavior: SnackBarBehavior.floating,
             ),
           );
-          return; //  AQUÍ SE DETIENE. NO SE LLAMA A FIREBASE NI SE GASTA SMS.
+          return;
         }
 
-        //  PASO 3: Si existe, recién ahora enviamos el SMS con Firebase
+        // PASO 3: Si existe, recién ahora enviamos el SMS con Firebase
         final formattedPhone = '+51$phone';
         await _otpService.sendOtp(
           phoneNumber: formattedPhone,
@@ -65,7 +67,7 @@ class _ForgotPasswordSheetState extends State<ForgotPasswordSheet> {
                 isScrollControlled: true,
                 backgroundColor: Colors.transparent,
                 builder: (_) => ResetCodeSheet(
-                  phone: phone, 
+                  phone: phone,
                   verificationId: verificationId,
                 ),
               );
@@ -76,7 +78,7 @@ class _ForgotPasswordSheetState extends State<ForgotPasswordSheet> {
               setState(() => _isLoading = false);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(error), 
+                  content: Text(error),
                   backgroundColor: AppColors.danger,
                   behavior: SnackBarBehavior.floating,
                 ),
@@ -85,7 +87,7 @@ class _ForgotPasswordSheetState extends State<ForgotPasswordSheet> {
           },
         );
       } catch (e) {
-        // Manejo de errores de red o del backend
+        if (!mounted) return;
         setState(() => _isLoading = false);
         String errorMsg = 'Error de conexión. Intenta de nuevo.';
         if (e.toString().contains('404')) {
