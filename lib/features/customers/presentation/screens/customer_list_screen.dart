@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:fiamas_app/core/constants/app_colors.dart';
+
 import '../../../../core/utils/phone_or_name_input_formatter.dart';
 
 import '../../../../core/widgets/app_header.dart';
@@ -155,8 +156,9 @@ class _CustomerListScreenState extends State<CustomerListScreen>
                   AppHeaderPillAction(
                     label: 'scoring',
                     backgroundColor: AppColors.teal,
-                    onTap: () => Navigator.of(context)
-                        .pushNamed(AppRoutes.scoringRanking),
+                    onTap: () =>
+                        Navigator.of(context)
+                            .pushNamed(AppRoutes.scoringRanking),
                   ),
                 ],
               ),
@@ -245,7 +247,7 @@ class _CustomerListScreenState extends State<CustomerListScreen>
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               if (provider.error != null)
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -265,16 +267,13 @@ class _CustomerListScreenState extends State<CustomerListScreen>
                 )
               else if (provider.isLoading && provider.clientes.isEmpty)
                 const Center(child: CircularProgressIndicator())
-              
               else if (filtrados.isEmpty)
                 if (query.isNotEmpty && _telefonoValido.hasMatch(query))
                   RegisterClientSuggestion(
                     phone: query,
                     onTap: () async {
-                      await Navigator.of(context).pushNamed(
-                        AppRoutes.newClient,
-                        arguments: query,
-                      );
+                      await Navigator.of(context)
+                          .pushNamed(AppRoutes.newClient, arguments: query);
                       if (!mounted) return;
                       _searchController.clear();
                       setState(() {});
@@ -291,44 +290,138 @@ class _CustomerListScreenState extends State<CustomerListScreen>
                       ),
                     ),
                   )
-              
               else
                 ...filtrados.map((cliente) {
                   final status = _getStatus(cliente);
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: CustomerCard(
-                      id: cliente.id,
-                      name: cliente.nombreCompleto,
-                      phone: cliente.telefono,
-                      imageUrl: cliente.fotoPerfilUrl,
-                      status: status,
-                      debtAmount: cliente.vinculacion.saldoActual,
-                      extraInfo: _getExtraInfo(cliente),
-                      onTapProfile: () {
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.customerProfile,
-                          arguments: cliente,
+                    child: Dismissible(
+                      key: Key(cliente.id),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerLeft,
+                        padding: const EdgeInsets.only(left: 24),
+                        decoration: BoxDecoration(
+                          color: AppColors.danger,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
+                      //  TODA la lógica va AQUÍ, antes de descartar
+                      confirmDismiss: (direction) async {
+                        // 1. Confirmación del usuario
+                        final confirmar = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Eliminar cliente'),
+                            content: Text(
+                              '¿Estás seguro de que deseas eliminar a '
+                              '${cliente.nombreCompleto}?\n\n'
+                              'Esta acción no se puede deshacer.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Cancelar'),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.danger,
+                                ),
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text(
+                                  'Eliminar',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          ),
                         );
-                      },
-                      onTapHistory: () {
-                        final customerMap = {
-                          'id': cliente.id,
-                          'name': cliente.nombreCompleto,
-                          'phone': cliente.telefono,
-                          'imageUrl': cliente.fotoPerfilUrl,
-                          'debt': cliente.vinculacion.saldoActual,
-                          'creditLimit': cliente.vinculacion.limiteCredito,
-                          'status': status,
-                          'activeDebts': cliente.vinculacion.fiadosActivos,
-                        };
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.debtHistory,
-                          arguments: customerMap,
+
+                        if (confirmar != true) return false; // cancela el swipe
+
+                        // 2. Llamar al backend
+                        final tiendaId = context
+                                .read<TiendaProvider>()
+                                .tiendaSeleccionadaId ??
+                            context.read<AuthProvider>().user?.tiendaId;
+                        if (tiendaId == null) return false;
+
+                        final provider = context.read<ClienteProvider>();
+                        final success = await provider.eliminarCliente(
+                          cliente.id,
+                          tiendaId,
                         );
+
+                        if (!context.mounted) return false;
+
+                        // 3a. FALLÓ (tiene deudas) → NO descartar, el widget
+                        //     vuelve solo a su lugar. Sin error rojo.
+                        if (!success) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                provider.errorEliminar ??
+                                    'No se puede eliminar: el cliente tiene deudas pendientes.',
+                              ),
+                              backgroundColor: AppColors.danger,
+                            ),
+                          );
+                          return false;
+                        }
+
+                        // 3b. ÉXITO → sí se descarta
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Cliente eliminado exitosamente'),
+                            backgroundColor: AppColors.success,
+                          ),
+                        );
+                        return true;
                       },
+                      //  Solo remover de la lista local (síncrono, sin await)
+                      onDismissed: (_) {
+                        context
+                            .read<ClienteProvider>()
+                            .removerClienteLocal(cliente.id);
+                      },
+                      child: CustomerCard(
+                        id: cliente.id,
+                        name: cliente.nombreCompleto,
+                        phone: cliente.telefono,
+                        imageUrl: cliente.fotoPerfilUrl,
+                        status: status,
+                        debtAmount: cliente.vinculacion.saldoActual,
+                        extraInfo: _getExtraInfo(cliente),
+                        onTapProfile: () {
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.customerProfile,
+                            arguments: cliente,
+                          );
+                        },
+                        onTapHistory: () {
+                          final customerMap = {
+                            'id': cliente.id,
+                            'name': cliente.nombreCompleto,
+                            'phone': cliente.telefono,
+                            'imageUrl': cliente.fotoPerfilUrl,
+                            'debt': cliente.vinculacion.saldoActual,
+                            'creditLimit': cliente.vinculacion.limiteCredito,
+                            'status': status,
+                            'activeDebts': cliente.vinculacion.fiadosActivos,
+                          };
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.debtHistory,
+                            arguments: customerMap,
+                          );
+                        },
+                      ),
                     ),
                   );
                 }),
